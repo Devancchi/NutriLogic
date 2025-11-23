@@ -9,6 +9,7 @@ import ConsultationList from "./konten/ConsultationList";
 import ConsultationDetail from "./konten/ConsultationDetail";
 import CreateConsultation from "./konten/CreateConsultation";
 import PointsAndBadgesPage from "./konten/PointsAndBadgesPage";
+import HistoryPage from "./konten/HistoryPage";
 
 export default function OrangTua() {
   return (
@@ -24,7 +25,7 @@ export default function OrangTua() {
           <Route path="konsultasi/new" element={<CreateConsultation />} />
           <Route path="konsultasi/:id" element={<ConsultationDetail />} />
           <Route path="gamification" element={<PointsAndBadgesPage />} />
-          <Route path="riwayat" element={<RiwayatPage />} />
+          <Route path="riwayat" element={<HistoryPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Routes>
@@ -40,12 +41,6 @@ const ProfilePage = () => (
   </div>
 );
 
-const RiwayatPage = () => (
-  <div className="p-4 md:p-10 w-full h-full bg-gray-50">
-    <h1 className="text-3xl font-bold text-gray-800">Riwayat</h1>
-    <p className="text-gray-600 mt-2">Halaman riwayat kunjungan</p>
-  </div>
-);
 
 const SettingsPage = () => (
   <div className="p-4 md:p-10 w-full h-full bg-gray-50">

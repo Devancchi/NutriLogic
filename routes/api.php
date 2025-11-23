@@ -8,6 +8,7 @@ use App\Http\Controllers\MealLogController;
 use App\Http\Controllers\NutriAssistController;
 use App\Http\Controllers\ParentConsultationController;
 use App\Http\Controllers\ParentDashboardController;
+use App\Http\Controllers\ParentHistoryController;
 use App\Http\Controllers\ParentPointsController;
 use App\Http\Controllers\PosyanduController;
 use App\Http\Controllers\WeighingLogController;
@@ -101,5 +102,8 @@ Route::middleware('auth:sanctum')->group(function () {
         
         // Parent points & badges routes
         Route::get('/points', [ParentPointsController::class, 'index']);
+        
+        // Parent history routes
+        Route::get('/history', [ParentHistoryController::class, 'index']);
     });
 });
