@@ -23,7 +23,7 @@ const Navbar = () => {
 
   return (
     <div
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ease-in-out ${
+      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ease-in-out font-montserrat ${
         isScrolled ? 'py-2' : 'py-4'
       }`}
     >
@@ -57,7 +57,7 @@ const Navbar = () => {
 
         {/* ====== Desktop Menu ====== */}
         <ul className="hidden md:flex gap-7 font-medium transition-colors duration-200">
-  {['Home', 'Problem', 'Fitur', 'Penggunaan', 'Testimonial'].map((item) => (
+  {['Home', 'About', 'Problem', 'Fitur', 'Penggunaan', 'Testimonial'].map((item) => (
     <button
       key={item}
       onClick={(e) => {
@@ -127,7 +127,7 @@ const Navbar = () => {
         </div>
 
         <ul className="flex flex-col items-center gap-3 mt-10 px-5 text-lg font-medium">
-   {['Home', 'Problem', 'Fitur', 'Penggunaan', 'Testimonial'].map((item, i) => (
+   {['Home', 'About', 'Problem', 'Fitur', 'Penggunaan', 'Testimonial'].map((item, i) => (
     <button
       key={item}
       onClick={(e) => {

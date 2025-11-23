@@ -1,6 +1,7 @@
 import React from 'react'
 import { AdvancedMap } from '../interactive-map'
 import { ActivityChartCard } from '../activity-chart-card'
+import { HyperText } from '../ui/hyper-text'
 import { cn } from "@/lib/utils"
 
 const Problem = () => {
@@ -8,14 +9,14 @@ const Problem = () => {
   const stuntingData = [
     {
       title: 'Stunting Indonesia',
-      value: '21.6%',
+      value: '19.8%',
       description: 'Prevalensi stunting nasional masih di atas standar WHO (20%)',
       chartData: [
-        { day: '2019', value: 27.7 },
         { day: '2020', value: 26.9 },
         { day: '2021', value: 24.4 },
         { day: '2022', value: 21.6 },
-        { day: '2023', value: 21.5 }
+        { day: '2023', value: 21.5 },
+        { day: '2024', value: 19.8 }
       ]
     },
     {
@@ -23,11 +24,11 @@ const Problem = () => {
       value: '19.2%',
       description: 'Berada sedikit di bawah rata-rata nasional',
       chartData: [
-        { day: '2019', value: 23.0 },
-        { day: '2020', value: 21.9 },
-        { day: '2021', value: 20.1 },
+        { day: '2020', value: 25.6 },
+        { day: '2021', value: 23.5 },
         { day: '2022', value: 19.2 },
-        { day: '2023', value: 18.9 }
+        { day: '2023', value: 17.7 },
+        { day: '2024', value: 14.7 }
       ]
     },
     {
@@ -35,11 +36,11 @@ const Problem = () => {
       value: '765',
       description: 'Total kasus stunting di Kecamatan Rambipuji',
       chartData: [
-        { day: 'Jan', value: 820 },
-        { day: 'Mar', value: 795 },
-        { day: 'Jun', value: 780 },
-        { day: 'Sep', value: 765 },
-        { day: 'Des', value: 750 }
+        { day: '2020', value: 678 },
+        { day: '2021', value: 610 },
+        { day: '2022', value: 549 },
+        { day: '2023', value: 699 },
+        { day: '2024', value: 720 }
       ]
     }
   ]
@@ -171,20 +172,25 @@ const Problem = () => {
   ]
 
   return (
-    <div className='py-8 pt-24' id='Problem'>
+    <div className='pb-16 pt-28 font-montserrat' id='Problem'>
       <div className="container mx-auto px-4">
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-black text-center mb-8">
-          Data Stunting
-        </h1>
+        <div className="text-center mb-12">
+          <HyperText 
+            text="DATA STUNTING" 
+            className="text-4xl md:text-5xl lg:text-6xl font-bold text-black inline-block"
+            duration={1000}
+            animateOnLoad={true}
+          />
+        </div>
         
-        <div className="flex flex-col lg:flex-row gap-6 mb-12 justify-center items-stretch">
+        <div className="flex flex-col lg:flex-row gap-6 mb-12 justify-center items-center">
           {stuntingData.map((stat, index) => (
-            <div key={index} className="flex-1 max-w-md">
+            <div key={index} className="w-full flex justify-center lg:flex-1 max-w-md">
               <ActivityChartCard
                 title={stat.title}
                 totalValue={stat.value + (stat.suffix || '')}
                 data={stat.chartData}
-                className="bg-white h-full"
+                className="bg-white h-full w-full"
                 description={stat.description}
               />
             </div>

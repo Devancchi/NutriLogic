@@ -5,7 +5,7 @@ import DashboardOrangTuaContent from "./konten/DashboardOrangTua";
 
 export default function OrangTua() {
   return (
-    <div className="flex flex-col md:flex-row bg-white w-full h-screen overflow-hidden">
+    <div className="flex flex-col md:flex-row bg-white w-full h-screen overflow-hidden font-montserrat">
       <SidebarOrangTua />
       <div className="flex-1 overflow-auto">
         <Routes>
