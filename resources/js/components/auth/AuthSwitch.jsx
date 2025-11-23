@@ -569,23 +569,3 @@ export default function AuthSwitch() {
     </div>
   );
 }
-
-// ✅ Separated for cleaner JSX
-function SocialIcons() {
-  return (
-    <>
-      <a href="#" className="social-icon">
-        <Icon icon="logos:google-icon" width="20" height="20" />
-      </a>
-      <a href="#" className="social-icon">
-        <Icon icon="logos:facebook" width="20" height="20" />
-      </a>
-      <a href="#" className="social-icon">
-        <Icon icon="logos:twitter" width="20" height="20" />
-      </a>
-      <a href="#" className="social-icon">
-        <Icon icon="logos:linkedin-icon" width="20" height="20" />
-      </a>
-    </>
-  );
-}
