@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import Header from './Header';
 import AuthSwitch from './auth';
 import Dashboard from './Dashboard';
+import ForgotPassword from './ForgotPassword';
 
 function App() {
     return (
@@ -10,6 +11,7 @@ function App() {
             <Routes>
                 <Route path="/" element={<Header />} />
                 <Route path="/auth" element={<AuthSwitch />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/dashboard" element={<Dashboard />} />
             </Routes>
         </div>
