@@ -5,6 +5,9 @@ import DashboardOrangTuaContent from "./konten/DashboardOrangTua";
 import DataAnakList from "./konten/DataAnakList";
 import DataAnakDetail from "./konten/DataAnakDetail";
 import NutriAssistPage from "./konten/NutriAssistPage";
+import ConsultationList from "./konten/ConsultationList";
+import ConsultationDetail from "./konten/ConsultationDetail";
+import CreateConsultation from "./konten/CreateConsultation";
 
 export default function OrangTua() {
   return (
@@ -16,7 +19,9 @@ export default function OrangTua() {
           <Route path="anak" element={<DataAnakList />} />
           <Route path="anak/:id" element={<DataAnakDetail />} />
           <Route path="nutri-assist" element={<NutriAssistPage />} />
-          <Route path="konsultasi" element={<KonsultasiPage />} />
+          <Route path="konsultasi" element={<ConsultationList />} />
+          <Route path="konsultasi/new" element={<CreateConsultation />} />
+          <Route path="konsultasi/:id" element={<ConsultationDetail />} />
           <Route path="gamification" element={<GamificationPage />} />
           <Route path="riwayat" element={<RiwayatPage />} />
           <Route path="profile" element={<ProfilePage />} />
@@ -49,14 +54,6 @@ const SettingsPage = () => (
 );
 
 
-const KonsultasiPage = () => (
-  <div className="p-4 md:p-10 w-full h-full bg-gray-50">
-    <h1 className="text-3xl font-bold text-gray-800">Konsultasi</h1>
-    <p className="text-gray-600 mt-2">
-      Tanya jawab singkat seputar gizi, jadwal posyandu, dan keluhan anak dengan kader.
-    </p>
-  </div>
-);
 
 const GamificationPage = () => (
   <div className="p-4 md:p-10 w-full h-full bg-gray-50">

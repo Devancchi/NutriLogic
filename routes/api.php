@@ -6,6 +6,7 @@ use App\Http\Controllers\ChildController;
 use App\Http\Controllers\ImmunizationScheduleController;
 use App\Http\Controllers\MealLogController;
 use App\Http\Controllers\NutriAssistController;
+use App\Http\Controllers\ParentConsultationController;
 use App\Http\Controllers\ParentDashboardController;
 use App\Http\Controllers\PosyanduController;
 use App\Http\Controllers\WeighingLogController;
@@ -90,5 +91,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/children', [ParentDashboardController::class, 'children']);
         Route::get('/children/{id}', [ParentDashboardController::class, 'showChild']);
         Route::post('/children/{id}/nutri-assist', [ParentDashboardController::class, 'nutriAssist']);
+        
+        // Parent consultation routes
+        Route::get('/consultations', [ParentConsultationController::class, 'index']);
+        Route::post('/consultations', [ParentConsultationController::class, 'store']);
+        Route::get('/consultations/{id}', [ParentConsultationController::class, 'show']);
+        Route::post('/consultations/{id}/messages', [ParentConsultationController::class, 'sendMessage']);
     });
 });

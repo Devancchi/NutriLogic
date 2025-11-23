@@ -86,4 +86,19 @@ class User extends Authenticatable
     {
         return $this->hasMany(Child::class, 'parent_id');
     }
+
+    public function consultationsAsParent(): HasMany
+    {
+        return $this->hasMany(Consultation::class, 'parent_id');
+    }
+
+    public function consultationsAsKader(): HasMany
+    {
+        return $this->hasMany(Consultation::class, 'kader_id');
+    }
+
+    public function consultationMessages(): HasMany
+    {
+        return $this->hasMany(ConsultationMessage::class, 'sender_id');
+    }
 }
