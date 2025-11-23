@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { assets } from "../../assets/assets";
+import { logoutWithApi } from "../../lib/auth";
 
 export default function SidebarOrangTua() {
   const navigate = useNavigate();
@@ -57,9 +58,9 @@ export default function SidebarOrangTua() {
       icon: (
         <LogOut className="text-neutral-700 dark:text-neutral-200 h-5 w-5 shrink-0" />
       ),
-      onClick: () => {
-        // TODO: Clear authentication/localStorage
-        navigate("/");
+      onClick: async () => {
+        await logoutWithApi();
+        navigate("/auth");
       },
     },
   ];
