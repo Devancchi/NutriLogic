@@ -9,6 +9,12 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        poppins: ['Poppins', 'sans-serif'],
+        montserrat: ['Montserrat', 'sans-serif'],
+        outfit: ['Outfit', 'sans-serif'],
+        sans: ['Poppins', 'Montserrat', 'Outfit', 'ui-sans-serif', 'system-ui'],
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",

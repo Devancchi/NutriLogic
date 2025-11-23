@@ -12,7 +12,7 @@ function App() {
                 <Route path="/" element={<Header />} />
                 <Route path="/auth" element={<AuthSwitch />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/dashboard/*" element={<Dashboard />} />
             </Routes>
         </div>
         
