@@ -1,6 +1,6 @@
 import React from "react";
-import Dashboard_orang_tua from "./Dashboard_orang_tua";
-import Dashboard_kader from "./Dashboard_kader";
+import OrangTua from "./OrangTua";
+import Kader from "./Kader";
 
 export default function Dashboard() {
   // TODO: Get user role from authentication/context/localStorage
@@ -8,8 +8,8 @@ export default function Dashboard() {
   
   // Render component based on role without redirect
   if (userRole === 'Kader') {
-    return <Dashboard_kader />;
+    return <Kader />;
   }
   
-  return <Dashboard_orang_tua />;
+  return <OrangTua />;
 }
