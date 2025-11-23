@@ -4,13 +4,16 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasApiTokens;
 
     /**
      * The attributes that are mass assignable.
@@ -20,7 +23,10 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'phone',
         'password',
+        'role',
+        'posyandu_id',
     ];
 
     /**
@@ -44,5 +50,40 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Check if user is admin.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Check if user is kader.
+     */
+    public function isKader(): bool
+    {
+        return $this->role === 'kader';
+    }
+
+    /**
+     * Check if user is ibu.
+     */
+    public function isIbu(): bool
+    {
+        return $this->role === 'ibu';
+    }
+
+    // Relationships
+    public function posyandu(): BelongsTo
+    {
+        return $this->belongsTo(Posyandu::class);
+    }
+
+    public function children(): HasMany
+    {
+        return $this->hasMany(Child::class, 'parent_id');
     }
 }
