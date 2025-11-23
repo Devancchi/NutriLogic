@@ -1,9 +1,9 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import LandingPage from './LandingPage';
-import AuthSwitch from './auth';
+import AuthSwitch from './auth/AuthSwitch';
 import Dashboard from './Dashboard';
-import ForgotPassword from './ForgotPassword';
+import ForgotPassword from './auth/ForgotPassword';
 
 function App() {
     return (

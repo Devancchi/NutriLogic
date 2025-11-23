@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { ResetPasswordForm } from "./reset-password-form";
+import { ResetPasswordForm } from "./ResetPasswordForm";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
