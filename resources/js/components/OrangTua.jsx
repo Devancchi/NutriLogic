@@ -2,10 +2,22 @@ import React from "react";
 import { Routes, Route } from "react-router-dom";
 import SidebarOrangTua from "./sidebars/SidebarOrangTua";
 import DashboardOrangTuaContent from "./konten/DashboardOrangTua";
+import DataAnakList from "./konten/DataAnakList";
+import DataAnakDetail from "./konten/DataAnakDetail";
+import TambahAnakForm from "./konten/TambahAnakForm";
+import EditAnakForm from "./konten/EditAnakForm";
+import NutriAssistPage from "./konten/NutriAssistPage";
+import ConsultationList from "./konten/ConsultationList";
+import ConsultationDetail from "./konten/ConsultationDetail";
+import CreateConsultation from "./konten/CreateConsultation";
+import PointsAndBadgesPage from "./konten/PointsAndBadgesPage";
+import HistoryPage from "./konten/HistoryPage";
+import SettingsPage from "./konten/SettingsPage";
+import ProfilePage from "./konten/ProfilePage";
 
 export default function OrangTua() {
   return (
-    <div className="flex flex-col md:flex-row bg-white w-full h-screen overflow-hidden font-montserrat">
+    <div className="flex flex-col md:flex-row bg-white w-full h-screen overflow-hidden">
       <SidebarOrangTua />
       <div className="flex-1 overflow-auto">
         <Routes>
@@ -21,30 +33,4 @@ export default function OrangTua() {
 }
 
 
-const DataAnakPage = () => (
-  <div className="p-4 md:p-10 w-full h-full bg-gray-50">
-    <h1 className="text-3xl font-bold text-gray-800">Data Anak</h1>
-    <p className="text-gray-600 mt-2">Halaman data anak</p>
-  </div>
-);
 
-const ProfilePage = () => (
-  <div className="p-4 md:p-10 w-full h-full bg-gray-50">
-    <h1 className="text-3xl font-bold text-gray-800">Profil</h1>
-    <p className="text-gray-600 mt-2">Halaman profil orang tua</p>
-  </div>
-);
-
-const RiwayatPage = () => (
-  <div className="p-4 md:p-10 w-full h-full bg-gray-50">
-    <h1 className="text-3xl font-bold text-gray-800">Riwayat</h1>
-    <p className="text-gray-600 mt-2">Halaman riwayat kunjungan</p>
-  </div>
-);
-
-const SettingsPage = () => (
-  <div className="p-4 md:p-10 w-full h-full bg-gray-50">
-    <h1 className="text-3xl font-bold text-gray-800">Pengaturan</h1>
-    <p className="text-gray-600 mt-2">Halaman pengaturan</p>
-  </div>
-);
