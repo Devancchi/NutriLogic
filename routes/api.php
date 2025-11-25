@@ -158,6 +158,34 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::delete('/{id}', [App\Http\Controllers\KaderScheduleController::class, 'destroy']);
         });
 
+        // Consultation Management
+        Route::prefix('consultations')->group(function () {
+            Route::get('/', [App\Http\Controllers\KaderConsultationController::class, 'index']);
+            Route::get('/{id}', [App\Http\Controllers\KaderConsultationController::class, 'show']);
+            Route::post('/{id}/messages', [App\Http\Controllers\KaderConsultationController::class, 'storeMessage']);
+            Route::put('/{id}/close', [App\Http\Controllers\KaderConsultationController::class, 'close']);
+        });
+
+        // Report & Export
+        Route::prefix('report')->group(function () {
+            Route::get('/summary', [App\Http\Controllers\KaderReportController::class, 'summary']);
+            Route::get('/export/children', [App\Http\Controllers\KaderReportController::class, 'exportChildren']);
+            Route::get('/export/weighings', [App\Http\Controllers\KaderReportController::class, 'exportWeighings']);
+        });
+
+        // Broadcast Management
+        Route::prefix('broadcast')->group(function () {
+            Route::post('/', [App\Http\Controllers\KaderBroadcastController::class, 'store']);
+            Route::get('/', [App\Http\Controllers\KaderBroadcastController::class, 'index']);
+        });
+
+        // Profile Management
+        Route::prefix('profile')->group(function () {
+            Route::get('/', [App\Http\Controllers\KaderProfileController::class, 'show']);
+            Route::put('/', [App\Http\Controllers\KaderProfileController::class, 'update']);
+            Route::put('/password', [App\Http\Controllers\KaderProfileController::class, 'updatePassword']);
+        });
+
         // Actual kader endpoints will be added here in next menus
     });
 });
