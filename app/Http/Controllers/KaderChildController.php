@@ -76,7 +76,7 @@ class KaderChildController extends Controller
     /**
      * Get single child detail
      */
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         
@@ -159,7 +159,7 @@ class KaderChildController extends Controller
     /**
      * Update child data
      */
-    public function update(Request $request, int $id): JsonResponse
+    public function update(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         $child = Child::findOrFail($id);
@@ -193,7 +193,7 @@ class KaderChildController extends Controller
     /**
      * Soft delete child (set is_active = false)
      */
-    public function destroy(Request $request, int $id): JsonResponse
+    public function destroy(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         $child = Child::findOrFail($id);

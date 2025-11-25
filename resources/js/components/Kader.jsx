@@ -6,6 +6,10 @@ import DataAnakKader from "./konten/DataAnakKader";
 import TambahAnakKaderForm from "./konten/TambahAnakKaderForm";
 import EditAnakKaderForm from "./konten/EditAnakKaderForm";
 import DetailAnakKader from "./konten/DetailAnakKader";
+import PenimbanganMassal from "./konten/PenimbanganMassal";
+import AnakPrioritas from "./konten/AnakPrioritas";
+import JadwalPosyandu from "./konten/JadwalPosyandu";
+import TambahJadwalForm from "./konten/TambahJadwalForm";
 
 export default function Kader() {
   return (
@@ -18,6 +22,10 @@ export default function Kader() {
           <Route path="data-anak/tambah" element={<TambahAnakKaderForm />} />
           <Route path="data-anak/edit/:id" element={<EditAnakKaderForm />} />
           <Route path="data-anak/:id" element={<DetailAnakKader />} />
+          <Route path="penimbangan" element={<PenimbanganMassal />} />
+          <Route path="anak-prioritas" element={<AnakPrioritas />} />
+          <Route path="jadwal" element={<JadwalPosyandu />} />
+          <Route path="jadwal/tambah" element={<TambahJadwalForm />} />
           <Route path="input-data" element={<InputDataPage />} />
           <Route path="reports" element={<ReportsPage />} />
           <Route path="statistics" element={<StatisticsPage />} />

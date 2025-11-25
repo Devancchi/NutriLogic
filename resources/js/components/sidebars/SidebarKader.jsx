@@ -8,6 +8,9 @@ import {
   BarChart,
   Users,
   ClipboardList,
+  Scale,
+  AlertTriangle,
+  Calendar,
   LogOut,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -30,6 +33,27 @@ export default function SidebarKader() {
       href: "/dashboard/data-anak",
       icon: (
         <Users className="text-neutral-700 dark:text-neutral-200 h-5 w-5 shrink-0" />
+      ),
+    },
+    {
+      label: "Penimbangan",
+      href: "/dashboard/penimbangan",
+      icon: (
+        <Scale className="text-neutral-700 dark:text-neutral-200 h-5 w-5 shrink-0" />
+      ),
+    },
+    {
+      label: "Anak Prioritas",
+      href: "/dashboard/anak-prioritas",
+      icon: (
+        <AlertTriangle className="text-neutral-700 dark:text-neutral-200 h-5 w-5 shrink-0" />
+      ),
+    },
+    {
+      label: "Jadwal",
+      href: "/dashboard/jadwal",
+      icon: (
+        <Calendar className="text-neutral-700 dark:text-neutral-200 h-5 w-5 shrink-0" />
       ),
     },
     {

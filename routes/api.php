@@ -134,9 +134,28 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::prefix('children')->group(function () {
             Route::get('/', [App\Http\Controllers\KaderChildController::class, 'index']);
             Route::post('/', [App\Http\Controllers\KaderChildController::class, 'store']);
+            
+            // Priority Children - must be before {id} routes
+            Route::get('/priorities', [App\Http\Controllers\KaderPriorityController::class, 'index']);
+            
             Route::get('/{id}', [App\Http\Controllers\KaderChildController::class, 'show']);
             Route::put('/{id}', [App\Http\Controllers\KaderChildController::class, 'update']);
             Route::delete('/{id}', [App\Http\Controllers\KaderChildController::class, 'destroy']);
+            Route::get('/{id}/weighings', [App\Http\Controllers\KaderWeighingController::class, 'childHistory']);
+        });
+
+        // Weighing Management
+        Route::prefix('weighings')->group(function () {
+            Route::get('/today', [App\Http\Controllers\KaderWeighingController::class, 'todayList']);
+            Route::post('/bulk', [App\Http\Controllers\KaderWeighingController::class, 'bulkStore']);
+        });
+
+        // Schedule Management
+        Route::prefix('schedules')->group(function () {
+            Route::get('/', [App\Http\Controllers\KaderScheduleController::class, 'index']);
+            Route::post('/', [App\Http\Controllers\KaderScheduleController::class, 'store']);
+            Route::put('/{id}', [App\Http\Controllers\KaderScheduleController::class, 'update']);
+            Route::delete('/{id}', [App\Http\Controllers\KaderScheduleController::class, 'destroy']);
         });
 
         // Actual kader endpoints will be added here in next menus
