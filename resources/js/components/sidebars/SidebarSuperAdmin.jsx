@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { assets } from "../../assets/assets";
+import { logoutWithApi } from "../../lib/auth";
 
 export default function SidebarSuperAdmin() {
     const navigate = useNavigate();
@@ -100,24 +101,8 @@ export default function SidebarSuperAdmin() {
             ),
             onClick: async () => {
                 if (window.confirm('Apakah Anda yakin ingin keluar?')) {
-                    try {
-                        const token = localStorage.getItem('token');
-                        if (token) {
-                            await fetch(`${import.meta.env.VITE_API_URL}/logout`, {
-                                method: 'POST',
-                                headers: {
-                                    'Authorization': `Bearer ${token}`,
-                                    'Content-Type': 'application/json',
-                                },
-                            });
-                        }
-                    } catch (error) {
-                        console.error('Logout error:', error);
-                    } finally {
-                        localStorage.removeItem('token');
-                        localStorage.removeItem('user');
-                        navigate("/");
-                    }
+                    await logoutWithApi();
+                    navigate("/");
                 }
             },
         },
