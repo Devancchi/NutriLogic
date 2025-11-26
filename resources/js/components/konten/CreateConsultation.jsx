@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../lib/api";
+import GenericFormSkeleton from "../loading/GenericFormSkeleton";
 
 export default function CreateConsultation() {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ export default function CreateConsultation() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await api.get('/parent/children');
       setChildren(response.data.data);
     } catch (err) {
@@ -34,7 +35,7 @@ export default function CreateConsultation() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!title.trim()) {
       setError('Judul konsultasi harus diisi.');
       return;
@@ -57,7 +58,7 @@ export default function CreateConsultation() {
       }
 
       const response = await api.post('/parent/consultations', payload);
-      
+
       // Navigate to consultation detail
       navigate(`/dashboard/konsultasi/${response.data.data.id}`);
     } catch (err) {
@@ -75,18 +76,7 @@ export default function CreateConsultation() {
 
   // Loading state
   if (loading) {
-    return (
-      <div className="flex flex-1 w-full h-full overflow-auto">
-        <div className="p-4 md:p-10 w-full h-full bg-gray-50 flex flex-col gap-4">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Memuat data...</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <GenericFormSkeleton fieldCount={3} />;
   }
 
   return (

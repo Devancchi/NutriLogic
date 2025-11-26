@@ -315,9 +315,9 @@ const Contact = () => {
                                                     transition={{ duration: 1, repeat: Infinity, ease: "linear" }} />
                                             ) : (
                                                 <>
-                                                    <Send className="h-5 w-5" />
                                                     Kirim Pesan
-                                                    <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                                                    <Send className="h-5 w-5" />
+                                                    
                                                 </>
                                             )}
                                         </span>

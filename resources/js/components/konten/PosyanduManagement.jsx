@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import api from "../../lib/api";
 import { Building2, Plus, Edit2, Power, MapPin, Users, Baby } from "lucide-react";
+import GenericListSkeleton from "../loading/GenericListSkeleton";
 
 export default function PosyanduManagement() {
     const [loading, setLoading] = useState(true);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import api from "../../lib/api";
+import DashboardKaderSkeleton from "../loading/DashboardKaderSkeleton";
 
 export default function DashboardKaderContent() {
   const [loading, setLoading] = useState(true);
@@ -28,18 +29,7 @@ export default function DashboardKaderContent() {
 
   // Loading state
   if (loading) {
-    return (
-      <div className="flex flex-1 w-full h-full overflow-auto font-montserrat">
-        <div className="p-4 md:p-10 w-full h-full bg-gray-50 flex flex-col gap-4">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Memuat data dashboard...</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <DashboardKaderSkeleton />;
   }
 
   // Error state

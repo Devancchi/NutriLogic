@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import api from "../../lib/api";
 import { formatAge, getStatusColor, getStatusLabel } from "../../lib/utils";
+import GenericListSkeleton from "../loading/GenericListSkeleton";
 
 export default function DataAnakKader() {
     const [loading, setLoading] = useState(true);
@@ -57,19 +58,9 @@ export default function DataAnakKader() {
 
     // Loading state
     if (loading && children.length === 0) {
-        return (
-            <div className="flex flex-1 w-full h-full overflow-auto">
-                <div className="p-4 md:p-10 w-full h-full bg-gray-50 flex flex-col gap-4">
-                    <div className="flex items-center justify-center h-64">
-                        <div className="text-center">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                            <p className="text-gray-600">Memuat data anak...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
+        return <GenericListSkeleton itemCount={6} />;
     }
+
 
     return (
         <div className="flex flex-1 w-full h-full overflow-auto">

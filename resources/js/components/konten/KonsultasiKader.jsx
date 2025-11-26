@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../lib/api";
+import GenericListSkeleton from "../loading/GenericListSkeleton";
 
 export default function KonsultasiKader() {
     const [loading, setLoading] = useState(true);

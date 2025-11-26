@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import api from "../../lib/api";
 import { FileText, Plus, Edit2, Trash2, Eye, EyeOff, Search } from "lucide-react";
+import GenericListSkeleton from "../loading/GenericListSkeleton";
 
 export default function ContentManagement() {
     const [loading, setLoading] = useState(true);
