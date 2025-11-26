@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import api from "../../lib/api";
 import { UserCog, Users, Plus, Edit2, Power, Key, Building2 } from "lucide-react";
+import GenericListSkeleton from "../loading/GenericListSkeleton";
 
 export default function UserManagement() {
     const [loading, setLoading] = useState(true);

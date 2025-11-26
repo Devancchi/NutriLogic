@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import api from "../../lib/api";
 import { Activity, Calendar, User, Filter } from "lucide-react";
+import GenericListSkeleton from "../loading/GenericListSkeleton";
 
 export default function ActivityLogs() {
     const [loading, setLoading] = useState(true);

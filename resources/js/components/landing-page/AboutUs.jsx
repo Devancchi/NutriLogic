@@ -6,7 +6,7 @@ const AboutUs = () => {
   const [sectionRef, isVisible] = useIntersectionObserver({ threshold: 0.1 })
 
   return (
-    <div className='font-poppins min-h-screen flex items-center w-full bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden' id='About'>
+    <div className='font-montserrat min-h-screen flex items-center w-full bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden' id='About'>
       <style>{`
         @keyframes float-slow {
           0%, 100% { transform: translateY(0px); }
@@ -34,19 +34,26 @@ const AboutUs = () => {
               Tentang Kami
             </span>
 
-            <h2 className='font-poppins text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-slate-900 leading-tight mb-8'>
+            <h2 className='font-montserrat text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-slate-900 leading-tight mb-8'>
               Optimalkan Tumbuh <br />
               Kembang Balita <br />
               Dengan <br />
               <span className='text-[#00BFEF] whitespace-nowrap'>Monitoring Terintegrasi AI</span>
             </h2>
 
-            <p className='font-poppins text-gray-600 text-xl lg:text-2xl leading-relaxed mb-12 max-w-2xl'>
+            <p className='font-montserrat text-gray-600 text-xl lg:text-2xl leading-relaxed mb-12 max-w-2xl'>
               NutriLogic mengintegrasikan Kecerdasan Buatan (AI) canggih untuk memberikan pemantauan status gizi balita yang akurat dan real-time. Algoritma cerdas kami menganalisis pola pertumbuhan untuk mendeteksi tanda awal stunting, memastikan setiap anak mendapatkan perawatan tepat demi masa depan emas.
             </p>
 
             <div className='flex flex-wrap gap-6'>
-              <button className='font-poppins px-10 py-5 bg-[#00BFEF] text-white text-lg rounded-full font-bold shadow-xl shadow-[#00BFEF]/30 hover:bg-[#009ec7] hover:shadow-2xl hover:-translate-y-1 transition-all duration-300'>
+              <button
+                onClick={() => {
+                  const element = document.querySelector('#Fitur');
+                  if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+                className='font-montserrat px-10 py-5 bg-[#00BFEF] text-white text-lg rounded-full font-bold shadow-xl shadow-[#00BFEF]/30 hover:bg-[#009ec7] hover:shadow-2xl hover:-translate-y-1 transition-all duration-300'>
                 Pelajari Lebih Lanjut
               </button>
             </div>
@@ -125,3 +132,4 @@ const AboutUs = () => {
 }
 
 export default AboutUs
+

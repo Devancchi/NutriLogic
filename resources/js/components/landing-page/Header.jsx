@@ -73,7 +73,7 @@ const Header = () => {
 
   return (
     <div
-      className='relative min-h-screen mb-4 w-full overflow-hidden font-poppins'
+      className='relative min-h-screen mb-4 w-full overflow-hidden font-montserrat'
       id='Home'
     >
       <style>{`
@@ -152,7 +152,7 @@ const Header = () => {
           <div className='px-6 md:pl-[150px] lg:pl-[230px] md:pr-12 lg:pr-20 xl:pr-32 w-full'>
             <div className='max-w-5xl'>
               {/* Main Heading */}
-              <h1 className='font-poppins text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight text-white animate-fade-in-left'
+              <h1 className='font-montserrat text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight text-white animate-fade-in-left'
                 style={{ animationDelay: '200ms' }}>
                 <div>Cegah Stunting, Ciptakan</div>
                 <div>Generasi Emas Dengan</div>
@@ -160,7 +160,7 @@ const Header = () => {
               </h1>
 
               {/* Subheading */}
-              <p className='font-poppins mt-6 md:mt-8 text-base md:text-lg lg:text-xl text-white/95 leading-relaxed font-medium animate-fade-in-left'
+              <p className='font-montserrat mt-6 md:mt-8 text-base md:text-lg lg:text-xl text-white/95 leading-relaxed font-medium animate-fade-in-left'
                 style={{ animationDelay: '400ms' }}>
                 Platform Terpadu Untuk Gizi Anak, Edukasi Keluarga, Dan Akses Mudah Ke Layanan Kesehatan Demi Masa Depan Yang Lebih Cerah
               </p>
@@ -169,7 +169,7 @@ const Header = () => {
               <div className='mt-8 md:mt-10 animate-fade-in-scale' style={{ animationDelay: '600ms' }}>
                 <button
                   onClick={() => navigate('/auth')}
-                  className='font-poppins bg-white text-gray-800 px-8 md:px-10 py-3 md:py-4 rounded-full font-semibold text-base md:text-lg shadow-[0_0_20px_rgba(255,255,255,0.6)] hover:shadow-[0_0_30px_rgba(255,255,255,0.8)] hover:scale-105 transition-all duration-300'
+                  className='font-montserrat bg-white text-gray-800 px-8 md:px-10 py-3 md:py-4 rounded-full font-semibold text-base md:text-lg shadow-[0_0_20px_rgba(255,255,255,0.6)] hover:bg-[#00BFEF] hover:text-white hover:shadow-[0_0_30px_rgba(0,191,239,0.8)] hover:scale-105 transition-all duration-500 ease-in-out'
                 >
                   Cek Status Gizi Sekarang
                 </button>
@@ -189,22 +189,22 @@ const Header = () => {
             <div className='h-full flex flex-wrap md:flex-nowrap items-center justify-between px-4 py-6 md:py-0 md:px-40 gap-4 md:gap-0'>
               {/* Stat 1 */}
               <div className='text-center text-white'>
-                <h3 className='font-poppins text-4xl md:text-5xl lg:text-6xl font-extrabold mb-2'>
+                <h3 className='font-montserrat text-4xl md:text-5xl lg:text-6xl font-extrabold mb-2'>
                   {count1}{count1 >= 20 ? '+' : ''}
                 </h3>
-                <p className='font-poppins text-sm md:text-base font-medium opacity-90'>Posyandu Setempat</p>
+                <p className='font-montserrat text-sm md:text-base font-medium opacity-90'>Posyandu Setempat</p>
               </div>
 
               {/* Stat 2 */}
               <div className='text-center text-white'>
-                <h3 className='font-poppins text-4xl md:text-5xl lg:text-6xl font-extrabold mb-2'>{count2}</h3>
-                <p className='font-poppins text-sm md:text-base font-medium opacity-90'>Dusun Terdaftar</p>
+                <h3 className='font-montserrat text-4xl md:text-5xl lg:text-6xl font-extrabold mb-2'>{count2}</h3>
+                <p className='font-montserrat text-sm md:text-base font-medium opacity-90'>Dusun Terdaftar</p>
               </div>
 
               {/* Stat 3 */}
               <div className='text-center text-white'>
-                <h3 className='font-poppins text-4xl md:text-5xl lg:text-6xl font-extrabold mb-2'>AI</h3>
-                <p className='font-poppins text-sm md:text-base font-medium opacity-90'>Integrasi</p>
+                <h3 className='font-montserrat text-4xl md:text-5xl lg:text-6xl font-extrabold mb-2'>AI</h3>
+                <p className='font-montserrat text-sm md:text-base font-medium opacity-90'>Integrasi</p>
               </div>
 
               {/* Stat 4 */}
@@ -212,7 +212,7 @@ const Header = () => {
                 <div className='flex justify-center mb-2'>
                   <Icon icon="bxs:chart" className='w-10 h-10 md:w-12 md:h-12' />
                 </div>
-                <p className='font-poppins text-sm md:text-base font-medium opacity-90'>Monitoring</p>
+                <p className='font-montserrat text-sm md:text-base font-medium opacity-90'>Monitoring</p>
               </div>
             </div>
           </div>
@@ -223,3 +223,4 @@ const Header = () => {
 }
 
 export default Header
+

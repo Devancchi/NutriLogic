@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import api from "../../lib/api";
 import { FileText, Download, Calendar, TrendingUp, BarChart3 } from "lucide-react";
+import GenericListSkeleton from "../loading/GenericListSkeleton";
 
 export default function SystemReports() {
     const [loading, setLoading] = useState(true);

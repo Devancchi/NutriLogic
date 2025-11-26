@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import api from "../../lib/api";
+import GenericListSkeleton from "../loading/GenericListSkeleton";
 
 export default function BroadcastKader() {
     const [loading, setLoading] = useState(false);

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../lib/api";
 import { formatAge } from "../../lib/utils";
+import GenericListSkeleton from "../loading/GenericListSkeleton";
 
 export default function AnakPrioritas() {
     const [loading, setLoading] = useState(true);
