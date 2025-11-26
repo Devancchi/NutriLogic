@@ -38,7 +38,7 @@ const AboutUs = () => {
               Optimalkan Tumbuh <br />
               Kembang Balita <br />
               Dengan <br />
-              <span className='text-[#00BFEF] whitespace-nowrap'>Monitoring Terintegrasi AI</span>
+              <span className='text-[#00BFEF]'>Monitoring Terintegrasi AI</span>
             </h2>
 
             <p className='font-montserrat text-gray-600 text-xl lg:text-2xl leading-relaxed mb-12 max-w-2xl'>

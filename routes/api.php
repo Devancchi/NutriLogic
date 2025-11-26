@@ -95,6 +95,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/children', [ParentDashboardController::class, 'children']);
         Route::get('/children/{id}', [ParentDashboardController::class, 'showChild']);
         Route::post('/children/{id}/nutri-assist', [ParentDashboardController::class, 'nutriAssist']);
+        Route::get('/growth-chart', [ParentDashboardController::class, 'growthChart']);
+        Route::get('/calendar/schedules', [ParentDashboardController::class, 'getCalendarSchedules']);
 
         // Parent consultation routes
         Route::get('/consultations', [ParentConsultationController::class, 'index']);

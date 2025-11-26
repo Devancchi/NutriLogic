@@ -6,9 +6,10 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 export function DataCacheProvider({ children }) {
     const [cache, setCache] = useState({});
+    const cacheRef = React.useRef({});
 
     const getCachedData = useCallback((key) => {
-        const cached = cache[key];
+        const cached = cacheRef.current[key];
         if (!cached) return null;
 
         const now = Date.now();
@@ -19,22 +20,27 @@ export function DataCacheProvider({ children }) {
             setCache(prev => {
                 const newCache = { ...prev };
                 delete newCache[key];
+                cacheRef.current = newCache;
                 return newCache;
             });
             return null;
         }
 
         return cached.data;
-    }, [cache]);
+    }, []);
 
     const setCachedData = useCallback((key, data) => {
-        setCache(prev => ({
-            ...prev,
-            [key]: {
-                data,
-                timestamp: Date.now(),
-            },
-        }));
+        setCache(prev => {
+            const newCache = {
+                ...prev,
+                [key]: {
+                    data,
+                    timestamp: Date.now(),
+                },
+            };
+            cacheRef.current = newCache;
+            return newCache;
+        });
     }, []);
 
     const invalidateCache = useCallback((key) => {
@@ -43,11 +49,13 @@ export function DataCacheProvider({ children }) {
             setCache(prev => {
                 const newCache = { ...prev };
                 delete newCache[key];
+                cacheRef.current = newCache;
                 return newCache;
             });
         } else {
             // Invalidate all cache
             setCache({});
+            cacheRef.current = {};
         }
     }, []);
 
