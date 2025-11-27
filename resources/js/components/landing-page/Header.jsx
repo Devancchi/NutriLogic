@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Icon } from '@iconify/react'
 import Navbar from './Navbar'
 import { assets } from '../../assets/assets'
+import { isAuthenticated } from '../../lib/auth'
 
 const Header = () => {
   const navigate = useNavigate()
@@ -168,10 +169,10 @@ const Header = () => {
               {/* CTA Button */}
               <div className='mt-6 md:mt-8 animate-fade-in-scale' style={{ animationDelay: '600ms' }}>
                 <button
-                  onClick={() => navigate('/auth')}
+                  onClick={() => navigate(isAuthenticated() ? '/dashboard' : '/auth')}
                   className='font-montserrat bg-white text-gray-800 px-6 md:px-8 py-2.5 md:py-3 rounded-full font-semibold text-sm md:text-base shadow-[0_0_20px_rgba(255,255,255,0.6)] hover:bg-[#00BFEF] hover:text-white hover:shadow-[0_0_30px_rgba(0,191,239,0.8)] hover:scale-105 transition-all duration-500 ease-in-out'
                 >
-                  Cek Status Gizi Sekarang
+                  {isAuthenticated() ? 'Buka Dashboard' : 'Cek Status Gizi Sekarang'}
                 </button>
               </div>
             </div>

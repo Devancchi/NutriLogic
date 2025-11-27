@@ -109,8 +109,9 @@ export default function ProfileModal({ isOpen, onClose }) {
             setSelectedPhoto(null);
 
             invalidateCache('profile');
-            notifyProfileUpdate();
+            // CRITICAL FIX: Must fetch new data (update localStorage) BEFORE notifying listeners
             await fetchMe();
+            notifyProfileUpdate();
 
             setTimeout(() => {
                 onClose();

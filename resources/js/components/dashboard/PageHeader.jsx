@@ -24,7 +24,7 @@ import { useSettingsModal } from '../../contexts/SettingsModalContext';
 
 export default function PageHeader({ title, subtitle = "Portal Orang Tua", children, showProfile = true, profileClassName = "" }) {
     const navigate = useNavigate();
-    const { openProfileModal } = useProfileModal();
+    const { openProfileModal, profileUpdateTrigger } = useProfileModal();
     const { openSettingsModal } = useSettingsModal();
     const [user, setUser] = useState(null);
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -32,7 +32,7 @@ export default function PageHeader({ title, subtitle = "Portal Orang Tua", child
     useEffect(() => {
         const userData = getUser();
         setUser(userData);
-    }, []);
+    }, [profileUpdateTrigger]); // Re-fetch when profile updates
 
     const handleLogoutClick = () => {
         setShowLogoutConfirm(true);
