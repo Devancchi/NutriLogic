@@ -6,12 +6,14 @@ import GenericListSkeleton from "../loading/GenericListSkeleton";
 import { useDataCache } from "../../contexts/DataCacheContext";
 import PageHeader from "../dashboard/PageHeader";
 import { DataAnakTable } from "../DataAnakTable";
+import AddChildModal from "./AddChildModal";
 
 export default function DataAnakList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [children, setChildren] = useState([]);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { getCachedData, setCachedData, invalidateCache } = useDataCache();
@@ -61,6 +63,16 @@ export default function DataAnakList() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAddSuccess = (message) => {
+    setSuccessMessage(message);
+    fetchChildren(); // Refresh list
+    invalidateCache('children');
+    invalidateCache('dashboard');
+    setTimeout(() => {
+      setSuccessMessage(null);
+    }, 5000);
   };
 
   // Loading state
@@ -130,7 +142,7 @@ export default function DataAnakList() {
             <p className="text-gray-600 mb-4">Belum ada data anak terdaftar</p>
             <button
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              onClick={() => navigate('/dashboard/anak/tambah')}
+              onClick={() => setIsAddModalOpen(true)}
             >
               Tambah Anak Pertama
             </button>
@@ -138,9 +150,16 @@ export default function DataAnakList() {
         ) : (
           <DataAnakTable
             data={children}
-            onAdd={() => navigate('/dashboard/anak/tambah')}
+            onAdd={() => setIsAddModalOpen(true)}
           />
         )}
+
+        {/* Add Child Modal */}
+        <AddChildModal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          onSuccess={handleAddSuccess}
+        />
       </div>
     </div>
   );
