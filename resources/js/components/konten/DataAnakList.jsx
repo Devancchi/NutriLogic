@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import api from "../../lib/api";
 import { formatAge, getStatusColor, getStatusLabel } from "../../lib/utils";
-import GenericListSkeleton from "../loading/GenericListSkeleton";
+import DataAnakSkeleton from "../loading/DataAnakSkeleton";
 import { useDataCache } from "../../contexts/DataCacheContext";
 import PageHeader from "../dashboard/PageHeader";
-import { DataAnakTable } from "../DataAnakTable";
+import { DataAnakTable } from "./DataAnakTable";
 import AddChildModal from "./AddChildModal";
 
 export default function DataAnakList() {
@@ -77,7 +77,7 @@ export default function DataAnakList() {
 
   // Loading state
   if (loading) {
-    return <GenericListSkeleton itemCount={6} />;
+    return <DataAnakSkeleton itemCount={6} />;
   }
 
   // Error state
