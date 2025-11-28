@@ -6,7 +6,7 @@ import CreditCard from "../credit-card-1";
 import logoScroll from '../../assets/logo_scroll.svg';
 import { assets } from '../../assets/assets';
 
-export default function AddChildModal({ isOpen, onClose, onSuccess }) {
+export default function AddChildModal({ isOpen, onClose, onSuccess, initialData = null }) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [posyandus, setPosyandus] = useState([]);
@@ -25,22 +25,37 @@ export default function AddChildModal({ isOpen, onClose, onSuccess }) {
     useEffect(() => {
         if (isOpen) {
             fetchPosyandus();
-            fetchUserData();
-            // Reset form when opening
-            setFormData({
-                full_name: "",
-                nik: "",
-                birth_date: "",
-                gender: "",
-                posyandu_id: "",
-                birth_weight_kg: "",
-                birth_height_cm: "",
-                notes: "",
-            });
+            if (initialData) {
+                // Edit mode: populate form with initialData
+                setFormData({
+                    full_name: initialData.full_name || "",
+                    nik: initialData.nik || "",
+                    birth_date: initialData.birth_date ? new Date(initialData.birth_date).toISOString().split('T')[0] : "",
+                    gender: initialData.gender || "",
+                    posyandu_id: initialData.posyandu?.id || initialData.posyandu_id || "",
+                    birth_weight_kg: initialData.birth_weight_kg || "",
+                    birth_height_cm: initialData.birth_height_cm || "",
+                    notes: initialData.notes || "",
+                });
+            } else {
+                // Add mode: fetch user data to auto-fill posyandu if needed
+                fetchUserData();
+                // Reset form
+                setFormData({
+                    full_name: "",
+                    nik: "",
+                    birth_date: "",
+                    gender: "",
+                    posyandu_id: "",
+                    birth_weight_kg: "",
+                    birth_height_cm: "",
+                    notes: "",
+                });
+            }
             setErrors({});
             setError(null);
         }
-    }, [isOpen]);
+    }, [isOpen, initialData]);
 
     const fetchPosyandus = async () => {
         try {
@@ -126,12 +141,8 @@ export default function AddChildModal({ isOpen, onClose, onSuccess }) {
         setError(null);
 
         try {
-            const response = await api.get('/me');
-            const user = response.data.data || response.data;
-
             const dataToSubmit = {
                 ...formData,
-                parent_id: user.id,
                 posyandu_id: parseInt(formData.posyandu_id),
                 birth_weight_kg: formData.birth_weight_kg ? parseFloat(formData.birth_weight_kg) : null,
                 birth_height_cm: formData.birth_height_cm ? parseFloat(formData.birth_height_cm) : null,
@@ -139,10 +150,23 @@ export default function AddChildModal({ isOpen, onClose, onSuccess }) {
                 notes: formData.notes || null,
             };
 
-            await api.post('/children', dataToSubmit);
+            // If adding new child, we need parent_id
+            if (!initialData) {
+                const response = await api.get('/me');
+                const user = response.data.data || response.data;
+                dataToSubmit.parent_id = user.id;
+            }
+
+            if (initialData) {
+                // Edit mode
+                await api.put(`/children/${initialData.id}`, dataToSubmit);
+            } else {
+                // Add mode
+                await api.post('/children', dataToSubmit);
+            }
 
             if (onSuccess) {
-                onSuccess('Data anak berhasil ditambahkan!');
+                onSuccess(initialData ? 'Data anak berhasil diperbarui!' : 'Data anak berhasil ditambahkan!');
             }
             onClose();
         } catch (err) {
@@ -152,7 +176,7 @@ export default function AddChildModal({ isOpen, onClose, onSuccess }) {
                 // Validation errors from backend
                 setErrors(err.response.data.errors);
             } else {
-                setError(err.response?.data?.message || 'Gagal menambahkan data anak. Silakan coba lagi.');
+                setError(err.response?.data?.message || 'Gagal menyimpan data anak. Silakan coba lagi.');
             }
         } finally {
             setLoading(false);
@@ -188,7 +212,7 @@ export default function AddChildModal({ isOpen, onClose, onSuccess }) {
                     >
                         {/* Header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                            <h2 className="text-xl font-bold text-gray-800">Tambah Data Anak</h2>
+                            <h2 className="text-xl font-bold text-gray-800">{initialData ? 'Edit Data Anak' : 'Tambah Data Anak'}</h2>
                             <button
                                 onClick={onClose}
                                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -346,7 +370,7 @@ export default function AddChildModal({ isOpen, onClose, onSuccess }) {
                                             {/* Berat Lahir */}
                                             <div>
                                                 <label htmlFor="birth_weight_kg" className="block text-sm font-medium text-gray-700 mb-2">
-                                                    Berat Badan (kg)
+                                                    Berat Lahir (kg)
                                                 </label>
                                                 <input
                                                     type="number"
@@ -369,7 +393,7 @@ export default function AddChildModal({ isOpen, onClose, onSuccess }) {
                                             {/* Tinggi Lahir */}
                                             <div>
                                                 <label htmlFor="birth_height_cm" className="block text-sm font-medium text-gray-700 mb-2">
-                                                    Tinggi Badan (cm)
+                                                    Tinggi Lahir (cm)
                                                 </label>
                                                 <input
                                                     type="number"
