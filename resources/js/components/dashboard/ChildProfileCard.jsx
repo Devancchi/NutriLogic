@@ -1,6 +1,6 @@
 import React from 'react';
 import { formatAge } from "../../lib/utils";
-import { Ruler, Weight, CreditCard } from 'lucide-react';
+import { Ruler, Weight, CreditCard, Zap } from 'lucide-react';
 import { assets } from '../../assets/assets';
 
 export default function ChildProfileCard({ child, onClick, onShowCard }) {
@@ -10,6 +10,7 @@ export default function ChildProfileCard({ child, onClick, onShowCard }) {
     const latestWeighing = child.weighing_logs?.[0];
     const currentWeight = latestWeighing?.weight_kg;
     const currentHeight = latestWeighing?.height_cm;
+    const currentMuac = latestWeighing?.muac_cm;
 
     return (
         <div
@@ -55,7 +56,7 @@ export default function ChildProfileCard({ child, onClick, onShowCard }) {
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-2 gap-4 mt-auto">
+                <div className="grid grid-cols-3 gap-3 mt-auto">
                     <div className="bg-gray-50/80 group-hover:bg-white/10 rounded-2xl p-4 flex flex-col items-start gap-1 transition-colors">
                         <div className="flex items-center gap-2 text-gray-400 group-hover:text-blue-200 mb-1 transition-colors">
                             <Weight className="w-4 h-4" />
@@ -72,6 +73,15 @@ export default function ChildProfileCard({ child, onClick, onShowCard }) {
                         </div>
                         <span className="text-lg font-bold text-gray-800 group-hover:text-white transition-colors">
                             {currentHeight ? `${currentHeight} cm` : '-'}
+                        </span>
+                    </div>
+                    <div className="bg-gray-50/80 group-hover:bg-white/10 rounded-2xl p-4 flex flex-col items-start gap-1 transition-colors">
+                        <div className="flex items-center gap-2 text-gray-400 group-hover:text-blue-200 mb-1 transition-colors">
+                            <Zap className="w-4 h-4" />
+                            <span className="text-xs font-semibold uppercase tracking-wider">Lingkar Lengan</span>
+                        </div>
+                        <span className="text-lg font-bold text-gray-800 group-hover:text-white transition-colors">
+                            {currentMuac ? `${currentMuac} cm` : '-'}
                         </span>
                     </div>
                 </div>
