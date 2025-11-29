@@ -18,7 +18,7 @@ class ParentDashboardController extends Controller
     }
     /**
      * Get dashboard data for parent (ibu)
-     * 
+     *
      * Returns summary of children, nutritional status, and upcoming schedules
      */
     public function dashboard(Request $request): JsonResponse
@@ -42,13 +42,13 @@ class ParentDashboardController extends Controller
 
         $now = Carbon::now();
         $atRiskStatuses = ['pendek', 'sangat_pendek', 'kurang', 'sangat_kurang', 'kurus', 'sangat_kurus'];
-        
+
         $childrenData = [];
         $atRiskCount = 0;
 
         foreach ($children as $child) {
             $latestWeighing = $child->weighingLogs->first();
-            
+
             // Calculate age
             $ageInDays = $child->birth_date->diffInDays($now);
             $ageInMonths = $child->birth_date->diffInMonths($now);
@@ -82,7 +82,7 @@ class ParentDashboardController extends Controller
         // Get upcoming schedules (immunization/vitamin) for all children
         $upcomingSchedules = [];
         $childIds = $children->pluck('id');
-        
+
         if ($childIds->isNotEmpty()) {
             $schedules = \App\Models\ImmunizationSchedule::whereIn('child_id', $childIds)
                 ->where('scheduled_for', '>=', $now)
@@ -94,7 +94,7 @@ class ParentDashboardController extends Controller
 
             foreach ($schedules as $schedule) {
                 $daysUntil = $now->diffInDays($schedule->scheduled_for, false);
-                
+
                 $upcomingSchedules[] = [
                     'id' => $schedule->id,
                     'child_id' => $schedule->child_id,
@@ -115,8 +115,8 @@ class ParentDashboardController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'role' => $user->role,
-                    'profile_photo_url' => $user->profile_photo_path 
-                        ? asset('storage/' . $user->profile_photo_path) 
+                    'profile_photo_url' => $user->profile_photo_path
+                        ? asset('storage/' . $user->profile_photo_path)
                         : null,
                 ],
                 'summary' => [
@@ -132,7 +132,7 @@ class ParentDashboardController extends Controller
 
     /**
      * Get all immunization schedules for calendar
-     * 
+     *
      * Returns all upcoming and past schedules for the user's children
      */
     public function getCalendarSchedules(Request $request): JsonResponse
@@ -177,7 +177,7 @@ class ParentDashboardController extends Controller
 
     /**
      * Get list of all children for parent (ibu)
-     * 
+     *
      * Returns list of children with basic info and latest nutritional status
      */
     public function children(Request $request): JsonResponse
@@ -218,6 +218,18 @@ class ParentDashboardController extends Controller
                     'id' => $child->posyandu->id,
                     'name' => $child->posyandu->name,
                 ] : null,
+                'weighing_logs' => $child->weighingLogs->map(function ($log) {
+                    return [
+                        'id' => $log->id,
+                        'weight_kg' => $log->weight_kg,
+                        'height_cm' => $log->height_cm,
+                        'measured_at' => $log->measured_at->format('Y-m-d'),
+                        'nutritional_status' => $log->nutritional_status,
+                        'zscore_wfa' => $log->zscore_wfa,
+                        'zscore_hfa' => $log->zscore_hfa,
+                        'zscore_wfh' => $log->zscore_wfh,
+                    ];
+                })->toArray(),
                 'latest_nutritional_status' => [
                     'status' => $latestWeighing ? $latestWeighing->nutritional_status : 'tidak_diketahui',
                     'measured_at' => $latestWeighing ? $latestWeighing->measured_at->format('Y-m-d') : null,
@@ -232,7 +244,7 @@ class ParentDashboardController extends Controller
 
     /**
      * Get detailed information about a specific child
-     * 
+     *
      * Returns child data with weighing logs, meal logs, and immunization schedules
      */
     public function showChild(Request $request, int $id): JsonResponse
@@ -336,7 +348,7 @@ class ParentDashboardController extends Controller
 
     /**
      * Get menu recommendations for a child based on available ingredients
-     * 
+     *
      * TODO: Integrate with AI/n8n for advanced recommendations in future version
      */
     public function nutriAssist(Request $request, int $id): JsonResponse
@@ -402,7 +414,7 @@ class ParentDashboardController extends Controller
 
     /**
      * Get growth chart data for parent's children
-     * 
+     *
      * Returns weight measurements over time for charting
      */
     public function growthChart(Request $request): JsonResponse
@@ -438,10 +450,10 @@ class ParentDashboardController extends Controller
 
         // Group by month and calculate average weight
         $monthlyData = [];
-        
+
         foreach ($weighingLogs as $log) {
             $monthKey = $log->measured_at->format('Y-m');
-            
+
             if (!isset($monthlyData[$monthKey])) {
                 $monthlyData[$monthKey] = [
                     'month' => $log->measured_at->format('M'),
@@ -451,7 +463,7 @@ class ParentDashboardController extends Controller
                     'measurements' => [],
                 ];
             }
-            
+
             $monthlyData[$monthKey]['total_weight'] += $log->weight_kg;
             $monthlyData[$monthKey]['count']++;
             $monthlyData[$monthKey]['measurements'][] = [
@@ -487,7 +499,7 @@ class ParentDashboardController extends Controller
     private function calculateScheduleStatus($childIds): array
     {
         $now = Carbon::now();
-        
+
         // Count upcoming schedules for current month (remaining days)
         $currentMonthCount = \App\Models\ImmunizationSchedule::whereIn('child_id', $childIds)
             ->where('scheduled_for', '>=', $now)
@@ -525,4 +537,3 @@ class ParentDashboardController extends Controller
         ];
     }
 }
-
