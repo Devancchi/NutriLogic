@@ -6,6 +6,11 @@ import { assets } from '../../assets/assets';
 export default function ChildProfileCard({ child, onClick, onShowCard }) {
     if (!child) return null;
 
+    // Get latest weighing data
+    const latestWeighing = child.weighing_logs?.[0];
+    const currentWeight = latestWeighing?.weight_kg;
+    const currentHeight = latestWeighing?.height_cm;
+
     return (
         <div
             onClick={onClick}
@@ -57,7 +62,7 @@ export default function ChildProfileCard({ child, onClick, onShowCard }) {
                             <span className="text-xs font-semibold uppercase tracking-wider">Berat</span>
                         </div>
                         <span className="text-lg font-bold text-gray-800 group-hover:text-white transition-colors">
-                            {child.weight ? `${child.weight} kg` : '-'}
+                            {currentWeight ? `${currentWeight} kg` : '-'}
                         </span>
                     </div>
                     <div className="bg-gray-50/80 group-hover:bg-white/10 rounded-2xl p-4 flex flex-col items-start gap-1 transition-colors">
@@ -66,7 +71,7 @@ export default function ChildProfileCard({ child, onClick, onShowCard }) {
                             <span className="text-xs font-semibold uppercase tracking-wider">Tinggi</span>
                         </div>
                         <span className="text-lg font-bold text-gray-800 group-hover:text-white transition-colors">
-                            {child.height ? `${child.height} cm` : '-'}
+                            {currentHeight ? `${currentHeight} cm` : '-'}
                         </span>
                     </div>
                 </div>

@@ -61,10 +61,10 @@ class ParentConsultationController extends Controller
                 'last_message' => $lastMessage ? [
                     'message' => $lastMessage->message,
                     'sender_name' => $lastMessage->sender->name,
-                    'created_at' => $lastMessage->created_at->format('Y-m-d H:i:s'),
+                    'created_at' => $lastMessage->created_at,
                 ] : null,
-                'created_at' => $consultation->created_at->format('Y-m-d H:i:s'),
-                'updated_at' => $consultation->updated_at->format('Y-m-d H:i:s'),
+                'created_at' => $consultation->created_at,
+                'updated_at' => $consultation->updated_at,
             ];
         });
 
@@ -197,11 +197,11 @@ class ParentConsultationController extends Controller
                         'sender_name' => $message->sender->name,
                         'sender_role' => $message->sender->role,
                         'message' => $message->message,
-                        'created_at' => $message->created_at->format('Y-m-d H:i:s'),
+                        'created_at' => $message->created_at,
                     ];
                 }),
-                'created_at' => $consultation->created_at->format('Y-m-d H:i:s'),
-                'updated_at' => $consultation->updated_at->format('Y-m-d H:i:s'),
+                'created_at' => $consultation->created_at,
+                'updated_at' => $consultation->updated_at,
             ],
         ], 200);
     }
@@ -262,7 +262,7 @@ class ParentConsultationController extends Controller
                 'sender_name' => $message->sender->name,
                 'sender_role' => $message->sender->role,
                 'message' => $message->message,
-                'created_at' => $message->created_at->format('Y-m-d H:i:s'),
+                'created_at' => $message->created_at,
             ],
             'message' => 'Message sent successfully.',
         ], 201);

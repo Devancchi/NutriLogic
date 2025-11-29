@@ -9,7 +9,6 @@ import { assets } from '../../assets/assets';
 export default function AddChildModal({ isOpen, onClose, onSuccess, initialData = null }) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [posyandus, setPosyandus] = useState([]);
     const [formData, setFormData] = useState({
         full_name: "",
         nik: "",
@@ -24,7 +23,6 @@ export default function AddChildModal({ isOpen, onClose, onSuccess, initialData 
 
     useEffect(() => {
         if (isOpen) {
-            fetchPosyandus();
             if (initialData) {
                 // Edit mode: populate form with initialData
                 setFormData({
@@ -56,15 +54,6 @@ export default function AddChildModal({ isOpen, onClose, onSuccess, initialData 
             setError(null);
         }
     }, [isOpen, initialData]);
-
-    const fetchPosyandus = async () => {
-        try {
-            const response = await api.get('/posyandus');
-            setPosyandus(response.data.data || response.data);
-        } catch (err) {
-            console.error('Failed to fetch posyandus:', err);
-        }
-    };
 
     const fetchUserData = async () => {
         try {
@@ -114,10 +103,6 @@ export default function AddChildModal({ isOpen, onClose, onSuccess, initialData 
             newErrors.gender = "Jenis kelamin wajib dipilih";
         }
 
-        if (!formData.posyandu_id) {
-            newErrors.posyandu_id = "Posyandu wajib dipilih";
-        }
-
         if (formData.birth_weight_kg && (parseFloat(formData.birth_weight_kg) < 0 || parseFloat(formData.birth_weight_kg) > 10)) {
             newErrors.birth_weight_kg = "Berat lahir harus antara 0-10 kg";
         }
@@ -141,9 +126,20 @@ export default function AddChildModal({ isOpen, onClose, onSuccess, initialData 
         setError(null);
 
         try {
+            // Get user data for parent_id and posyandu_id
+            const response = await api.get('/me');
+            const user = response.data.data || response.data;
+
+            // Pastikan user memiliki posyandu_id
+            if (!user.posyandu_id && !initialData) {
+                setError('Akun Anda belum terdaftar di posyandu. Silakan hubungi admin.');
+                setLoading(false);
+                return;
+            }
+
             const dataToSubmit = {
                 ...formData,
-                posyandu_id: parseInt(formData.posyandu_id),
+                posyandu_id: initialData ? parseInt(formData.posyandu_id) : parseInt(user.posyandu_id), // Untuk edit gunakan yang ada, untuk add gunakan dari user
                 birth_weight_kg: formData.birth_weight_kg ? parseFloat(formData.birth_weight_kg) : null,
                 birth_height_cm: formData.birth_height_cm ? parseFloat(formData.birth_height_cm) : null,
                 nik: formData.nik || null,
@@ -152,8 +148,6 @@ export default function AddChildModal({ isOpen, onClose, onSuccess, initialData 
 
             // If adding new child, we need parent_id
             if (!initialData) {
-                const response = await api.get('/me');
-                const user = response.data.data || response.data;
                 dataToSubmit.parent_id = user.id;
             }
 
@@ -339,31 +333,6 @@ export default function AddChildModal({ isOpen, onClose, onSuccess, initialData 
                                                     <p className="mt-1 text-sm text-red-600">{errors.gender}</p>
                                                 )}
                                             </div>
-                                        </div>
-
-                                        {/* Posyandu */}
-                                        <div>
-                                            <label htmlFor="posyandu_id" className="block text-sm font-medium text-gray-700 mb-2">
-                                                Posyandu <span className="text-red-500">*</span>
-                                            </label>
-                                            <select
-                                                id="posyandu_id"
-                                                name="posyandu_id"
-                                                value={formData.posyandu_id}
-                                                onChange={handleChange}
-                                                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-900 ${errors.posyandu_id ? 'border-red-500' : 'border-gray-200'
-                                                    }`}
-                                            >
-                                                <option value="">Pilih posyandu terdekat</option>
-                                                {posyandus.map((posyandu) => (
-                                                    <option key={posyandu.id} value={posyandu.id}>
-                                                        {posyandu.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            {errors.posyandu_id && (
-                                                <p className="mt-1 text-sm text-red-600">{errors.posyandu_id}</p>
-                                            )}
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-5">
