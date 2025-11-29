@@ -294,11 +294,15 @@ export default function DataAnakDetail() {
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="bg-purple-50/50 rounded-xl p-4 border border-purple-100">
                                                     <p className="text-xs text-purple-600 mb-1 font-medium uppercase tracking-wider">Berat Lahir</p>
-                                                    <p className="font-bold text-gray-900 text-lg">{childData.birth_weight_kg ? `${childData.birth_weight_kg} kg` : '-'}</p>
+                                                    <p className="font-bold text-gray-900 text-lg">
+                                                        {childData.birth_weight_kg != null ? `${childData.birth_weight_kg} kg` : '-'}
+                                                    </p>
                                                 </div>
                                                 <div className="bg-purple-50/50 rounded-xl p-4 border border-purple-100">
                                                     <p className="text-xs text-purple-600 mb-1 font-medium uppercase tracking-wider">Tinggi Lahir</p>
-                                                    <p className="font-bold text-gray-900 text-lg">{childData.birth_height_cm ? `${childData.birth_height_cm} cm` : '-'}</p>
+                                                    <p className="font-bold text-gray-900 text-lg">
+                                                        {childData.birth_height_cm != null ? `${childData.birth_height_cm} cm` : '-'}
+                                                    </p>
                                                 </div>
                                             </div>
                                         </div>
@@ -345,6 +349,7 @@ export default function DataAnakDetail() {
                                                     <th className="text-left py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Tanggal</th>
                                                     <th className="text-left py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Berat</th>
                                                     <th className="text-left py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Tinggi</th>
+                                                    <th className="text-left py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Lingkar Lengan</th>
                                                     <th className="text-left py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Status Gizi</th>
                                                     <th className="text-left py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Z-Score</th>
                                                 </tr>
@@ -357,6 +362,7 @@ export default function DataAnakDetail() {
                                                         </td>
                                                         <td className="py-4 px-4 text-sm text-gray-600">{log.weight_kg} kg</td>
                                                         <td className="py-4 px-4 text-sm text-gray-600">{log.height_cm} cm</td>
+                                                        <td className="py-4 px-4 text-sm text-gray-600">{log.muac_cm ? `${log.muac_cm} cm` : '-'}</td>
                                                         <td className="py-4 px-4">
                                                             <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${getStatusColor(log.nutritional_status)}`}>
                                                                 {getStatusLabel(log.nutritional_status)}
@@ -364,9 +370,9 @@ export default function DataAnakDetail() {
                                                         </td>
                                                         <td className="py-4 px-4 text-sm text-gray-500 font-mono">
                                                             <div className="flex flex-col gap-0.5 text-xs">
-                                                                <span>HFA: {log.zscore_hfa?.toFixed(2) ?? '-'}</span>
-                                                                <span>WFA: {log.zscore_wfa?.toFixed(2) ?? '-'}</span>
-                                                                <span>WFH: {log.zscore_wfh?.toFixed(2) ?? '-'}</span>
+                                                                <span>HFA: {log.zscore_hfa ? Number(log.zscore_hfa).toFixed(2) : '-'}</span>
+                                                                <span>WFA: {log.zscore_wfa ? Number(log.zscore_wfa).toFixed(2) : '-'}</span>
+                                                                <span>WFH: {log.zscore_wfh ? Number(log.zscore_wfh).toFixed(2) : '-'}</span>
                                                             </div>
                                                         </td>
                                                     </tr>

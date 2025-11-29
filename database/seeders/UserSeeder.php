@@ -20,16 +20,16 @@ class UserSeeder extends Seeder
         // Admin (opsional)
         User::create([
             'name'     => 'Admin NutriLogic',
-            'email'    => 'a@a.com',
-            'password' => Hash::make('a'),
+            'email'    => 'admin@admin.com',
+            'password' => Hash::make('admin'),
             'role'     => 'admin',
         ]);
 
         // Kader
         User::create([
             'name'        => 'Kader Siti',
-            'email'       => 'b@b.com',
-            'password'    => Hash::make('b'),
+            'email'       => 'kader@kader.com',
+            'password'    => Hash::make('kader'),
             'role'        => 'kader',
             'posyandu_id' => $posyandu->id,
         ]);
@@ -37,8 +37,8 @@ class UserSeeder extends Seeder
         // Ibu
         User::create([
             'name'     => 'Ibu Ani',
-            'email'    => 'c@c.com',
-            'password' => Hash::make('c'),
+            'email'    => 'ibu@ibu.com',
+            'password' => Hash::make('ibu'),
             'role'     => 'ibu',
         ]);
     }
