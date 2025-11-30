@@ -38,6 +38,7 @@ class KaderWeighingController extends Controller
                 'measured_at' => $latestWeighing->measured_at,
                 'weight_kg' => $latestWeighing->weight_kg,
                 'height_cm' => $latestWeighing->height_cm,
+                'muac_cm' => $latestWeighing->muac_cm,
                 'nutritional_status' => $latestWeighing->nutritional_status,
             ] : null;
         });
@@ -66,6 +67,7 @@ class KaderWeighingController extends Controller
             'weighings.*.measured_at' => ['required', 'date'],
             'weighings.*.weight_kg' => ['required', 'numeric', 'min:0', 'max:100'],
             'weighings.*.height_cm' => ['required', 'numeric', 'min:0', 'max:200'],
+            'weighings.*.muac_cm' => ['nullable', 'numeric', 'min:0', 'max:50'],
             'weighings.*.notes' => ['nullable', 'string', 'max:500'],
         ]);
 
@@ -92,6 +94,7 @@ class KaderWeighingController extends Controller
                     'measured_at' => $weighingData['measured_at'],
                     'weight_kg' => $weighingData['weight_kg'],
                     'height_cm' => $weighingData['height_cm'],
+                    'muac_cm' => $weighingData['muac_cm'] ?? null,
                     'notes' => $weighingData['notes'] ?? null,
                 ]);
 
