@@ -356,9 +356,8 @@ class ParentDashboardController extends Controller
     }
 
     /**
-     * Get menu recommendations for a child based on available ingredients
-     *
-     * TODO: Integrate with AI/n8n for advanced recommendations in future version
+     * Get AI-powered menu recommendations for a child based on available ingredients
+     * Integrates with n8n workflow using Google Gemini for intelligent recommendations
      */
     public function nutriAssist(Request $request, int $id): JsonResponse
     {
@@ -372,7 +371,9 @@ class ParentDashboardController extends Controller
         }
 
         // Get child and verify ownership
-        $child = Child::find($id);
+        $child = Child::with(['weighingLogs' => function ($query) {
+            $query->orderBy('measured_at', 'desc')->limit(1);
+        }])->find($id);
 
         if (!$child) {
             return response()->json([
@@ -389,8 +390,8 @@ class ParentDashboardController extends Controller
 
         // Validate input
         $validated = $request->validate([
-            'ingredients' => ['required', 'array', 'min:1'],
-            'ingredients.*' => ['required', 'string'],
+            'ingredients' => ['required', 'array', 'min:1', 'max:20'],
+            'ingredients.*' => ['required', 'string', 'max:100'],
             'date' => ['nullable', 'date'],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
@@ -398,15 +399,89 @@ class ParentDashboardController extends Controller
         // Calculate child age
         $ageInMonths = $child->birth_date->diffInMonths(now());
 
+        // Check if n8n is enabled
+        if (!config('services.n8n.enabled')) {
+            return $this->getFallbackNutriAssist($child, $validated['ingredients'], $ageInMonths);
+        }
+
+        // Try to get from cache first (24 hours)
+        $cacheKey = 'nutriassist_' . $child->id . '_' . md5(json_encode($validated['ingredients']));
+        
+        try {
+            $recommendations = \Illuminate\Support\Facades\Cache::remember($cacheKey, 86400, function () use ($child, $validated) {
+                return $this->getAINutriAssist($child, $validated);
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $recommendations,
+            ], 200);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('NutriAssist AI Error: ' . $e->getMessage(), [
+                'child_id' => $child->id,
+                'ingredients' => $validated['ingredients'],
+                'error' => $e->getMessage(),
+            ]);
+
+            // Fallback to basic recommendations
+            return $this->getFallbackNutriAssist($child, $validated['ingredients'], $ageInMonths);
+        }
+    }
+
+    /**
+     * Get AI recommendations from n8n workflow
+     */
+    private function getAINutriAssist(Child $child, array $validated): array
+    {
+        $webhookUrl = config('services.n8n.webhook_url');
+        $apiKey = config('services.n8n.api_key');
+        $timeout = config('services.n8n.timeout', 30);
+
+        if (!$webhookUrl || !$apiKey) {
+            throw new \Exception('n8n webhook URL or API key not configured');
+        }
+
+        $response = \Illuminate\Support\Facades\Http::timeout($timeout)->post($webhookUrl, [
+            'child_id' => $child->id,
+            'ingredients' => $validated['ingredients'],
+            'date' => $validated['date'] ?? now()->toDateString(),
+            'notes' => $validated['notes'] ?? null,
+            'api_key' => $apiKey,
+        ]);
+
+        if ($response->failed()) {
+            throw new \Exception('n8n webhook request failed: ' . $response->status());
+        }
+
+        $result = $response->json();
+
+        if (!isset($result['success']) || !$result['success']) {
+            throw new \Exception('n8n returned unsuccessful response');
+        }
+
+        return $result['data'];
+    }
+
+    /**
+     * Fallback to basic recommendations when AI is unavailable
+     */
+    private function getFallbackNutriAssist(Child $child, array $ingredients, int $ageInMonths): JsonResponse
+    {
+        \Illuminate\Support\Facades\Log::info('Using fallback NutriAssist recommendations', [
+            'child_id' => $child->id,
+            'reason' => 'n8n unavailable or disabled',
+        ]);
+
         // Get recommendations using NutritionService
-        // TODO: Integrate with AI/n8n for advanced recommendations in future version
         $recommendations = $this->nutritionService->getRecommendations(
             $child->id,
-            $validated['ingredients'],
+            $ingredients,
             $ageInMonths
         );
 
         return response()->json([
+            'success' => true,
             'data' => [
                 'child' => [
                     'id' => $child->id,
@@ -414,9 +489,17 @@ class ParentDashboardController extends Controller
                     'age_in_months' => $ageInMonths,
                 ],
                 'recommendations' => $recommendations,
-                'ingredients_submitted' => $validated['ingredients'],
-                'date' => $validated['date'] ?? null,
-                'notes' => $validated['notes'] ?? null,
+                'advice' => [
+                    'general' => 'Sistem AI sedang tidak tersedia. Berikut rekomendasi dasar berdasarkan bahan yang tersedia.',
+                    'nutritional_focus' => 'Pastikan anak mendapat nutrisi seimbang dari berbagai kelompok makanan.',
+                ],
+                'metadata' => [
+                    'ingredients_provided' => count($ingredients),
+                    'recommendations_count' => count($recommendations),
+                    'generated_at' => now()->toISOString(),
+                    'ai_powered' => false,
+                    'fallback' => true,
+                ],
             ],
         ], 200);
     }
