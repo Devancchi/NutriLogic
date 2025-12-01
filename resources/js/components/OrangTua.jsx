@@ -41,7 +41,7 @@ export default function OrangTua() {
                 <Route path="nutri-assist" element={<NutriAssistPage />} />
                 <Route path="konsultasi" element={<ConsultationList />} />
                 <Route path="konsultasi/create" element={<CreateConsultation />} />
-                <Route path="konsultasi/:id" element={<ConsultationDetail />} />
+                <Route path="konsultasi/:id" element={<ConsultationList />} />
                 <Route path="gamification" element={<PointsAndBadgesPage />} />
                 <Route path="riwayat" element={<HistoryPage />} />
               </Routes>

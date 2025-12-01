@@ -18,7 +18,7 @@ class ParentDashboardController extends Controller
     }
     /**
      * Get dashboard data for parent (ibu)
-     * 
+     *
      * Returns summary of children, nutritional status, and upcoming schedules
      */
     public function dashboard(Request $request): JsonResponse
@@ -42,13 +42,13 @@ class ParentDashboardController extends Controller
 
         $now = Carbon::now();
         $atRiskStatuses = ['pendek', 'sangat_pendek', 'kurang', 'sangat_kurang', 'kurus', 'sangat_kurus'];
-        
+
         $childrenData = [];
         $atRiskCount = 0;
 
         foreach ($children as $child) {
             $latestWeighing = $child->weighingLogs->first();
-            
+
             // Calculate age
             $ageInDays = $child->birth_date->diffInDays($now);
             $ageInMonths = $child->birth_date->diffInMonths($now);
@@ -82,7 +82,7 @@ class ParentDashboardController extends Controller
         // Get upcoming schedules (immunization/vitamin) for all children
         $upcomingSchedules = [];
         $childIds = $children->pluck('id');
-        
+
         if ($childIds->isNotEmpty()) {
             $schedules = \App\Models\ImmunizationSchedule::whereIn('child_id', $childIds)
                 ->where('scheduled_for', '>=', $now)
@@ -94,7 +94,7 @@ class ParentDashboardController extends Controller
 
             foreach ($schedules as $schedule) {
                 $daysUntil = $now->diffInDays($schedule->scheduled_for, false);
-                
+
                 $upcomingSchedules[] = [
                     'id' => $schedule->id,
                     'child_id' => $schedule->child_id,
@@ -115,8 +115,8 @@ class ParentDashboardController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'role' => $user->role,
-                    'profile_photo_url' => $user->profile_photo_path 
-                        ? asset('storage/' . $user->profile_photo_path) 
+                    'profile_photo_url' => $user->profile_photo_path
+                        ? asset('storage/' . $user->profile_photo_path)
                         : null,
                 ],
                 'summary' => [
@@ -132,7 +132,7 @@ class ParentDashboardController extends Controller
 
     /**
      * Get all immunization schedules for calendar
-     * 
+     *
      * Returns all upcoming and past schedules for the user's children
      */
     public function getCalendarSchedules(Request $request): JsonResponse
@@ -177,7 +177,7 @@ class ParentDashboardController extends Controller
 
     /**
      * Get list of all children for parent (ibu)
-     * 
+     *
      * Returns list of children with basic info and latest nutritional status
      */
     public function children(Request $request): JsonResponse
@@ -218,6 +218,19 @@ class ParentDashboardController extends Controller
                     'id' => $child->posyandu->id,
                     'name' => $child->posyandu->name,
                 ] : null,
+                'weighing_logs' => $child->weighingLogs->map(function ($log) {
+                    return [
+                        'id' => $log->id,
+                        'weight_kg' => $log->weight_kg,
+                        'height_cm' => $log->height_cm,
+                        'muac_cm' => $log->muac_cm,
+                        'measured_at' => $log->measured_at->format('Y-m-d'),
+                        'nutritional_status' => $log->nutritional_status,
+                        'zscore_wfa' => $log->zscore_wfa,
+                        'zscore_hfa' => $log->zscore_hfa,
+                        'zscore_wfh' => $log->zscore_wfh,
+                    ];
+                })->toArray(),
                 'latest_nutritional_status' => [
                     'status' => $latestWeighing ? $latestWeighing->nutritional_status : 'tidak_diketahui',
                     'measured_at' => $latestWeighing ? $latestWeighing->measured_at->format('Y-m-d') : null,
@@ -232,7 +245,7 @@ class ParentDashboardController extends Controller
 
     /**
      * Get detailed information about a specific child
-     * 
+     *
      * Returns child data with weighing logs, meal logs, and immunization schedules
      */
     public function showChild(Request $request, int $id): JsonResponse
@@ -285,6 +298,7 @@ class ParentDashboardController extends Controller
                 'measured_at' => $log->measured_at->format('Y-m-d'),
                 'weight_kg' => $log->weight_kg,
                 'height_cm' => $log->height_cm,
+                'muac_cm' => $log->muac_cm,
                 'nutritional_status' => $log->nutritional_status,
                 'zscore_hfa' => $log->zscore_hfa,
                 'zscore_wfa' => $log->zscore_wfa,
@@ -319,10 +333,17 @@ class ParentDashboardController extends Controller
             'data' => [
                 'id' => $child->id,
                 'full_name' => $child->full_name,
+                'nik' => $child->nik,
                 'birth_date' => $child->birth_date->format('Y-m-d'),
                 'gender' => $child->gender,
+                'birth_weight_kg' => $child->birth_weight_kg,
+                'birth_height_cm' => $child->birth_height_cm,
                 'age_in_months' => $ageInMonths,
                 'age_in_days' => $ageInDays,
+                'notes' => $child->notes,
+                'is_active' => $child->is_active,
+                'created_at' => $child->created_at->format('Y-m-d H:i:s'),
+                'updated_at' => $child->updated_at->format('Y-m-d H:i:s'),
                 'posyandu' => $child->posyandu ? [
                     'id' => $child->posyandu->id,
                     'name' => $child->posyandu->name,
@@ -335,9 +356,8 @@ class ParentDashboardController extends Controller
     }
 
     /**
-     * Get menu recommendations for a child based on available ingredients
-     * 
-     * TODO: Integrate with AI/n8n for advanced recommendations in future version
+     * Get AI-powered menu recommendations for a child based on available ingredients
+     * Integrates with n8n workflow using Google Gemini for intelligent recommendations
      */
     public function nutriAssist(Request $request, int $id): JsonResponse
     {
@@ -351,7 +371,9 @@ class ParentDashboardController extends Controller
         }
 
         // Get child and verify ownership
-        $child = Child::find($id);
+        $child = Child::with(['weighingLogs' => function ($query) {
+            $query->orderBy('measured_at', 'desc')->limit(1);
+        }])->find($id);
 
         if (!$child) {
             return response()->json([
@@ -368,8 +390,8 @@ class ParentDashboardController extends Controller
 
         // Validate input
         $validated = $request->validate([
-            'ingredients' => ['required', 'array', 'min:1'],
-            'ingredients.*' => ['required', 'string'],
+            'ingredients' => ['required', 'array', 'min:1', 'max:20'],
+            'ingredients.*' => ['required', 'string', 'max:100'],
             'date' => ['nullable', 'date'],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
@@ -377,15 +399,89 @@ class ParentDashboardController extends Controller
         // Calculate child age
         $ageInMonths = $child->birth_date->diffInMonths(now());
 
+        // Check if n8n is enabled
+        if (!config('services.n8n.enabled')) {
+            return $this->getFallbackNutriAssist($child, $validated['ingredients'], $ageInMonths);
+        }
+
+        // Try to get from cache first (24 hours)
+        $cacheKey = 'nutriassist_' . $child->id . '_' . md5(json_encode($validated['ingredients']));
+        
+        try {
+            $recommendations = \Illuminate\Support\Facades\Cache::remember($cacheKey, 86400, function () use ($child, $validated) {
+                return $this->getAINutriAssist($child, $validated);
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $recommendations,
+            ], 200);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('NutriAssist AI Error: ' . $e->getMessage(), [
+                'child_id' => $child->id,
+                'ingredients' => $validated['ingredients'],
+                'error' => $e->getMessage(),
+            ]);
+
+            // Fallback to basic recommendations
+            return $this->getFallbackNutriAssist($child, $validated['ingredients'], $ageInMonths);
+        }
+    }
+
+    /**
+     * Get AI recommendations from n8n workflow
+     */
+    private function getAINutriAssist(Child $child, array $validated): array
+    {
+        $webhookUrl = config('services.n8n.webhook_url');
+        $apiKey = config('services.n8n.api_key');
+        $timeout = config('services.n8n.timeout', 30);
+
+        if (!$webhookUrl || !$apiKey) {
+            throw new \Exception('n8n webhook URL or API key not configured');
+        }
+
+        $response = \Illuminate\Support\Facades\Http::timeout($timeout)->post($webhookUrl, [
+            'child_id' => $child->id,
+            'ingredients' => $validated['ingredients'],
+            'date' => $validated['date'] ?? now()->toDateString(),
+            'notes' => $validated['notes'] ?? null,
+            'api_key' => $apiKey,
+        ]);
+
+        if ($response->failed()) {
+            throw new \Exception('n8n webhook request failed: ' . $response->status());
+        }
+
+        $result = $response->json();
+
+        if (!isset($result['success']) || !$result['success']) {
+            throw new \Exception('n8n returned unsuccessful response');
+        }
+
+        return $result['data'];
+    }
+
+    /**
+     * Fallback to basic recommendations when AI is unavailable
+     */
+    private function getFallbackNutriAssist(Child $child, array $ingredients, int $ageInMonths): JsonResponse
+    {
+        \Illuminate\Support\Facades\Log::info('Using fallback NutriAssist recommendations', [
+            'child_id' => $child->id,
+            'reason' => 'n8n unavailable or disabled',
+        ]);
+
         // Get recommendations using NutritionService
-        // TODO: Integrate with AI/n8n for advanced recommendations in future version
         $recommendations = $this->nutritionService->getRecommendations(
             $child->id,
-            $validated['ingredients'],
+            $ingredients,
             $ageInMonths
         );
 
         return response()->json([
+            'success' => true,
             'data' => [
                 'child' => [
                     'id' => $child->id,
@@ -393,16 +489,24 @@ class ParentDashboardController extends Controller
                     'age_in_months' => $ageInMonths,
                 ],
                 'recommendations' => $recommendations,
-                'ingredients_submitted' => $validated['ingredients'],
-                'date' => $validated['date'] ?? null,
-                'notes' => $validated['notes'] ?? null,
+                'advice' => [
+                    'general' => 'Sistem AI sedang tidak tersedia. Berikut rekomendasi dasar berdasarkan bahan yang tersedia.',
+                    'nutritional_focus' => 'Pastikan anak mendapat nutrisi seimbang dari berbagai kelompok makanan.',
+                ],
+                'metadata' => [
+                    'ingredients_provided' => count($ingredients),
+                    'recommendations_count' => count($recommendations),
+                    'generated_at' => now()->toISOString(),
+                    'ai_powered' => false,
+                    'fallback' => true,
+                ],
             ],
         ], 200);
     }
 
     /**
      * Get growth chart data for parent's children
-     * 
+     *
      * Returns weight measurements over time for charting
      */
     public function growthChart(Request $request): JsonResponse
@@ -438,10 +542,10 @@ class ParentDashboardController extends Controller
 
         // Group by month and calculate average weight
         $monthlyData = [];
-        
+
         foreach ($weighingLogs as $log) {
             $monthKey = $log->measured_at->format('Y-m');
-            
+
             if (!isset($monthlyData[$monthKey])) {
                 $monthlyData[$monthKey] = [
                     'month' => $log->measured_at->format('M'),
@@ -451,7 +555,7 @@ class ParentDashboardController extends Controller
                     'measurements' => [],
                 ];
             }
-            
+
             $monthlyData[$monthKey]['total_weight'] += $log->weight_kg;
             $monthlyData[$monthKey]['count']++;
             $monthlyData[$monthKey]['measurements'][] = [
@@ -487,7 +591,7 @@ class ParentDashboardController extends Controller
     private function calculateScheduleStatus($childIds): array
     {
         $now = Carbon::now();
-        
+
         // Count upcoming schedules for current month (remaining days)
         $currentMonthCount = \App\Models\ImmunizationSchedule::whereIn('child_id', $childIds)
             ->where('scheduled_for', '>=', $now)
@@ -525,4 +629,3 @@ class ParentDashboardController extends Controller
         ];
     }
 }
-

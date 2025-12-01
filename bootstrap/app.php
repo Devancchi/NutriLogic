@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'kader' => \App\Http\Middleware\EnsureUserIsKader::class,
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
         ]);
+        $middleware->append(\App\Http\Middleware\UpdateUserActivity::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

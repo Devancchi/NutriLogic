@@ -23,10 +23,15 @@ class KaderConsultationController extends Controller
             ], 400);
         }
 
-        // Get consultations where parent is in same posyandu
+        // Get consultations where:
+        // 1. Child is in same posyandu as kader, OR
+        // 2. Kader is assigned to this consultation
         $query = Consultation::with(['parent', 'child', 'kader'])
-            ->whereHas('parent', function ($q) use ($user) {
-                $q->where('posyandu_id', $user->posyandu_id);
+            ->where(function ($q) use ($user) {
+                $q->whereHas('child', function ($childQuery) use ($user) {
+                    $childQuery->where('posyandu_id', $user->posyandu_id);
+                })
+                    ->orWhere('kader_id', $user->id);
             });
 
         // Filter by status
@@ -64,11 +69,16 @@ class KaderConsultationController extends Controller
         $consultation = Consultation::with(['parent', 'child', 'kader'])
             ->findOrFail($id);
 
-        // Authorization: parent must be in same posyandu
-        if ($user->posyandu_id && $consultation->parent->posyandu_id !== $user->posyandu_id) {
-            return response()->json([
-                'message' => 'Unauthorized access.',
-            ], 403);
+        // Authorization: child must be in same posyandu OR kader is assigned
+        if ($user->posyandu_id) {
+            $hasAccess = ($consultation->child && $consultation->child->posyandu_id === $user->posyandu_id)
+                || $consultation->kader_id === $user->id;
+
+            if (!$hasAccess) {
+                return response()->json([
+                    'message' => 'Unauthorized access.',
+                ], 403);
+            }
         }
 
         // Get all messages
@@ -92,10 +102,13 @@ class KaderConsultationController extends Controller
     {
         $user = $request->user();
 
-        $consultation = Consultation::with('parent')->findOrFail($id);
+        $consultation = Consultation::with(['parent', 'child'])->findOrFail($id);
 
-        // Authorization
-        if ($user->posyandu_id && $consultation->parent->posyandu_id !== $user->posyandu_id) {
+        // Authorization: kader can access if assigned OR child belongs to their posyandu
+        if (
+            $consultation->kader_id !== $user->id &&
+            (!$user->posyandu_id || $consultation->child->posyandu_id !== $user->posyandu_id)
+        ) {
             return response()->json([
                 'message' => 'Unauthorized access.',
             ], 403);
@@ -133,10 +146,13 @@ class KaderConsultationController extends Controller
     {
         $user = $request->user();
 
-        $consultation = Consultation::with('parent')->findOrFail($id);
+        $consultation = Consultation::with(['parent', 'child'])->findOrFail($id);
 
-        // Authorization
-        if ($user->posyandu_id && $consultation->parent->posyandu_id !== $user->posyandu_id) {
+        // Authorization: kader can access if assigned OR child belongs to their posyandu
+        if (
+            $consultation->kader_id !== $user->id &&
+            (!$user->posyandu_id || $consultation->child->posyandu_id !== $user->posyandu_id)
+        ) {
             return response()->json([
                 'message' => 'Unauthorized access.',
             ], 403);

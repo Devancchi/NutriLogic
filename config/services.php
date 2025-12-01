@@ -35,4 +35,34 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | N8N Workflow Integration
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for N8N workflow integration, specifically for the
+    | Nutri-Assist feature that uses AI-powered recommendations via Google Gemini.
+    |
+    */
+
+    'n8n' => [
+        'webhook_url' => env('N8N_WEBHOOK_URL'),
+        'api_key' => env('N8N_API_KEY'),
+        'timeout' => env('N8N_TIMEOUT', 60),
+        'enabled' => env('N8N_ENABLED', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Google Gemini API
+    |--------------------------------------------------------------------------
+    |
+    | API key for Google Gemini (used in N8N workflow)
+    |
+    */
+
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+    ],
+
 ];

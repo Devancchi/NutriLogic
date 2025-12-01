@@ -38,6 +38,7 @@ class KaderWeighingController extends Controller
                 'measured_at' => $latestWeighing->measured_at,
                 'weight_kg' => $latestWeighing->weight_kg,
                 'height_cm' => $latestWeighing->height_cm,
+                'muac_cm' => $latestWeighing->muac_cm,
                 'nutritional_status' => $latestWeighing->nutritional_status,
             ] : null;
         });
@@ -66,6 +67,7 @@ class KaderWeighingController extends Controller
             'weighings.*.measured_at' => ['required', 'date'],
             'weighings.*.weight_kg' => ['required', 'numeric', 'min:0', 'max:100'],
             'weighings.*.height_cm' => ['required', 'numeric', 'min:0', 'max:200'],
+            'weighings.*.muac_cm' => ['nullable', 'numeric', 'min:0', 'max:50'],
             'weighings.*.notes' => ['nullable', 'string', 'max:500'],
         ]);
 
@@ -86,22 +88,13 @@ class KaderWeighingController extends Controller
         DB::beginTransaction();
         try {
             foreach ($validated['weighings'] as $weighingData) {
-                $child = Child::find($weighingData['child_id']);
-                
-                // Calculate nutritional status
-                $nutritionalStatus = $this->calculateNutritionalStatus(
-                    $child,
-                    $weighingData['weight_kg'],
-                    $weighingData['height_cm'],
-                    $weighingData['measured_at']
-                );
-
+                // Z-scores and nutritional_status will be auto-calculated by model event
                 $weighing = WeighingLog::create([
                     'child_id' => $weighingData['child_id'],
                     'measured_at' => $weighingData['measured_at'],
                     'weight_kg' => $weighingData['weight_kg'],
                     'height_cm' => $weighingData['height_cm'],
-                    'nutritional_status' => $nutritionalStatus,
+                    'muac_cm' => $weighingData['muac_cm'] ?? null,
                     'notes' => $weighingData['notes'] ?? null,
                 ]);
 
@@ -116,7 +109,7 @@ class KaderWeighingController extends Controller
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return response()->json([
                 'message' => 'Gagal menyimpan data penimbangan: ' . $e->getMessage(),
             ], 500);
@@ -129,7 +122,7 @@ class KaderWeighingController extends Controller
     public function childHistory(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
-        
+
         $child = Child::findOrFail($id);
 
         // Authorization: child must be in kader's posyandu
@@ -154,43 +147,5 @@ class KaderWeighingController extends Controller
                 'weighings' => $weighings,
             ],
         ], 200);
-    }
-
-    /**
-     * Calculate nutritional status based on WHO standards
-     * This is a simplified version - you should use proper WHO z-score tables
-     */
-    private function calculateNutritionalStatus(Child $child, float $weight, float $height, string $measuredAt): string
-    {
-        // Calculate age in months at measurement date
-        $birthDate = new \DateTime($child->birth_date);
-        $measureDate = new \DateTime($measuredAt);
-        $ageInMonths = $birthDate->diff($measureDate)->m + ($birthDate->diff($measureDate)->y * 12);
-
-        // Calculate BMI
-        $heightInMeters = $height / 100;
-        $bmi = $weight / ($heightInMeters * $heightInMeters);
-
-        // Simplified logic - replace with proper WHO z-score calculation
-        // This is just a placeholder
-        if ($ageInMonths < 24) {
-            // For children under 2 years
-            if ($weight < 8) return 'sangat_kurang';
-            if ($weight < 10) return 'kurang';
-            if ($weight > 15) return 'lebih';
-            return 'normal';
-        } else {
-            // For children 2 years and above
-            if ($bmi < 14) return 'sangat_kurus';
-            if ($bmi < 16) return 'kurus';
-            if ($bmi > 18) return 'gemuk';
-            if ($bmi > 20) return 'lebih';
-            
-            // Check height for stunting
-            if ($height < 75) return 'sangat_pendek';
-            if ($height < 80) return 'pendek';
-            
-            return 'normal';
-        }
     }
 }

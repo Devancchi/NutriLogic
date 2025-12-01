@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../lib/api";
-import GenericListSkeleton from "../loading/GenericListSkeleton";
+import { Search, MessageSquare, Clock, CheckCircle, User, ChevronRight, Filter } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function KonsultasiKader() {
     const [loading, setLoading] = useState(true);
@@ -39,121 +40,155 @@ export default function KonsultasiKader() {
         const diffDays = Math.floor(diffMs / 86400000);
 
         if (diffMins < 1) return 'Baru saja';
-        if (diffMins < 60) return `${diffMins} menit lalu`;
-        if (diffHours < 24) return `${diffHours} jam lalu`;
-        if (diffDays < 7) return `${diffDays} hari lalu`;
-        return past.toLocaleDateString('id-ID');
+        if (diffMins < 60) return `${diffMins}m lalu`;
+        if (diffHours < 24) return `${diffHours}j lalu`;
+        if (diffDays < 7) return `${diffDays}h lalu`;
+        return past.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
     };
 
     return (
-        <div className="flex flex-1 w-full h-full overflow-auto">
-            <div className="p-4 md:p-10 w-full h-full bg-gray-50 flex flex-col gap-6">
-                {/* Header */}
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-800">Konsultasi</h1>
-                    <p className="text-gray-600 mt-2">Kelola konsultasi dari orang tua</p>
-                </div>
-
-                {/* Tabs */}
-                <div className="flex gap-2 border-b border-gray-200">
-                    <button
-                        onClick={() => setActiveTab('open')}
-                        className={`px-4 py-2 font-medium transition-colors ${activeTab === 'open'
-                                ? 'text-blue-600 border-b-2 border-blue-600'
-                                : 'text-gray-600 hover:text-gray-800'
-                            }`}
-                    >
-                        Aktif
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('closed')}
-                        className={`px-4 py-2 font-medium transition-colors ${activeTab === 'closed'
-                                ? 'text-blue-600 border-b-2 border-blue-600'
-                                : 'text-gray-600 hover:text-gray-800'
-                            }`}
-                    >
-                        Selesai
-                    </button>
-                </div>
-
-                {/* Error Alert */}
-                {error && (
-                    <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
-                        {error}
-                    </div>
-                )}
-
-                {/* Consultations List */}
-                {loading ? (
-                    <div className="flex items-center justify-center h-64">
-                        <div className="text-center">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                            <p className="text-gray-600">Memuat konsultasi...</p>
+        <div className="flex flex-col h-full bg-slate-50 overflow-hidden">
+            {/* Header Section */}
+            <div className="bg-white border-b border-slate-200 px-6 py-8">
+                <div className="max-w-5xl mx-auto w-full">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h1 className="text-2xl font-bold text-slate-800">Konsultasi</h1>
+                            <p className="text-slate-500 mt-1">Kelola pesan dan konsultasi dari orang tua</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <input
+                                    type="text"
+                                    placeholder="Cari nama..."
+                                    className="pl-9 pr-4 py-2 bg-slate-100 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 w-full md:w-64 transition-all"
+                                />
+                            </div>
+                            <button className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 transition-colors">
+                                <Filter className="w-5 h-5" />
+                            </button>
                         </div>
                     </div>
-                ) : consultations.length === 0 ? (
-                    <div className="bg-white rounded-lg p-8 shadow-sm border border-gray-200 text-center">
-                        <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                        </svg>
-                        <p className="text-gray-800 font-medium mb-2">Tidak Ada Konsultasi</p>
-                        <p className="text-gray-600">
-                            {activeTab === 'open' ? 'Belum ada konsultasi aktif' : 'Belum ada konsultasi yang selesai'}
-                        </p>
+
+                    {/* Tabs */}
+                    <div className="flex gap-1 bg-slate-100 p-1 rounded-xl w-fit">
+                        <button
+                            onClick={() => setActiveTab('open')}
+                            className={`px-6 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === 'open'
+                                    ? 'bg-white text-blue-600 shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-700'
+                                }`}
+                        >
+                            Aktif
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('closed')}
+                            className={`px-6 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === 'closed'
+                                    ? 'bg-white text-slate-800 shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-700'
+                                }`}
+                        >
+                            Selesai
+                        </button>
                     </div>
-                ) : (
-                    <div className="grid grid-cols-1 gap-4">
-                        {consultations.map((consultation) => (
-                            <div
-                                key={consultation.id}
-                                onClick={() => navigate(`/dashboard/konsultasi/${consultation.id}`)}
-                                className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
-                            >
-                                <div className="flex items-start justify-between mb-3">
-                                    <div className="flex-1">
-                                        <h3 className="text-lg font-semibold text-gray-900 mb-1">{consultation.title}</h3>
-                                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                                            <span className="font-medium">{consultation.parent?.name || 'Unknown'}</span>
-                                            {consultation.child && (
-                                                <>
-                                                    <span>•</span>
-                                                    <span>Anak: {consultation.child.full_name}</span>
-                                                </>
-                                            )}
+                </div>
+            </div>
+
+            {/* Content Section */}
+            <div className="flex-1 overflow-y-auto p-4 md:p-6">
+                <div className="max-w-5xl mx-auto w-full">
+                    {error && (
+                        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl mb-6 flex items-center gap-3">
+                            <div className="w-2 h-2 rounded-full bg-red-500" />
+                            {error}
+                        </div>
+                    )}
+
+                    {loading ? (
+                        <div className="space-y-4">
+                            {[1, 2, 3].map((i) => (
+                                <div key={i} className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm animate-pulse">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-slate-200 rounded-full" />
+                                        <div className="flex-1 space-y-2">
+                                            <div className="h-4 bg-slate-200 rounded w-1/4" />
+                                            <div className="h-3 bg-slate-200 rounded w-1/2" />
                                         </div>
                                     </div>
-                                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${consultation.status === 'open'
-                                            ? 'bg-green-100 text-green-800 border border-green-200'
-                                            : 'bg-gray-100 text-gray-800 border border-gray-200'
-                                        }`}>
-                                        {consultation.status === 'open' ? 'Aktif' : 'Selesai'}
-                                    </span>
                                 </div>
-
-                                {consultation.last_message && (
-                                    <div className="bg-gray-50 rounded-lg p-3 mb-3">
-                                        <p className="text-sm text-gray-700 line-clamp-2">
-                                            <span className="font-medium">{consultation.last_message.sender_name}:</span>{' '}
-                                            {consultation.last_message.message}
-                                        </p>
-                                    </div>
-                                )}
-
-                                <div className="flex items-center justify-between text-xs text-gray-500">
-                                    <span>{getTimeAgo(consultation.updated_at)}</span>
-                                    {consultation.kader && (
-                                        <span className="flex items-center gap-1">
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                            </svg>
-                                            Ditangani: {consultation.kader.name}
-                                        </span>
-                                    )}
-                                </div>
+                            ))}
+                        </div>
+                    ) : consultations.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-20 text-center">
+                            <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                                <MessageSquare className="w-10 h-10 text-slate-300" />
                             </div>
-                        ))}
-                    </div>
-                )}
+                            <h3 className="text-lg font-semibold text-slate-800 mb-1">Tidak Ada Konsultasi</h3>
+                            <p className="text-slate-500 max-w-xs mx-auto">
+                                {activeTab === 'open'
+                                    ? 'Belum ada konsultasi yang aktif saat ini.'
+                                    : 'Belum ada riwayat konsultasi yang selesai.'}
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 gap-4">
+                            {consultations.map((consultation, index) => (
+                                <motion.div
+                                    key={consultation.id}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: index * 0.05 }}
+                                    onClick={() => navigate(`/dashboard/konsultasi/${consultation.id}`)}
+                                    className="group bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md hover:border-blue-100 transition-all cursor-pointer relative overflow-hidden"
+                                >
+                                    <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                                    <div className="flex items-start gap-4">
+                                        {/* Avatar */}
+                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 flex items-center justify-center flex-shrink-0 text-blue-600 font-bold text-lg">
+                                            {consultation.parent?.name?.substring(0, 2).toUpperCase() || 'OR'}
+                                        </div>
+
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-start justify-between mb-1">
+                                                <h3 className="text-base font-bold text-slate-800 truncate pr-2 group-hover:text-blue-700 transition-colors">
+                                                    {consultation.title || 'Konsultasi Tanpa Judul'}
+                                                </h3>
+                                                <span className="text-xs font-medium text-slate-400 whitespace-nowrap flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-full">
+                                                    <Clock className="w-3 h-3" />
+                                                    {getTimeAgo(consultation.updated_at)}
+                                                </span>
+                                            </div>
+
+                                            <div className="flex items-center gap-2 text-xs text-slate-500 mb-3">
+                                                <span className="font-medium text-slate-700">{consultation.parent?.name}</span>
+                                                <span>•</span>
+                                                <span className="flex items-center gap-1">
+                                                    <User className="w-3 h-3" />
+                                                    Anak: {consultation.child?.full_name || '-'}
+                                                </span>
+                                            </div>
+
+                                            <div className="bg-slate-50 rounded-xl p-3 group-hover:bg-blue-50/50 transition-colors">
+                                                <p className="text-sm text-slate-600 line-clamp-2 leading-relaxed">
+                                                    <span className="font-semibold text-slate-800 mr-1">
+                                                        {consultation.last_message?.sender_name || 'User'}:
+                                                    </span>
+                                                    {consultation.last_message?.message || 'Belum ada pesan'}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="self-center pl-2">
+                                            <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-blue-400 transition-colors" />
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

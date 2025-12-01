@@ -17,6 +17,33 @@ class ParentConsultationController extends Controller
     ) {
     }
     /**
+     * Get list of available kaders
+     */
+    /**
+     * Get list of available kaders
+     */
+    public function getKaders(Request $request): JsonResponse
+    {
+        $kaders = User::where('role', 'kader')
+            ->select('id', 'name', 'posyandu_id', 'last_seen_at')
+            ->with('posyandu:id,name')
+            ->get()
+            ->map(function ($kader) {
+                return [
+                    'id' => $kader->id,
+                    'name' => $kader->name,
+                    'posyandu_id' => $kader->posyandu_id,
+                    'posyandu' => $kader->posyandu,
+                    'is_online' => $kader->is_online,
+                ];
+            });
+
+        return response()->json([
+            'data' => $kaders,
+        ], 200);
+    }
+
+    /**
      * Get list of consultations for parent (ibu)
      */
     public function index(Request $request): JsonResponse
@@ -57,14 +84,16 @@ class ParentConsultationController extends Controller
                 'kader' => $consultation->kader ? [
                     'id' => $consultation->kader->id,
                     'name' => $consultation->kader->name,
+                    'is_online' => $consultation->kader->is_online,
                 ] : null,
                 'last_message' => $lastMessage ? [
                     'message' => $lastMessage->message,
                     'sender_name' => $lastMessage->sender->name,
-                    'created_at' => $lastMessage->created_at->format('Y-m-d H:i:s'),
+                    'created_at' => $lastMessage->created_at,
+                    'attachment_type' => $lastMessage->attachment_type,
                 ] : null,
-                'created_at' => $consultation->created_at->format('Y-m-d H:i:s'),
-                'updated_at' => $consultation->updated_at->format('Y-m-d H:i:s'),
+                'created_at' => $consultation->created_at,
+                'updated_at' => $consultation->updated_at,
             ];
         });
 
@@ -185,6 +214,7 @@ class ParentConsultationController extends Controller
                 'kader' => $consultation->kader ? [
                     'id' => $consultation->kader->id,
                     'name' => $consultation->kader->name,
+                    'is_online' => $consultation->kader->is_online,
                 ] : null,
                 'child' => $consultation->child ? [
                     'id' => $consultation->child->id,
@@ -197,11 +227,13 @@ class ParentConsultationController extends Controller
                         'sender_name' => $message->sender->name,
                         'sender_role' => $message->sender->role,
                         'message' => $message->message,
-                        'created_at' => $message->created_at->format('Y-m-d H:i:s'),
+                        'attachment_path' => $message->attachment_path ? url('storage/' . $message->attachment_path) : null,
+                        'attachment_type' => $message->attachment_type,
+                        'created_at' => $message->created_at,
                     ];
                 }),
-                'created_at' => $consultation->created_at->format('Y-m-d H:i:s'),
-                'updated_at' => $consultation->updated_at->format('Y-m-d H:i:s'),
+                'created_at' => $consultation->created_at,
+                'updated_at' => $consultation->updated_at,
             ],
         ], 200);
     }
@@ -236,13 +268,30 @@ class ParentConsultationController extends Controller
         }
 
         $validated = $request->validate([
-            'message' => ['required', 'string', 'min:1', 'max:2000'],
+            'message' => ['nullable', 'string', 'max:2000'],
+            'attachment' => ['nullable', 'file', 'image', 'max:5120'], // Max 5MB
         ]);
+
+        if (empty($validated['message']) && empty($request->file('attachment'))) {
+            return response()->json(['message' => 'Message or attachment is required.'], 422);
+        }
+
+        $attachmentPath = null;
+        $attachmentType = null;
+
+        if ($request->hasFile('attachment')) {
+            $file = $request->file('attachment');
+            $path = $file->store('consultation-attachments', 'public');
+            $attachmentPath = $path;
+            $attachmentType = 'image'; // For now only images
+        }
 
         $message = ConsultationMessage::create([
             'consultation_id' => $consultation->id,
             'sender_id' => $user->id,
-            'message' => $validated['message'],
+            'message' => $validated['message'] ?? null,
+            'attachment_path' => $attachmentPath,
+            'attachment_type' => $attachmentType,
         ]);
 
         // Update consultation updated_at
@@ -262,10 +311,101 @@ class ParentConsultationController extends Controller
                 'sender_name' => $message->sender->name,
                 'sender_role' => $message->sender->role,
                 'message' => $message->message,
-                'created_at' => $message->created_at->format('Y-m-d H:i:s'),
+                'attachment_path' => $message->attachment_path ? url('storage/' . $message->attachment_path) : null,
+                'attachment_type' => $message->attachment_type,
+                'created_at' => $message->created_at,
             ],
             'message' => 'Message sent successfully.',
         ], 201);
+    }
+
+    /**
+     * Delete consultation
+     */
+    public function destroy(Request $request, $id): JsonResponse
+    {
+        $user = $request->user();
+
+        // Authorization: only for ibu role
+        if (!$user->isIbu()) {
+            return response()->json([
+                'message' => 'Unauthorized. This endpoint is only for parents.',
+            ], 403);
+        }
+
+        $consultation = Consultation::find($id);
+
+        if (!$consultation) {
+            return response()->json([
+                'message' => 'Consultation not found.',
+            ], 404);
+        }
+
+        // Authorization: check if consultation belongs to this parent
+        if ($consultation->parent_id !== $user->id) {
+            return response()->json([
+                'message' => 'Unauthorized. You can only delete your own consultations.',
+            ], 403);
+        }
+
+        $consultation->delete();
+
+        return response()->json([
+            'message' => 'Consultation deleted successfully.',
+        ], 200);
+    }
+
+
+    /**
+     * Get child data for sharing in consultation
+     */
+    public function getChildData(Request $request, $id): JsonResponse
+    {
+        $user = $request->user();
+
+        // Authorization: only for ibu role
+        if (!$user->isIbu()) {
+            return response()->json([
+                'message' => 'Unauthorized. This endpoint is only for parents.',
+            ], 403);
+        }
+
+        $consultation = Consultation::with('child.weighingLogs')->find($id);
+
+        if (!$consultation) {
+            return response()->json([
+                'message' => 'Consultation not found.',
+            ], 404);
+        }
+
+        // Authorization: check if consultation belongs to this parent
+        if ($consultation->parent_id !== $user->id) {
+            return response()->json([
+                'message' => 'Unauthorized. You can only view your own consultations.',
+            ], 403);
+        }
+
+        if (!$consultation->child) {
+            return response()->json([
+                'message' => 'No child associated with this consultation.',
+            ], 404);
+        }
+
+        $child = $consultation->child;
+        $latestLog = $child->weighingLogs()->latest('measured_at')->first();
+
+        return response()->json([
+            'data' => [
+                'name' => $child->full_name,
+                'age_months' => $child->age_in_months,
+                'gender' => $child->gender,
+                'weight' => $latestLog ? $latestLog->weight_kg : null,
+                'height' => $latestLog ? $latestLog->height_cm : null,
+                'head_circumference' => $latestLog ? $latestLog->head_circumference_cm : null,
+                'notes' => $latestLog ? $latestLog->notes : null,
+                'measured_at' => $latestLog ? $latestLog->measured_at : null,
+            ],
+        ], 200);
     }
 }
 

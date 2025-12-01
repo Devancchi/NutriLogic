@@ -32,6 +32,7 @@ export default function PenimbanganMassal() {
                 initialData[child.id] = {
                     weight_kg: '',
                     height_cm: '',
+                    muac_cm: '',
                     notes: '',
                 };
             });
@@ -68,6 +69,7 @@ export default function PenimbanganMassal() {
                     measured_at: weighingDate,
                     weight_kg: parseFloat(data.weight_kg),
                     height_cm: parseFloat(data.height_cm),
+                    muac_cm: data.muac_cm ? parseFloat(data.muac_cm) : null,
                     notes: data.notes || null,
                 });
             }
@@ -91,6 +93,7 @@ export default function PenimbanganMassal() {
                 clearedData[child.id] = {
                     weight_kg: '',
                     height_cm: '',
+                    muac_cm: '',
                     notes: '',
                 };
             });
@@ -230,6 +233,7 @@ export default function PenimbanganMassal() {
                                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data Terakhir</th>
                                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Berat (kg)</th>
                                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tinggi (cm)</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Lingkar Lengan (cm)</th>
                                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Catatan</th>
                                     </tr>
                                 </thead>
@@ -247,6 +251,7 @@ export default function PenimbanganMassal() {
                                                     <div className="text-xs text-gray-600">
                                                         <div>{child.latest_weighing.weight_kg} kg</div>
                                                         <div>{child.latest_weighing.height_cm} cm</div>
+                                                        <div>LL: {child.latest_weighing.muac_cm || '-'} cm</div>
                                                         <div className="text-gray-500">{new Date(child.latest_weighing.measured_at).toLocaleDateString('id-ID')}</div>
                                                     </div>
                                                 ) : (
@@ -273,6 +278,18 @@ export default function PenimbanganMassal() {
                                                     max="200"
                                                     value={weighingData[child.id]?.height_cm || ''}
                                                     onChange={(e) => handleInputChange(child.id, 'height_cm', e.target.value)}
+                                                    className="w-24 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                                    placeholder="0.0"
+                                                />
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <input
+                                                    type="number"
+                                                    step="0.1"
+                                                    min="0"
+                                                    max="50"
+                                                    value={weighingData[child.id]?.muac_cm || ''}
+                                                    onChange={(e) => handleInputChange(child.id, 'muac_cm', e.target.value)}
                                                     className="w-24 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                                                     placeholder="0.0"
                                                 />

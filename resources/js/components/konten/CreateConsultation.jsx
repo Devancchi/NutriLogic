@@ -2,37 +2,69 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../lib/api";
 import GenericFormSkeleton from "../loading/GenericFormSkeleton";
-import PageHeader from "../dashboard/PageHeader";
+import { useDataCache } from "../../contexts/DataCacheContext";
+import { ArrowLeft, MessageSquare, User, AlertCircle, CheckCircle, Users } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function CreateConsultation() {
   const navigate = useNavigate();
+  const { invalidateCache } = useDataCache();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [children, setChildren] = useState([]);
+  const [kaders, setKaders] = useState([]);
   const [title, setTitle] = useState("");
   const [selectedChildId, setSelectedChildId] = useState("");
   const [selectedKaderId, setSelectedKaderId] = useState("");
 
   useEffect(() => {
-    fetchChildren();
+    fetchData();
   }, []);
 
-  const fetchChildren = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const response = await api.get('/parent/children');
-      setChildren(response.data.data);
+      const [childrenRes, kadersRes] = await Promise.all([
+        api.get('/parent/children'),
+        api.get('/parent/kaders')
+      ]);
+
+      setChildren(childrenRes.data.data);
+      setKaders(kadersRes.data.data);
     } catch (err) {
-      const errorMessage = err.response?.data?.message || 'Gagal memuat data anak. Silakan coba lagi.';
+      const errorMessage = err.response?.data?.message || 'Gagal memuat data. Silakan coba lagi.';
       setError(errorMessage);
-      console.error('Children fetch error:', err);
+      console.error('Fetch error:', err);
     } finally {
       setLoading(false);
     }
   };
+
+  // Auto-select kader when child is selected
+  useEffect(() => {
+    if (selectedChildId && children.length > 0 && kaders.length > 0) {
+      const child = children.find(c => c.id === parseInt(selectedChildId));
+      if (child && child.posyandu_id) {
+        // Find kader in the same posyandu
+        const recommendedKader = kaders.find(k => k.posyandu_id === child.posyandu_id);
+        if (recommendedKader) {
+          setSelectedKaderId(recommendedKader.id);
+        } else {
+          // If no kader found in the same posyandu, clear selected kader
+          setSelectedKaderId("");
+        }
+      } else {
+        // If child has no posyandu_id or child not found, clear selected kader
+        setSelectedKaderId("");
+      }
+    } else if (!selectedChildId) {
+      // If no child is selected, clear selected kader
+      setSelectedKaderId("");
+    }
+  }, [selectedChildId, children, kaders]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -60,6 +92,11 @@ export default function CreateConsultation() {
 
       const response = await api.post('/parent/consultations', payload);
 
+      // Invalidate cache to ensure list is updated
+      invalidateCache('consultations_all');
+      invalidateCache('consultations_open');
+      invalidateCache('consultations_closed');
+
       // Navigate to consultation detail
       navigate(`/dashboard/konsultasi/${response.data.data.id}`);
     } catch (err) {
@@ -81,137 +118,180 @@ export default function CreateConsultation() {
   }
 
   return (
-    <div className="flex flex-1 w-full h-full overflow-auto">
-      <div className="p-4 md:p-10 w-full h-full bg-gray-50 flex flex-col gap-6">
-
-        {/* Header */}
-        <PageHeader title="Buat Konsultasi Baru" subtitle="Portal Orang Tua">
+    <div className="flex flex-col h-full bg-slate-50 overflow-y-auto">
+      {/* Header */}
+      <div className="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-10 shadow-sm">
+        <div className="max-w-2xl mx-auto w-full flex items-center gap-4">
           <button
             onClick={() => navigate('/dashboard/konsultasi')}
-            className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+            className="p-2 -ml-2 hover:bg-slate-100 rounded-full transition-colors text-slate-600"
           >
-            <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            <ArrowLeft className="w-5 h-5" />
           </button>
-        </PageHeader>
-
-        {/* Error State */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-              <p className="text-red-800">{error}</p>
-            </div>
-            <button
-              onClick={() => setError(null)}
-              className="text-red-600 hover:text-red-800"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+          <div>
+            <h1 className="text-lg font-bold text-slate-800">Buat Konsultasi Baru</h1>
+            <p className="text-xs text-slate-500">Mulai percakapan dengan kader</p>
           </div>
-        )}
+        </div>
+      </div>
 
-        {/* Form */}
-        <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 max-w-2xl">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Title Input */}
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                Judul Konsultasi <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Contoh: Pertanyaan tentang MPASI untuk anak 8 bulan"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-                disabled={submitting}
-                maxLength={255}
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                Jelaskan topik atau pertanyaan yang ingin Anda konsultasikan
-              </p>
-            </div>
-
-            {/* Child Selection (Optional) */}
-            <div>
-              <label htmlFor="child" className="block text-sm font-medium text-gray-700 mb-2">
-                Anak (Opsional)
-              </label>
-              <select
-                id="child"
-                value={selectedChildId}
-                onChange={(e) => setSelectedChildId(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                disabled={submitting}
-              >
-                <option value="">-- Pilih Anak (Opsional) --</option>
-                {children.map((child) => (
-                  <option key={child.id} value={child.id}>
-                    {child.full_name} ({child.age_in_months} bulan)
-                  </option>
-                ))}
-              </select>
-              <p className="mt-1 text-xs text-gray-500">
-                Pilih anak jika konsultasi terkait dengan anak tertentu. Kader akan otomatis di-assign dari posyandu anak.
-              </p>
-            </div>
-
-            {/* Kader Selection (Optional) */}
-            <div>
-              <label htmlFor="kader" className="block text-sm font-medium text-gray-700 mb-2">
-                Kader (Opsional)
-              </label>
-              <input
-                type="text"
-                id="kader"
-                placeholder="Akan di-assign otomatis jika memilih anak"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                disabled
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                Kader akan otomatis di-assign dari posyandu anak yang dipilih. Jika tidak memilih anak, konsultasi akan dibuat tanpa kader.
-              </p>
-            </div>
-
-            {/* Submit Button */}
-            <div className="flex gap-3 pt-4">
+      <div className="flex-1 p-4 md:p-8">
+        <div className="max-w-2xl mx-auto w-full">
+          {/* Error State */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3 mb-6"
+            >
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-red-800 text-sm font-medium">{error}</p>
+              </div>
               <button
-                type="button"
-                onClick={() => navigate('/dashboard/konsultasi')}
-                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                disabled={submitting}
+                onClick={() => setError(null)}
+                className="text-red-400 hover:text-red-600 transition-colors"
               >
-                Batal
+                <span className="sr-only">Dismiss</span>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="flex-1 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {submitting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    <span>Membuat...</span>
-                  </>
-                ) : (
-                  <>
+            </motion.div>
+          )}
+
+          {/* Form */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-200"
+          >
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Title Input */}
+              <div>
+                <label htmlFor="title" className="block text-sm font-semibold text-slate-700 mb-2">
+                  Topik Konsultasi <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute left-4 top-3.5 text-slate-400">
+                    <MessageSquare className="w-5 h-5" />
+                  </div>
+                  <input
+                    type="text"
+                    id="title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Contoh: Pertanyaan tentang MPASI..."
+                    className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-slate-800 placeholder:text-slate-400"
+                    required
+                    disabled={submitting}
+                    maxLength={255}
+                  />
+                </div>
+                <p className="mt-2 text-xs text-slate-500">
+                  Jelaskan secara singkat apa yang ingin Anda tanyakan.
+                </p>
+              </div>
+
+              {/* Child Selection */}
+              <div>
+                <label htmlFor="child" className="block text-sm font-semibold text-slate-700 mb-2">
+                  Terkait Anak (Opsional)
+                </label>
+                <div className="relative">
+                  <div className="absolute left-4 top-3.5 text-slate-400">
+                    <User className="w-5 h-5" />
+                  </div>
+                  <select
+                    id="child"
+                    value={selectedChildId}
+                    onChange={(e) => setSelectedChildId(e.target.value)}
+                    className="w-full pl-12 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-slate-800 appearance-none"
+                    disabled={submitting}
+                  >
+                    <option value="">-- Pilih Anak --</option>
+                    {children.map((child) => (
+                      <option key={child.id} value={child.id}>
+                        {child.full_name} ({child.age_in_months} bulan)
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-4 top-3.5 pointer-events-none text-slate-400">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
-                    <span>Buat Konsultasi</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
+                  </div>
+                </div>
+                <p className="mt-2 text-xs text-slate-500 flex items-center gap-1">
+                  <CheckCircle className="w-3 h-3 text-green-500" />
+                  Kader akan otomatis disesuaikan dengan posyandu anak, namun Anda dapat mengubahnya.
+                </p>
+              </div>
+
+              {/* Kader Selection (Dynamic) */}
+              <div>
+                <label htmlFor="kader" className="block text-sm font-semibold text-slate-700 mb-2">
+                  Pilih Kader
+                </label>
+                <div className="relative">
+                  <div className="absolute left-4 top-3.5 text-slate-400">
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <select
+                    id="kader"
+                    value={selectedKaderId}
+                    onChange={(e) => setSelectedKaderId(e.target.value)}
+                    className="w-full pl-12 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-slate-800 appearance-none"
+                    disabled={submitting}
+                  >
+                    <option value="">-- Pilih Kader --</option>
+                    {kaders.map((kader) => (
+                      <option key={kader.id} value={kader.id}>
+                        {kader.name} {kader.posyandu ? `(${kader.posyandu.name})` : ''} {kader.is_online ? '🟢 Online' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-4 top-3.5 pointer-events-none text-slate-400">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+                <p className="mt-2 text-xs text-slate-500">
+                  Pilih kader yang ingin Anda ajak berkonsultasi.
+                </p>
+              </div>
+
+              {/* Submit Button */}
+              <div className="pt-4 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => navigate('/dashboard/konsultasi')}
+                  className="px-6 py-3 border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 transition-colors font-medium"
+                  disabled={submitting}
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 hover:shadow-blue-300 transform active:scale-95 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {submitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      <span>Memproses...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Mulai Konsultasi</span>
+                      <ArrowLeft className="w-5 h-5 rotate-180" />
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </motion.div>
         </div>
       </div>
     </div>

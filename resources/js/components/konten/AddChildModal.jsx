@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+import { X, ChevronDown, Check, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import api from "../../lib/api";
 import CreditCard from "../credit-card-1";
 import logoScroll from '../../assets/logo_scroll.svg';
@@ -9,7 +10,6 @@ import { assets } from '../../assets/assets';
 export default function AddChildModal({ isOpen, onClose, onSuccess, initialData = null }) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [posyandus, setPosyandus] = useState([]);
     const [formData, setFormData] = useState({
         full_name: "",
         nik: "",
@@ -21,10 +21,25 @@ export default function AddChildModal({ isOpen, onClose, onSuccess, initialData 
         notes: "",
     });
     const [errors, setErrors] = useState({});
+    const [isGenderDropdownOpen, setIsGenderDropdownOpen] = useState(false);
+    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+    const [pickerDate, setPickerDate] = useState(new Date());
+    const dateButtonRef = useRef(null);
+    const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
+
+    const toggleDatePicker = () => {
+        if (!isDatePickerOpen && dateButtonRef.current) {
+            const rect = dateButtonRef.current.getBoundingClientRect();
+            setDropdownPos({
+                top: rect.bottom + 8,
+                left: rect.left
+            });
+        }
+        setIsDatePickerOpen(!isDatePickerOpen);
+    };
 
     useEffect(() => {
         if (isOpen) {
-            fetchPosyandus();
             if (initialData) {
                 // Edit mode: populate form with initialData
                 setFormData({
@@ -56,15 +71,6 @@ export default function AddChildModal({ isOpen, onClose, onSuccess, initialData 
             setError(null);
         }
     }, [isOpen, initialData]);
-
-    const fetchPosyandus = async () => {
-        try {
-            const response = await api.get('/posyandus');
-            setPosyandus(response.data.data || response.data);
-        } catch (err) {
-            console.error('Failed to fetch posyandus:', err);
-        }
-    };
 
     const fetchUserData = async () => {
         try {
@@ -114,10 +120,6 @@ export default function AddChildModal({ isOpen, onClose, onSuccess, initialData 
             newErrors.gender = "Jenis kelamin wajib dipilih";
         }
 
-        if (!formData.posyandu_id) {
-            newErrors.posyandu_id = "Posyandu wajib dipilih";
-        }
-
         if (formData.birth_weight_kg && (parseFloat(formData.birth_weight_kg) < 0 || parseFloat(formData.birth_weight_kg) > 10)) {
             newErrors.birth_weight_kg = "Berat lahir harus antara 0-10 kg";
         }
@@ -141,9 +143,20 @@ export default function AddChildModal({ isOpen, onClose, onSuccess, initialData 
         setError(null);
 
         try {
+            // Get user data for parent_id and posyandu_id
+            const response = await api.get('/me');
+            const user = response.data.data || response.data;
+
+            // Pastikan user memiliki posyandu_id
+            if (!user.posyandu_id && !initialData) {
+                setError('Akun Anda belum terdaftar di posyandu. Silakan hubungi admin.');
+                setLoading(false);
+                return;
+            }
+
             const dataToSubmit = {
                 ...formData,
-                posyandu_id: parseInt(formData.posyandu_id),
+                posyandu_id: initialData ? parseInt(formData.posyandu_id) : parseInt(user.posyandu_id), // Untuk edit gunakan yang ada, untuk add gunakan dari user
                 birth_weight_kg: formData.birth_weight_kg ? parseFloat(formData.birth_weight_kg) : null,
                 birth_height_cm: formData.birth_height_cm ? parseFloat(formData.birth_height_cm) : null,
                 nik: formData.nik || null,
@@ -152,8 +165,6 @@ export default function AddChildModal({ isOpen, onClose, onSuccess, initialData 
 
             // If adding new child, we need parent_id
             if (!initialData) {
-                const response = await api.get('/me');
-                const user = response.data.data || response.data;
                 dataToSubmit.parent_id = user.id;
             }
 
@@ -195,7 +206,7 @@ export default function AddChildModal({ isOpen, onClose, onSuccess, initialData 
     return (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6">
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -208,11 +219,11 @@ export default function AddChildModal({ isOpen, onClose, onSuccess, initialData 
                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        className="relative w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]"
+                        className="relative w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh] md:max-h-[85vh]"
                     >
                         {/* Header */}
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                            <h2 className="text-xl font-bold text-gray-800">{initialData ? 'Edit Data Anak' : 'Tambah Data Anak'}</h2>
+                        <div className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 border-b border-gray-100">
+                            <h2 className="text-lg md:text-xl font-bold text-gray-800">{initialData ? 'Edit Data Anak' : 'Tambah Data Anak'}</h2>
                             <button
                                 onClick={onClose}
                                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -222,22 +233,30 @@ export default function AddChildModal({ isOpen, onClose, onSuccess, initialData 
                         </div>
 
                         {/* Content - Scrollable */}
-                        <div className="flex-1 overflow-y-auto p-6 md:p-8">
-                            <div className="flex flex-col gap-8 items-center">
+                        <div
+                            className="flex-1 overflow-y-auto p-3 md:p-8 no-scrollbar overflow-x-hidden"
+                            onScroll={() => {
+                                if (isDatePickerOpen) setIsDatePickerOpen(false);
+                                if (isGenderDropdownOpen) setIsGenderDropdownOpen(false);
+                            }}
+                        >
+                            <div className="flex flex-col gap-4 md:gap-8 items-center">
                                 {/* Top - Card Preview */}
-                                <div className="w-full max-w-md flex flex-col items-center">
-                                    <div className="w-full aspect-[1.586/1]">
-                                        <CreditCard
-                                            cardNumber={formData.nik ? formData.nik.replace(/(\d{4})(?=\d)/g, '$1 ') : "0000 0000 0000 0000"}
-                                            cardHolder={formData.full_name || "NAMA ANAK"}
-                                            expiryDate={getFormattedDate(formData.birth_date)}
-                                            cvv={formData.gender === 'L' ? '001' : formData.gender === 'P' ? '002' : 'XXX'}
-                                            variant="gradient"
-                                            labelName="NAMA ANAK"
-                                            labelExpiry="TGL LAHIR"
-                                            brandLogo={logoScroll}
-                                            chipImage={formData.gender === 'L' ? assets.kepala_bayi : formData.gender === 'P' ? assets.kepala_bayi_cewe : null}
-                                        />
+                                <div className="w-full flex flex-col items-center overflow-hidden h-[160px] md:h-[280px]">
+                                    <div className="origin-top transform scale-[0.5] md:scale-[0.8] transition-transform duration-300">
+                                        <div className="w-[500px] h-[315px]">
+                                            <CreditCard
+                                                cardNumber={formData.nik ? formData.nik.replace(/(\d{4})(?=\d)/g, '$1 ') : "0000 0000 0000 0000"}
+                                                cardHolder={formData.full_name || "NAMA ANAK"}
+                                                expiryDate={getFormattedDate(formData.birth_date)}
+                                                cvv={formData.gender === 'L' ? '001' : formData.gender === 'P' ? '002' : 'XXX'}
+                                                variant="gradient"
+                                                labelName="NAMA ANAK"
+                                                labelExpiry="TGL LAHIR"
+                                                brandLogo={logoScroll}
+                                                chipImage={formData.gender === 'L' ? assets.kepala_bayi : formData.gender === 'P' ? assets.kepala_bayi_cewe : null}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 
@@ -255,7 +274,7 @@ export default function AddChildModal({ isOpen, onClose, onSuccess, initialData 
                                         </div>
                                     )}
 
-                                    <form onSubmit={handleSubmit} className="space-y-5">
+                                    <form onSubmit={handleSubmit} className="space-y-3 md:space-y-5">
                                         {/* Nama Lengkap */}
                                         <div>
                                             <label htmlFor="full_name" className="block text-sm font-medium text-gray-700 mb-2">
@@ -267,7 +286,7 @@ export default function AddChildModal({ isOpen, onClose, onSuccess, initialData 
                                                 name="full_name"
                                                 value={formData.full_name}
                                                 onChange={handleChange}
-                                                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-900 ${errors.full_name ? 'border-red-500' : 'border-gray-200'
+                                                className={`w-full px-4 py-2.5 md:py-3 border rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-900 ${errors.full_name ? 'border-red-500' : 'border-gray-200'
                                                     }`}
                                                 placeholder="Masukkan nama lengkap anak"
                                             />
@@ -288,7 +307,7 @@ export default function AddChildModal({ isOpen, onClose, onSuccess, initialData 
                                                 value={formData.nik}
                                                 onChange={handleChange}
                                                 maxLength="16"
-                                                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-900 ${errors.nik ? 'border-red-500' : 'border-gray-200'
+                                                className={`w-full px-4 py-2.5 md:py-3 border rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-900 ${errors.nik ? 'border-red-500' : 'border-gray-200'
                                                     }`}
                                                 placeholder="Masukkan 16 digit NIK"
                                             />
@@ -297,76 +316,211 @@ export default function AddChildModal({ isOpen, onClose, onSuccess, initialData 
                                             )}
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-5">
+                                        <div className="grid grid-cols-2 gap-3 md:gap-5">
                                             {/* Tanggal Lahir */}
-                                            <div>
+                                            <div className="relative">
                                                 <label htmlFor="birth_date" className="block text-sm font-medium text-gray-700 mb-2">
                                                     Tanggal Lahir <span className="text-red-500">*</span>
                                                 </label>
-                                                <input
-                                                    type="date"
-                                                    id="birth_date"
-                                                    name="birth_date"
-                                                    value={formData.birth_date}
-                                                    onChange={handleChange}
-                                                    max={new Date().toISOString().split('T')[0]}
-                                                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-900 ${errors.birth_date ? 'border-red-500' : 'border-gray-200'
-                                                        }`}
-                                                />
+
+                                                <button
+                                                    type="button"
+                                                    ref={dateButtonRef}
+                                                    onClick={toggleDatePicker}
+                                                    className={`w-full px-4 py-2.5 md:py-3 bg-white border rounded-xl text-left text-gray-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all flex items-center justify-between hover:bg-gray-50 ${errors.birth_date ? 'border-red-500' : 'border-gray-200'}`}
+                                                >
+                                                    <span className={!formData.birth_date ? "text-gray-400" : ""}>
+                                                        {formData.birth_date ? new Date(formData.birth_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : "dd/mm/yyyy"}
+                                                    </span>
+                                                    <Calendar className="w-4 h-4 text-gray-400" />
+                                                </button>
+
+                                                {isDatePickerOpen && createPortal(
+                                                    <>
+                                                        <div
+                                                            className="fixed inset-0 z-[9998] bg-transparent"
+                                                            onClick={() => setIsDatePickerOpen(false)}
+                                                        />
+                                                        <motion.div
+                                                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                            transition={{ duration: 0.2 }}
+                                                            style={{
+                                                                top: dropdownPos.top,
+                                                                left: dropdownPos.left
+                                                            }}
+                                                            className="fixed z-[9999] p-4 bg-white/90 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-xl w-[360px]"
+                                                        >
+                                                            {/* Calendar Header */}
+                                                            <div className="flex items-center justify-between mb-4">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setPickerDate(new Date(pickerDate.setMonth(pickerDate.getMonth() - 1)))}
+                                                                    className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                                                                >
+                                                                    <ChevronLeft className="w-5 h-5 text-gray-600" />
+                                                                </button>
+                                                                <span className="font-semibold text-gray-800">
+                                                                    {pickerDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+                                                                </span>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setPickerDate(new Date(pickerDate.setMonth(pickerDate.getMonth() + 1)))}
+                                                                    className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                                                                >
+                                                                    <ChevronRight className="w-5 h-5 text-gray-600" />
+                                                                </button>
+                                                            </div>
+
+                                                            {/* Days Header */}
+                                                            <div className="grid grid-cols-7 mb-2">
+                                                                {['Mg', 'Sn', 'Sl', 'Rb', 'Km', 'Jm', 'Sb'].map((day) => (
+                                                                    <div key={day} className="text-xs font-medium text-gray-400 text-center py-1">
+                                                                        {day}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+
+                                                            {/* Calendar Grid */}
+                                                            <div className="grid grid-cols-7 gap-1">
+                                                                {(() => {
+                                                                    const daysInMonth = new Date(pickerDate.getFullYear(), pickerDate.getMonth() + 1, 0).getDate();
+                                                                    const firstDay = new Date(pickerDate.getFullYear(), pickerDate.getMonth(), 1).getDay();
+                                                                    const days = [];
+
+                                                                    // Empty slots for previous month
+                                                                    for (let i = 0; i < firstDay; i++) {
+                                                                        days.push(<div key={`empty-${i}`} className="w-10 h-10" />);
+                                                                    }
+
+                                                                    // Days of current month
+                                                                    for (let i = 1; i <= daysInMonth; i++) {
+                                                                        const currentDateStr = `${pickerDate.getFullYear()}-${String(pickerDate.getMonth() + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                                                                        const isSelected = formData.birth_date === currentDateStr;
+                                                                        const isToday = new Date().toISOString().split('T')[0] === currentDateStr;
+
+                                                                        days.push(
+                                                                            <button
+                                                                                key={i}
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    handleChange({ target: { name: 'birth_date', value: currentDateStr } });
+                                                                                    setIsDatePickerOpen(false);
+                                                                                }}
+                                                                                className={`w-10 h-10 text-sm rounded-full flex items-center justify-center transition-all
+                                                                                    ${isSelected
+                                                                                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30'
+                                                                                        : isToday
+                                                                                            ? 'text-blue-600 font-bold bg-blue-50'
+                                                                                            : 'text-gray-700 hover:bg-gray-100'
+                                                                                    }`}
+                                                                            >
+                                                                                {i}
+                                                                            </button>
+                                                                        );
+                                                                    }
+                                                                    return days;
+                                                                })()}
+                                                            </div>
+
+                                                            <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        handleChange({ target: { name: 'birth_date', value: "" } });
+                                                                        setIsDatePickerOpen(false);
+                                                                    }}
+                                                                    className="text-xs text-red-500 hover:text-red-700 font-medium px-2 py-1 rounded hover:bg-red-50 transition-colors"
+                                                                >
+                                                                    Clear
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        const today = new Date();
+                                                                        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                                                                        handleChange({ target: { name: 'birth_date', value: todayStr } });
+                                                                        setPickerDate(today);
+                                                                        setIsDatePickerOpen(false);
+                                                                    }}
+                                                                    className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 rounded hover:bg-blue-50 transition-colors"
+                                                                >
+                                                                    Today
+                                                                </button>
+                                                            </div>
+                                                        </motion.div>
+                                                    </>,
+                                                    document.body
+                                                )}
+
                                                 {errors.birth_date && (
                                                     <p className="mt-1 text-sm text-red-600">{errors.birth_date}</p>
                                                 )}
                                             </div>
 
                                             {/* Jenis Kelamin */}
-                                            <div>
+                                            <div className="relative">
                                                 <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-2">
                                                     Jenis Kelamin <span className="text-red-500">*</span>
                                                 </label>
-                                                <select
-                                                    id="gender"
-                                                    name="gender"
-                                                    value={formData.gender}
-                                                    onChange={handleChange}
-                                                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-900 ${errors.gender ? 'border-red-500' : 'border-gray-200'
-                                                        }`}
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsGenderDropdownOpen(!isGenderDropdownOpen)}
+                                                    className={`w-full px-4 py-2.5 md:py-3 bg-white border rounded-xl text-left text-gray-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all flex items-center justify-between hover:bg-gray-50 ${errors.gender ? 'border-red-500' : 'border-gray-200'}`}
                                                 >
-                                                    <option value="">Pilih...</option>
-                                                    <option value="L">Laki-laki</option>
-                                                    <option value="P">Perempuan</option>
-                                                </select>
+                                                    <span className={!formData.gender ? "text-gray-400" : ""}>
+                                                        {formData.gender === 'L' ? 'Laki-laki' : formData.gender === 'P' ? 'Perempuan' : 'Pilih...'}
+                                                    </span>
+                                                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isGenderDropdownOpen ? "rotate-180" : ""}`} />
+                                                </button>
+
+                                                <AnimatePresence>
+                                                    {isGenderDropdownOpen && (
+                                                        <>
+                                                            <div
+                                                                className="fixed inset-0 z-40 bg-transparent"
+                                                                onClick={() => setIsGenderDropdownOpen(false)}
+                                                            />
+                                                            <motion.div
+                                                                initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                                                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                                exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                                                transition={{ duration: 0.2 }}
+                                                                className="absolute z-50 w-full mt-2 bg-white/90 backdrop-blur-xl border border-gray-200 rounded-xl shadow-xl overflow-hidden"
+                                                            >
+                                                                {[
+                                                                    { value: 'L', label: 'Laki-laki' },
+                                                                    { value: 'P', label: 'Perempuan' }
+                                                                ].map((option) => (
+                                                                    <div
+                                                                        key={option.value}
+                                                                        onClick={() => {
+                                                                            handleChange({ target: { name: 'gender', value: option.value } });
+                                                                            setIsGenderDropdownOpen(false);
+                                                                        }}
+                                                                        className="px-4 py-3 hover:bg-blue-50 cursor-pointer transition-colors flex items-center justify-between group border-b border-gray-50 last:border-0"
+                                                                    >
+                                                                        <span className={`text-sm ${formData.gender === option.value ? 'text-blue-700 font-semibold' : 'text-gray-700 font-medium group-hover:text-blue-700'}`}>
+                                                                            {option.label}
+                                                                        </span>
+                                                                        {formData.gender === option.value && (
+                                                                            <Check className="w-4 h-4 text-blue-600" />
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </motion.div>
+                                                        </>
+                                                    )}
+                                                </AnimatePresence>
+
                                                 {errors.gender && (
                                                     <p className="mt-1 text-sm text-red-600">{errors.gender}</p>
                                                 )}
                                             </div>
                                         </div>
 
-                                        {/* Posyandu */}
-                                        <div>
-                                            <label htmlFor="posyandu_id" className="block text-sm font-medium text-gray-700 mb-2">
-                                                Posyandu <span className="text-red-500">*</span>
-                                            </label>
-                                            <select
-                                                id="posyandu_id"
-                                                name="posyandu_id"
-                                                value={formData.posyandu_id}
-                                                onChange={handleChange}
-                                                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-900 ${errors.posyandu_id ? 'border-red-500' : 'border-gray-200'
-                                                    }`}
-                                            >
-                                                <option value="">Pilih posyandu terdekat</option>
-                                                {posyandus.map((posyandu) => (
-                                                    <option key={posyandu.id} value={posyandu.id}>
-                                                        {posyandu.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            {errors.posyandu_id && (
-                                                <p className="mt-1 text-sm text-red-600">{errors.posyandu_id}</p>
-                                            )}
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-5">
+                                        <div className="grid grid-cols-2 gap-3 md:gap-5">
                                             {/* Berat Lahir */}
                                             <div>
                                                 <label htmlFor="birth_weight_kg" className="block text-sm font-medium text-gray-700 mb-2">
@@ -381,7 +535,7 @@ export default function AddChildModal({ isOpen, onClose, onSuccess, initialData 
                                                     step="0.1"
                                                     min="0"
                                                     max="10"
-                                                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-900 ${errors.birth_weight_kg ? 'border-red-500' : 'border-gray-200'
+                                                    className={`w-full px-4 py-2.5 md:py-3 border rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-900 ${errors.birth_weight_kg ? 'border-red-500' : 'border-gray-200'
                                                         }`}
                                                     placeholder="0.0"
                                                 />
@@ -404,7 +558,7 @@ export default function AddChildModal({ isOpen, onClose, onSuccess, initialData 
                                                     step="0.1"
                                                     min="0"
                                                     max="100"
-                                                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-900 ${errors.birth_height_cm ? 'border-red-500' : 'border-gray-200'
+                                                    className={`w-full px-4 py-2.5 md:py-3 border rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-900 ${errors.birth_height_cm ? 'border-red-500' : 'border-gray-200'
                                                         }`}
                                                     placeholder="0.0"
                                                 />

@@ -28,11 +28,20 @@ class Child extends Model
     {
         return [
             'birth_date' => 'date',
-            'birth_weight_kg' => 'decimal:1',
-            'birth_height_cm' => 'decimal:1',
+            'birth_weight_kg' => 'float',
+            'birth_height_cm' => 'float',
             'is_active' => 'boolean',
         ];
     }
+
+    protected $appends = ['age_in_months'];
+
+    // Accessors
+    public function getAgeInMonthsAttribute(): int
+    {
+        return $this->birth_date->diffInMonths(now());
+    }
+
 
     // Relationships
     public function parent(): BelongsTo

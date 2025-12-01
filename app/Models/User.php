@@ -29,6 +29,7 @@ class User extends Authenticatable
         'posyandu_id',
         'points',
         'notification_channel',
+        'last_seen_at',
     ];
 
     /**
@@ -52,7 +53,15 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'points' => 'integer',
+            'last_seen_at' => 'datetime',
         ];
+    }
+
+    protected $appends = ['is_online'];
+
+    public function getIsOnlineAttribute(): bool
+    {
+        return $this->last_seen_at && $this->last_seen_at->diffInMinutes(now()) < 5;
     }
 
     /**

@@ -10,7 +10,6 @@ export default function TambahAnakForm() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [posyandus, setPosyandus] = useState([]);
     const [formData, setFormData] = useState({
         full_name: "",
         nik: "",
@@ -24,18 +23,8 @@ export default function TambahAnakForm() {
     const [errors, setErrors] = useState({});
 
     useEffect(() => {
-        fetchPosyandus();
         fetchUserData();
     }, []);
-
-    const fetchPosyandus = async () => {
-        try {
-            const response = await api.get('/posyandus');
-            setPosyandus(response.data.data || response.data);
-        } catch (err) {
-            console.error('Failed to fetch posyandus:', err);
-        }
-    };
 
     const fetchUserData = async () => {
         try {
@@ -85,10 +74,6 @@ export default function TambahAnakForm() {
             newErrors.gender = "Jenis kelamin wajib dipilih";
         }
 
-        if (!formData.posyandu_id) {
-            newErrors.posyandu_id = "Posyandu wajib dipilih";
-        }
-
         if (formData.birth_weight_kg && (parseFloat(formData.birth_weight_kg) < 0 || parseFloat(formData.birth_weight_kg) > 10)) {
             newErrors.birth_weight_kg = "Berat lahir harus antara 0-10 kg";
         }
@@ -115,10 +100,17 @@ export default function TambahAnakForm() {
             const response = await api.get('/me');
             const user = response.data.data || response.data;
 
+            // Pastikan user memiliki posyandu_id
+            if (!user.posyandu_id) {
+                setError('Akun Anda belum terdaftar di posyandu. Silakan hubungi admin.');
+                setLoading(false);
+                return;
+            }
+
             const dataToSubmit = {
                 ...formData,
                 parent_id: user.id,
-                posyandu_id: parseInt(formData.posyandu_id),
+                posyandu_id: parseInt(user.posyandu_id), // Ambil dari user, bukan formData
                 birth_weight_kg: formData.birth_weight_kg ? parseFloat(formData.birth_weight_kg) : null,
                 birth_height_cm: formData.birth_height_cm ? parseFloat(formData.birth_height_cm) : null,
                 nik: formData.nik || null,
@@ -288,31 +280,6 @@ export default function TambahAnakForm() {
                                             <p className="mt-1 text-sm text-red-600">{errors.gender}</p>
                                         )}
                                     </div>
-                                </div>
-
-                                {/* Posyandu */}
-                                <div>
-                                    <label htmlFor="posyandu_id" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Posyandu <span className="text-red-500">*</span>
-                                    </label>
-                                    <select
-                                        id="posyandu_id"
-                                        name="posyandu_id"
-                                        value={formData.posyandu_id}
-                                        onChange={handleChange}
-                                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${errors.posyandu_id ? 'border-red-500' : 'border-gray-200'
-                                            }`}
-                                    >
-                                        <option value="">Pilih posyandu terdekat</option>
-                                        {posyandus.map((posyandu) => (
-                                            <option key={posyandu.id} value={posyandu.id}>
-                                                {posyandu.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {errors.posyandu_id && (
-                                        <p className="mt-1 text-sm text-red-600">{errors.posyandu_id}</p>
-                                    )}
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-5">
