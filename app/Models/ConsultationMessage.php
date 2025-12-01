@@ -14,6 +14,8 @@ class ConsultationMessage extends Model
         'consultation_id',
         'sender_id',
         'message',
+        'attachment_path',
+        'attachment_type',
     ];
 
     // Relationships
