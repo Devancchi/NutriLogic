@@ -41,52 +41,134 @@ export default function NutriAssistPage() {
   const [recommendations, setRecommendations] = useState(null);
   const { getCachedData, setCachedData } = useDataCache();
 
-  useEffect(() => {
-    fetchChildren();
-  }, []);
+    useEffect(() => {
+        fetchChildren();
 
-  const fetchChildren = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Check cache first (reuse children cache)
-      const cachedData = getCachedData('children');
-      if (cachedData) {
-        setChildren(cachedData);
-        if (cachedData.length > 0) {
-          setSelectedChildId(cachedData[0].id.toString());
+        // Load cached recommendations if available
+        const cachedRecommendations = getCachedData('nutriAssistRecommendations');
+        if (cachedRecommendations) {
+            setRecommendations(cachedRecommendations);
         }
-        setLoading(false);
-        return;
-      }
+    }, []);
 
-      // Fetch from API if no cache
-      const response = await api.get('/parent/children');
-      const data = response.data.data;
-      setChildren(data);
-      setCachedData('children', data);
+    useEffect(() => {
+        if (recommendations) {
+            // Trigger animation after recommendations are set
+            setTimeout(() => setShowRecommendations(true), 100);
+        } else {
+            setShowRecommendations(false);
+        }
+    }, [recommendations]);
 
-      // Auto-select first child if available
-      if (data.length > 0) {
-        setSelectedChildId(data[0].id.toString());
-      }
-    } catch (err) {
-      const errorMessage = err.response?.data?.message || 'Gagal memuat data anak. Silakan coba lagi.';
-      setError(errorMessage);
-      console.error('Children fetch error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const fetchChildren = async () => {
+        try {
+            setLoading(true);
+            setError(null);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+            // Check cache first (reuse children cache)
+            const cachedData = getCachedData('children');
+            if (cachedData) {
+                setChildren(cachedData);
+                if (cachedData.length > 0) {
+                    setSelectedChildId(cachedData[0].id.toString());
+                }
+                setLoading(false);
+                return;
+            }
 
-    // Validation
-    if (!selectedChildId) {
-      setError('Silakan pilih anak terlebih dahulu.');
-      return;
+            // Fetch from API if no cache
+            const response = await api.get('/parent/children');
+            const data = response.data.data;
+            setChildren(data);
+            setCachedData('children', data);
+
+            // Auto-select first child if available
+            if (data.length > 0) {
+                setSelectedChildId(data[0].id.toString());
+            }
+        } catch (err) {
+            const errorMessage = err.response?.data?.message || 'Gagal memuat data anak. Silakan coba lagi.';
+            setError(errorMessage);
+            console.error('Children fetch error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        // Validation
+        if (!selectedChildId) {
+            setError('Silakan pilih anak terlebih dahulu.');
+            return;
+        }
+
+        if (!ingredients.trim()) {
+            setError('Silakan masukkan bahan makanan yang tersedia.');
+            return;
+        }
+
+        // Parse ingredients from string to array
+        // Support both comma-separated and newline-separated
+        const ingredientsArray = ingredients
+            .split(/[,\n]/)
+            .map(item => item.trim())
+            .filter(item => item.length > 0);
+
+        if (ingredientsArray.length === 0) {
+            setError('Silakan masukkan minimal satu bahan makanan.');
+            return;
+        }
+
+        try {
+            setSubmitting(true);
+            setError(null);
+            // Don't clear recommendations here - keep them until new results arrive
+
+            const payload = {
+                ingredients: ingredientsArray,
+            };
+
+            if (date) {
+                payload.date = date;
+            }
+
+            if (notes.trim()) {
+                payload.notes = notes.trim();
+            }
+
+            const response = await api.post(`/parent/children/${selectedChildId}/nutri-assist`, payload);
+            const newRecommendations = response.data.data;
+            setRecommendations(newRecommendations);
+            setCachedData('nutriAssistRecommendations', newRecommendations); // Cache the recommendations
+            setExpandedCardIndex(null); // Reset expanded card when new recommendations arrive
+
+            // Scroll to recommendations smoothly
+            setTimeout(() => {
+                document.getElementById('recommendations-section')?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }, 200);
+        } catch (err) {
+            if (err.response?.status === 403) {
+                setError('Anda tidak memiliki akses untuk mendapatkan rekomendasi untuk anak ini.');
+            } else if (err.response?.status === 404) {
+                setError('Data anak tidak ditemukan.');
+            } else {
+                const errorMessage = err.response?.data?.message || 'Gagal mendapatkan rekomendasi. Silakan coba lagi.';
+                setError(errorMessage);
+            }
+            console.error('Nutri-assist submit error:', err);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    // Loading state (initial fetch)
+    if (loading) {
+        return <NutriAssistSkeleton />;
     }
 
     if (!ingredients.trim()) {

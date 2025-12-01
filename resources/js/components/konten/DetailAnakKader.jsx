@@ -187,6 +187,12 @@ export default function DetailAnakKader() {
                                         <p className="text-sm text-gray-600">Tinggi Badan</p>
                                         <p className="text-base font-medium text-gray-900">{latestWeighing.height_cm} cm</p>
                                     </div>
+                                    <div>
+                                        <p className="text-sm text-gray-600">Lingkar Lengan</p>
+                                        <p className="text-base font-medium text-gray-900">
+                                            {latestWeighing.muac_cm ? `${latestWeighing.muac_cm} cm` : '-'}
+                                        </p>
+                                    </div>
                                     <div className="md:col-span-3">
                                         <p className="text-sm text-gray-600 mb-2">Status Gizi</p>
                                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(latestWeighing.nutritional_status)}`}>
@@ -208,6 +214,7 @@ export default function DetailAnakKader() {
                                                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
                                                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Berat (kg)</th>
                                                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tinggi (cm)</th>
+                                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Lingkar Lengan (cm)</th>
                                                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                                             </tr>
                                         </thead>
@@ -219,6 +226,7 @@ export default function DetailAnakKader() {
                                                     </td>
                                                     <td className="px-4 py-3 text-sm text-gray-900">{log.weight_kg}</td>
                                                     <td className="px-4 py-3 text-sm text-gray-900">{log.height_cm}</td>
+                                                    <td className="px-4 py-3 text-sm text-gray-900">{log.muac_cm || '-'}</td>
                                                     <td className="px-4 py-3 text-sm">
                                                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(log.nutritional_status)}`}>
                                                             {getStatusLabel(log.nutritional_status)}
