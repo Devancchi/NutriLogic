@@ -126,7 +126,7 @@ export default function DataAnakDetail() {
     const currentHeight = latestWeighing?.height_cm;
 
     return (
-        <div className="flex flex-1 w-full h-full overflow-auto bg-gray-50">
+        <div className="flex flex-1 w-full h-full overflow-auto no-scrollbar md:scrollbar-auto bg-gray-50">
             <div className="p-4 md:p-8 w-full max-w-7xl mx-auto flex flex-col gap-8">
                 {/* Header */}
                 <div className="flex items-center gap-4">
@@ -218,25 +218,25 @@ export default function DataAnakDetail() {
                 {/* Content Tabs */}
                 <div className="flex flex-col gap-6">
                     {/* Tab Navigation */}
-                    <div className="flex gap-2 p-1 bg-gray-100/80 rounded-xl w-fit">
+                    <div className="grid grid-cols-2 md:flex gap-2 p-1 bg-gray-100/80 rounded-xl w-full md:w-fit">
                         {[
-                            { id: 'history', label: 'Riwayat Penimbangan', icon: Activity },
-                            { id: 'meals', label: 'Log Makanan', icon: Utensils },
+                            { id: 'history', label: 'Riwayat', icon: Activity },
+                            { id: 'meals', label: 'Makanan', icon: Utensils },
                             { id: 'immunization', label: 'Imunisasi', icon: Syringe },
-                            { id: 'details', label: 'Informasi Detail', icon: Info },
+                            { id: 'details', label: 'Info Detail', icon: Info },
                         ].map((tab) => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`
-                            px-4 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2
+                            px-3 py-2.5 rounded-lg text-xs md:text-sm font-medium transition-all flex items-center justify-center md:justify-start gap-2
                             ${activeTab === tab.id
                                         ? 'bg-white text-blue-600 shadow-sm'
                                         : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'}
                         `}
                             >
-                                <tab.icon className="w-4 h-4" />
-                                {tab.label}
+                                <tab.icon className="w-4 h-4 flex-shrink-0" />
+                                <span className="truncate">{tab.label}</span>
                             </button>
                         ))}
                     </div>
@@ -342,44 +342,106 @@ export default function DataAnakDetail() {
                                 {childData.weighing_logs.length === 0 ? (
                                     <EmptyState message="Belum ada data penimbangan" />
                                 ) : (
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full">
-                                            <thead>
-                                                <tr className="border-b border-gray-100">
-                                                    <th className="text-left py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Tanggal</th>
-                                                    <th className="text-left py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Berat</th>
-                                                    <th className="text-left py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Tinggi</th>
-                                                    <th className="text-left py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Lingkar Lengan</th>
-                                                    <th className="text-left py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Status Gizi</th>
-                                                    <th className="text-left py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Z-Score</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-gray-50">
-                                                {childData.weighing_logs.map((log) => (
-                                                    <tr key={log.id} className="hover:bg-gray-50/50 transition-colors">
-                                                        <td className="py-4 px-4 text-sm font-medium text-gray-900">
-                                                            {new Date(log.measured_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
-                                                        </td>
-                                                        <td className="py-4 px-4 text-sm text-gray-600">{log.weight_kg} kg</td>
-                                                        <td className="py-4 px-4 text-sm text-gray-600">{log.height_cm} cm</td>
-                                                        <td className="py-4 px-4 text-sm text-gray-600">{log.muac_cm ? `${log.muac_cm} cm` : '-'}</td>
-                                                        <td className="py-4 px-4">
-                                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${getStatusColor(log.nutritional_status)}`}>
+                                    <>
+                                        {/* Mobile View (Cards) */}
+                                        <div className="md:hidden flex flex-col gap-4">
+                                            {childData.weighing_logs.map((log) => (
+                                                <div key={log.id} className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-3">
+                                                    <div className="flex justify-between items-start">
+                                                        <div>
+                                                            <p className="text-sm font-bold text-gray-900">
+                                                                {new Date(log.measured_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                                            </p>
+                                                            <span className={`mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${getStatusColor(log.nutritional_status)}`}>
                                                                 {getStatusLabel(log.nutritional_status)}
                                                             </span>
-                                                        </td>
-                                                        <td className="py-4 px-4 text-sm text-gray-500 font-mono">
-                                                            <div className="flex flex-col gap-0.5 text-xs">
-                                                                <span>HFA: {log.zscore_hfa ? Number(log.zscore_hfa).toFixed(2) : '-'}</span>
-                                                                <span>WFA: {log.zscore_wfa ? Number(log.zscore_wfa).toFixed(2) : '-'}</span>
-                                                                <span>WFH: {log.zscore_wfh ? Number(log.zscore_wfh).toFixed(2) : '-'}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-3 gap-2 py-2 border-y border-gray-200/50">
+                                                        <div>
+                                                            <p className="text-[10px] text-gray-500 uppercase tracking-wider">Berat</p>
+                                                            <p className="font-semibold text-gray-900">{log.weight_kg} kg</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[10px] text-gray-500 uppercase tracking-wider">Tinggi</p>
+                                                            <p className="font-semibold text-gray-900">{log.height_cm} cm</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[10px] text-gray-500 uppercase tracking-wider">Lila</p>
+                                                            <p className="font-semibold text-gray-900">{log.muac_cm ? `${log.muac_cm} cm` : '-'}</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Z-Score</p>
+                                                        <div className="flex gap-3 text-xs font-mono bg-white p-2 rounded-lg border border-gray-100">
+                                                            <div className="flex flex-col">
+                                                                <span className="text-gray-400 text-[10px]">HFA</span>
+                                                                <span className={log.zscore_hfa < -2 || log.zscore_hfa > 2 ? 'text-red-500 font-bold' : 'text-gray-700'}>
+                                                                    {log.zscore_hfa ? Number(log.zscore_hfa).toFixed(2) : '-'}
+                                                                </span>
                                                             </div>
-                                                        </td>
+                                                            <div className="w-px bg-gray-100"></div>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-gray-400 text-[10px]">WFA</span>
+                                                                <span className={log.zscore_wfa < -2 || log.zscore_wfa > 2 ? 'text-red-500 font-bold' : 'text-gray-700'}>
+                                                                    {log.zscore_wfa ? Number(log.zscore_wfa).toFixed(2) : '-'}
+                                                                </span>
+                                                            </div>
+                                                            <div className="w-px bg-gray-100"></div>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-gray-400 text-[10px]">WFH</span>
+                                                                <span className={log.zscore_wfh < -2 || log.zscore_wfh > 2 ? 'text-red-500 font-bold' : 'text-gray-700'}>
+                                                                    {log.zscore_wfh ? Number(log.zscore_wfh).toFixed(2) : '-'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* Desktop View (Table) */}
+                                        <div className="hidden md:block overflow-x-auto no-scrollbar">
+                                            <table className="w-full">
+                                                <thead>
+                                                    <tr className="border-b border-gray-100">
+                                                        <th className="text-left py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Tanggal</th>
+                                                        <th className="text-left py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Berat</th>
+                                                        <th className="text-left py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Tinggi</th>
+                                                        <th className="text-left py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Lingkar Lengan</th>
+                                                        <th className="text-left py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Status Gizi</th>
+                                                        <th className="text-left py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Z-Score</th>
                                                     </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                                </thead>
+                                                <tbody className="divide-y divide-gray-50">
+                                                    {childData.weighing_logs.map((log) => (
+                                                        <tr key={log.id} className="hover:bg-gray-50/50 transition-colors">
+                                                            <td className="py-4 px-4 text-sm font-medium text-gray-900">
+                                                                {new Date(log.measured_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                                            </td>
+                                                            <td className="py-4 px-4 text-sm text-gray-600">{log.weight_kg} kg</td>
+                                                            <td className="py-4 px-4 text-sm text-gray-600">{log.height_cm} cm</td>
+                                                            <td className="py-4 px-4 text-sm text-gray-600">{log.muac_cm ? `${log.muac_cm} cm` : '-'}</td>
+                                                            <td className="py-4 px-4">
+                                                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${getStatusColor(log.nutritional_status)}`}>
+                                                                    {getStatusLabel(log.nutritional_status)}
+                                                                </span>
+                                                            </td>
+                                                            <td className="py-4 px-4 text-sm text-gray-500 font-mono">
+                                                                <div className="flex flex-col gap-0.5 text-xs">
+                                                                    <span>HFA: {log.zscore_hfa ? Number(log.zscore_hfa).toFixed(2) : '-'}</span>
+                                                                    <span>WFA: {log.zscore_wfa ? Number(log.zscore_wfa).toFixed(2) : '-'}</span>
+                                                                    <span>WFH: {log.zscore_wfh ? Number(log.zscore_wfh).toFixed(2) : '-'}</span>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </>
                                 )}
                             </div>
                         )}

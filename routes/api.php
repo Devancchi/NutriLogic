@@ -99,10 +99,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/calendar/schedules', [ParentDashboardController::class, 'getCalendarSchedules']);
 
         // Parent consultation routes
+        Route::get('/kaders', [ParentConsultationController::class, 'getKaders']);
         Route::get('/consultations', [ParentConsultationController::class, 'index']);
         Route::post('/consultations', [ParentConsultationController::class, 'store']);
         Route::get('/consultations/{id}', [ParentConsultationController::class, 'show']);
         Route::post('/consultations/{id}/messages', [ParentConsultationController::class, 'sendMessage']);
+        Route::get('/consultations/{id}/child-data', [ParentConsultationController::class, 'getChildData']);
+        Route::delete('/consultations/{id}', [ParentConsultationController::class, 'destroy']);
 
         // Parent points & badges routes
         Route::get('/points', [ParentPointsController::class, 'index']);

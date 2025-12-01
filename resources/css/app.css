@@ -150,4 +150,13 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  .scrollbar-auto::-webkit-scrollbar {
+    display: block;
+  }
+
+  .scrollbar-auto {
+    -ms-overflow-style: auto;
+    scrollbar-width: auto;
+  }
 }

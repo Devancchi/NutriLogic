@@ -1,11 +1,28 @@
-
 import React, { useState, useEffect } from "react";
 import api from "../../lib/api";
-import { assets } from "../../assets/assets";
 import { formatAge } from "../../lib/utils";
 import PageHeader from "../dashboard/PageHeader";
 import NutriAssistSkeleton from "../loading/NutriAssistSkeleton";
 import { useDataCache } from "../../contexts/DataCacheContext";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  ChefHat,
+  Utensils,
+  Calendar,
+  FileText,
+  Sparkles,
+  AlertCircle,
+  CheckCircle2,
+  Search,
+  ArrowRight,
+  Leaf,
+  Baby,
+  Loader2,
+  ChevronDown,
+  Check,
+  ChevronLeft,
+  ChevronRight
+} from "lucide-react";
 
 // TODO: Integrate with AI/n8n for advanced recommendations in future version
 
@@ -15,6 +32,9 @@ export default function NutriAssistPage() {
   const [error, setError] = useState(null);
   const [children, setChildren] = useState([]);
   const [selectedChildId, setSelectedChildId] = useState("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [pickerDate, setPickerDate] = useState(new Date());
   const [ingredients, setIngredients] = useState("");
   const [date, setDate] = useState("");
   const [notes, setNotes] = useState("");
@@ -126,227 +146,494 @@ export default function NutriAssistPage() {
   }
 
   return (
-    <div className="flex flex-1 w-full h-full overflow-auto">
-      <div className="p-4 md:p-10 w-full h-full bg-gray-50 flex flex-col gap-6">
-        {/* Header */}
-        <PageHeader title="Nutri-Assist" subtitle="Portal Orang Tua" />
-        <p className="text-gray-600 mt-2 mb-6">
-          Asisten pintar untuk membantu memantau gizi dan kesehatan anak Anda.
-        </p>
+    <div className="flex flex-1 w-full h-full overflow-hidden bg-gradient-to-br from-blue-50 via-indigo-50/50 to-purple-50">
+      <div className="w-full h-full overflow-y-auto custom-scrollbar no-scrollbar md:scrollbar-auto">
+        <div className="w-full p-4 md:p-8 lg:p-10">
 
-        {/* Error State */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-              <p className="text-red-800">{error}</p>
-            </div>
-            <button
-              onClick={() => setError(null)}
-              className="text-red-600 hover:text-red-800"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        )}
+          {/* Header Section */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8"
+          >
+            <PageHeader title="Nutri-Assist" subtitle="Smart Meal Planner" />
+            <p className="text-gray-500 mt-2 max-w-2xl text-lg">
+              Asisten pintar yang membantu Anda meracik menu bergizi dari bahan yang tersedia di rumah.
+            </p>
+          </motion.div>
 
-        {/* Empty State - No Children */}
-        {children.length === 0 ? (
-          <div className="bg-white rounded-lg p-8 shadow-sm border border-gray-200 text-center">
-            <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
-            <p className="text-gray-600 mb-4">Belum ada data anak terdaftar</p>
-            <p className="text-sm text-gray-500">Silakan daftarkan anak terlebih dahulu untuk menggunakan fitur Nutri-Assist.</p>
-          </div>
-        ) : (
-          <>
-            {/* Form Section */}
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Form Rekomendasi Menu</h2>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Select Child */}
-                <div>
-                  <label htmlFor="child" className="block text-sm font-medium text-gray-700 mb-2">
-                    Pilih Anak <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    id="child"
-                    value={selectedChildId}
-                    onChange={(e) => setSelectedChildId(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    required
-                    disabled={submitting}
+          {/* Error Alert */}
+          <AnimatePresence>
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mb-6 overflow-hidden"
+              >
+                <div className="bg-red-50/80 backdrop-blur-sm border border-red-200 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-red-100 rounded-full">
+                      <AlertCircle className="w-5 h-5 text-red-600" />
+                    </div>
+                    <p className="text-red-800 font-medium">{error}</p>
+                  </div>
+                  <button
+                    onClick={() => setError(null)}
+                    className="p-2 hover:bg-red-100 rounded-full transition-colors text-red-500"
                   >
-                    <option value="">-- Pilih Anak --</option>
-                    {children.map((child) => (
-                      <option key={child.id} value={child.id}>
-                        {child.full_name} ({formatAge(child.age_in_months)})
-                      </option>
-                    ))}
-                  </select>
+                    <ArrowRight className="w-5 h-5 rotate-45" />
+                  </button>
                 </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-                {/* Ingredients Input */}
-                <div>
-                  <label htmlFor="ingredients" className="block text-sm font-medium text-gray-700 mb-2">
-                    Bahan Makanan yang Tersedia <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    id="ingredients"
-                    value={ingredients}
-                    onChange={(e) => setIngredients(e.target.value)}
-                    placeholder="Contoh: beras, ayam, wortel, bayam&#10;atau&#10;beras&#10;ayam&#10;wortel&#10;bayam"
-                    rows={6}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    required
-                    disabled={submitting}
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    Pisahkan setiap bahan dengan koma atau baris baru. Contoh: beras, ayam, wortel
-                  </p>
+          {children.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center justify-center py-20 bg-white/60 backdrop-blur-xl rounded-3xl border border-white/40 shadow-xl text-center"
+            >
+              <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mb-6">
+                <Baby className="w-12 h-12 text-blue-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-2">Belum Ada Data Anak</h3>
+              <p className="text-gray-500 max-w-md mb-8">
+                Silakan daftarkan anak Anda terlebih dahulu untuk mulai menggunakan fitur Nutri-Assist dan dapatkan rekomendasi menu terbaik.
+              </p>
+              <button className="px-8 py-3 bg-blue-600 text-white rounded-xl font-semibold shadow-lg shadow-blue-500/30 hover:bg-blue-700 transition-all hover:scale-105 active:scale-95">
+                Daftarkan Anak
+              </button>
+            </motion.div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+              {/* Left Column: Form */}
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 }}
+                className="lg:col-span-5 space-y-6 relative z-20"
+              >
+                <div className="bg-white/70 backdrop-blur-xl rounded-3xl p-6 md:p-8 border border-white/50 shadow-xl relative">
+                  {/* Decorative Background Element */}
+                  <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
+                    <div className="absolute -top-20 -right-20 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl" />
+                  </div>
+
+                  <div className="flex items-center gap-3 mb-6 relative z-10">
+                    <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg shadow-blue-500/20 text-white">
+                      <ChefHat className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-800">Racik Menu</h2>
+                      <p className="text-sm text-gray-500">Isi detail untuk rekomendasi</p>
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
+                    {/* Select Child */}
+                    <div className="space-y-2">
+                      <label htmlFor="child" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                        <Baby className="w-4 h-4 text-blue-500" />
+                        Pilih Anak
+                      </label>
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                          className="w-full pl-4 pr-10 py-3 bg-white border border-gray-200 rounded-xl text-left text-gray-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer hover:bg-gray-50 flex items-center justify-between"
+                          disabled={submitting}
+                        >
+                          <span className={!selectedChildId ? "text-gray-500" : "font-medium"}>
+                            {selectedChildId
+                              ? (() => {
+                                const child = children.find(c => c.id.toString() === selectedChildId);
+                                return child ? `${child.full_name} (${formatAge(child.age_in_months)})` : "-- Pilih Anak --";
+                              })()
+                              : "-- Pilih Anak --"}
+                          </span>
+                          <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`} />
+                        </button>
+
+                        <AnimatePresence>
+                          {isDropdownOpen && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                              transition={{ duration: 0.2 }}
+                              className="absolute z-50 w-full mt-2 bg-white/90 backdrop-blur-xl border border-gray-200 rounded-xl shadow-xl overflow-hidden max-h-60 overflow-y-auto custom-scrollbar"
+                            >
+                              {children.length === 0 ? (
+                                <div className="px-4 py-3 text-gray-500 text-center text-sm">
+                                  Tidak ada data anak
+                                </div>
+                              ) : (
+                                children.map((child) => (
+                                  <div
+                                    key={child.id}
+                                    onClick={() => {
+                                      setSelectedChildId(child.id.toString());
+                                      setIsDropdownOpen(false);
+                                    }}
+                                    className="px-4 py-3 hover:bg-blue-50 cursor-pointer transition-colors flex items-center justify-between group border-b border-gray-50 last:border-0"
+                                  >
+                                    <span className={`text-sm ${selectedChildId === child.id.toString() ? 'text-blue-700 font-semibold' : 'text-gray-700 font-medium group-hover:text-blue-700'}`}>
+                                      {child.full_name} <span className="text-gray-400 font-normal ml-1">({formatAge(child.age_in_months)})</span>
+                                    </span>
+                                    {selectedChildId === child.id.toString() && (
+                                      <Check className="w-4 h-4 text-blue-600" />
+                                    )}
+                                  </div>
+                                ))
+                              )}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+
+                        {/* Backdrop to close dropdown when clicking outside */}
+                        {isDropdownOpen && (
+                          <div
+                            className="fixed inset-0 z-40 bg-transparent"
+                            onClick={() => setIsDropdownOpen(false)}
+                          />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Ingredients Input */}
+                    <div className="space-y-2">
+                      <label htmlFor="ingredients" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                        <Leaf className="w-4 h-4 text-green-500" />
+                        Bahan Tersedia
+                      </label>
+                      <div className="relative">
+                        <textarea
+                          id="ingredients"
+                          value={ingredients}
+                          onChange={(e) => setIngredients(e.target.value)}
+                          placeholder="Contoh: beras, ayam, wortel, bayam..."
+                          rows={4}
+                          className="w-full p-4 bg-white border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none placeholder:text-gray-400"
+                          required
+                          disabled={submitting}
+                        />
+                        <div className="absolute bottom-3 right-3">
+                          <div className="text-[10px] font-medium text-gray-400 bg-gray-100 px-2 py-1 rounded-md">
+                            Pisahkan dengan koma
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Date Input */}
+                      <div className="space-y-2 relative">
+                        <label htmlFor="date" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-purple-500" />
+                          Tanggal
+                        </label>
+
+                        <button
+                          type="button"
+                          onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
+                          className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-left text-gray-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all flex items-center justify-between hover:bg-gray-50"
+                          disabled={submitting}
+                        >
+                          <span className={!date ? "text-gray-400" : ""}>
+                            {date ? new Date(date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : "dd/mm/yyyy"}
+                          </span>
+                          <Calendar className="w-4 h-4 text-gray-400" />
+                        </button>
+
+                        <AnimatePresence>
+                          {isDatePickerOpen && (
+                            <>
+                              <div
+                                className="fixed inset-0 z-40 bg-transparent"
+                                onClick={() => setIsDatePickerOpen(false)}
+                              />
+                              <motion.div
+                                initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                transition={{ duration: 0.2 }}
+                                className="absolute z-50 bottom-full mb-2 p-4 bg-white/90 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-xl w-full max-w-[320px]"
+                              >
+                                {/* Calendar Header */}
+                                <div className="flex items-center justify-between mb-4">
+                                  <button
+                                    type="button"
+                                    onClick={() => setPickerDate(new Date(pickerDate.setMonth(pickerDate.getMonth() - 1)))}
+                                    className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                                  >
+                                    <ChevronLeft className="w-5 h-5 text-gray-600" />
+                                  </button>
+                                  <span className="font-semibold text-gray-800">
+                                    {pickerDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setPickerDate(new Date(pickerDate.setMonth(pickerDate.getMonth() + 1)))}
+                                    className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                                  >
+                                    <ChevronRight className="w-5 h-5 text-gray-600" />
+                                  </button>
+                                </div>
+
+                                {/* Days Header */}
+                                <div className="grid grid-cols-7 mb-2">
+                                  {['Mg', 'Sn', 'Sl', 'Rb', 'Km', 'Jm', 'Sb'].map((day) => (
+                                    <div key={day} className="text-xs font-medium text-gray-400 text-center py-1">
+                                      {day}
+                                    </div>
+                                  ))}
+                                </div>
+
+                                {/* Calendar Grid */}
+                                <div className="grid grid-cols-7 gap-1">
+                                  {(() => {
+                                    const daysInMonth = new Date(pickerDate.getFullYear(), pickerDate.getMonth() + 1, 0).getDate();
+                                    const firstDay = new Date(pickerDate.getFullYear(), pickerDate.getMonth(), 1).getDay();
+                                    const days = [];
+
+                                    // Empty slots for previous month
+                                    for (let i = 0; i < firstDay; i++) {
+                                      days.push(<div key={`empty-${i}`} className="w-8 h-8" />);
+                                    }
+
+                                    // Days of current month
+                                    for (let i = 1; i <= daysInMonth; i++) {
+                                      const currentDateStr = `${pickerDate.getFullYear()}-${String(pickerDate.getMonth() + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                                      const isSelected = date === currentDateStr;
+                                      const isToday = new Date().toISOString().split('T')[0] === currentDateStr;
+
+                                      days.push(
+                                        <button
+                                          key={i}
+                                          type="button"
+                                          onClick={() => {
+                                            setDate(currentDateStr);
+                                            setIsDatePickerOpen(false);
+                                          }}
+                                          className={`w-8 h-8 text-sm rounded-full flex items-center justify-center transition-all
+                                            ${isSelected
+                                              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30'
+                                              : isToday
+                                                ? 'text-blue-600 font-bold bg-blue-50'
+                                                : 'text-gray-700 hover:bg-gray-100'
+                                            }`}
+                                        >
+                                          {i}
+                                        </button>
+                                      );
+                                    }
+                                    return days;
+                                  })()}
+                                </div>
+
+                                <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setDate("");
+                                      setIsDatePickerOpen(false);
+                                    }}
+                                    className="text-xs text-red-500 hover:text-red-700 font-medium px-2 py-1 rounded hover:bg-red-50 transition-colors"
+                                  >
+                                    Clear
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const today = new Date();
+                                      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                                      setDate(todayStr);
+                                      setPickerDate(today);
+                                      setIsDatePickerOpen(false);
+                                    }}
+                                    className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 rounded hover:bg-blue-50 transition-colors"
+                                  >
+                                    Today
+                                  </button>
+                                </div>
+                              </motion.div>
+                            </>
+                          )}
+                        </AnimatePresence>
+                      </div>
+
+                      {/* Notes Input */}
+                      <div className="space-y-2">
+                        <label htmlFor="notes" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-orange-500" />
+                          Catatan
+                        </label>
+                        <input
+                          type="text"
+                          id="notes"
+                          value={notes}
+                          onChange={(e) => setNotes(e.target.value)}
+                          placeholder="Alergi, dll..."
+                          className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                          disabled={submitting}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Submit Button */}
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="w-full mt-4 group relative overflow-hidden px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+                    >
+                      <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                      <div className="relative flex items-center justify-center gap-2">
+                        {submitting ? (
+                          <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            <span>Meracik Menu...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-5 h-5" />
+                            <span>Buat Rekomendasi</span>
+                          </>
+                        )}
+                      </div>
+                    </button>
+                  </form>
                 </div>
+              </motion.div>
 
-                {/* Date Input (Optional) */}
-                <div>
-                  <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">
-                    Tanggal (Opsional)
-                  </label>
-                  <input
-                    type="date"
-                    id="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    disabled={submitting}
-                  />
-                </div>
-
-                {/* Notes Input (Optional) */}
-                <div>
-                  <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
-                    Catatan Khusus (Opsional)
-                  </label>
-                  <textarea
-                    id="notes"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Contoh: Anak sedang tidak nafsu makan, atau alergi tertentu"
-                    rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    disabled={submitting}
-                  />
-                </div>
-
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {submitting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                      <span>Memproses...</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                      </svg>
-                      <span>Dapatkan Rekomendasi</span>
-                    </>
-                  )}
-                </button>
-              </form>
-            </div>
-
-            {/* Recommendations Section */}
-            {recommendations && (
-              <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                  Rekomendasi Menu untuk {recommendations.child.full_name}
-                </h2>
-
-                {recommendations.recommendations.length === 0 ? (
-                  <div className="text-center py-8">
-                    <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <p className="text-gray-600">Tidak ada rekomendasi menu yang cocok dengan bahan yang tersedia.</p>
-                    <p className="text-sm text-gray-500 mt-2">Coba masukkan bahan makanan lain atau konsultasikan dengan kader.</p>
+              {/* Right Column: Results */}
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 }}
+                className="lg:col-span-7 relative z-10"
+              >
+                {!recommendations ? (
+                  <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-center p-8 bg-white/40 backdrop-blur-md rounded-3xl border border-white/40 border-dashed">
+                    <div className="w-32 h-32 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mb-6 animate-pulse">
+                      <Utensils className="w-12 h-12 text-blue-400/50" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-600 mb-2">Siap Meracik Menu?</h3>
+                    <p className="text-gray-500 max-w-sm">
+                      Masukkan bahan-bahan yang Anda miliki di panel sebelah kiri, dan kami akan menyarankan menu terbaik untuk si kecil.
+                    </p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {recommendations.recommendations.map((rec, index) => {
-                      const isBest = index === 0 && rec.match_percentage >= 50;
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        <span className="bg-green-100 text-green-700 p-2 rounded-lg">
+                          <CheckCircle2 className="w-5 h-5" />
+                        </span>
+                        Hasil Rekomendasi
+                      </h3>
+                      <span className="text-sm text-gray-500 bg-white/50 px-3 py-1 rounded-full border border-gray-200">
+                        Untuk: {recommendations.child.full_name}
+                      </span>
+                    </div>
 
-                      return (
-                        <div
-                          key={index}
-                          className={`p-5 rounded-lg border-2 ${isBest
-                            ? 'bg-blue-50 border-blue-300'
-                            : 'bg-gray-50 border-gray-200'
-                            }`}
-                        >
-                          {isBest && (
-                            <div className="flex items-center gap-2 mb-3">
-                              <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                              </svg>
-                              <span className="text-sm font-semibold text-blue-800">Rekomendasi Terbaik</span>
-                            </div>
-                          )}
+                    {recommendations.recommendations.length === 0 ? (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-white/70 backdrop-blur-xl rounded-3xl p-10 text-center border border-white/50 shadow-lg"
+                      >
+                        <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                        <h4 className="text-lg font-semibold text-gray-800 mb-2">Tidak Ada Menu yang Cocok</h4>
+                        <p className="text-gray-500">
+                          Maaf, kami tidak menemukan menu yang cocok dengan kombinasi bahan tersebut. Coba tambahkan bahan umum lainnya.
+                        </p>
+                      </motion.div>
+                    ) : (
+                      <div className="space-y-4">
+                        {recommendations.recommendations.map((rec, index) => {
+                          const isBest = index === 0 && rec.match_percentage >= 50;
 
-                          <div className="flex items-start justify-between mb-2">
-                            <h3 className="text-lg font-semibold text-gray-900">{rec.menu.name}</h3>
-                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${rec.match_percentage >= 70
-                              ? 'bg-green-100 text-green-800'
-                              : rec.match_percentage >= 50
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-gray-100 text-gray-800'
-                              }`}>
-                              {rec.match_percentage.toFixed(1)}% Cocok
-                            </span>
-                          </div>
+                          return (
+                            <motion.div
+                              key={index}
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: index * 0.1 }}
+                              className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 hover:shadow-xl ${isBest
+                                ? 'bg-gradient-to-br from-white to-blue-50/50 border-blue-200 shadow-lg shadow-blue-100'
+                                : 'bg-white/80 border-white/60 hover:border-blue-200 shadow-sm'
+                                }`}
+                            >
+                              {isBest && (
+                                <div className="absolute top-0 right-0 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-bl-xl shadow-sm z-10">
+                                  BEST MATCH
+                                </div>
+                              )}
 
-                          <p className="text-gray-700 mb-3">{rec.menu.description}</p>
+                              <div className="p-6">
+                                <div className="flex justify-between items-start mb-4">
+                                  <div>
+                                    <h4 className="text-lg font-bold text-gray-800 group-hover:text-blue-600 transition-colors">
+                                      {rec.menu.name}
+                                    </h4>
+                                    <div className="flex items-center gap-3 mt-2 text-sm text-gray-500">
+                                      <span className="flex items-center gap-1 bg-orange-50 text-orange-700 px-2 py-0.5 rounded-md border border-orange-100">
+                                        <span className="font-bold">{rec.menu.calories}</span> kcal
+                                      </span>
+                                      <span className="flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md border border-blue-100">
+                                        <span className="font-bold">{rec.menu.protein}g</span> Protein
+                                      </span>
+                                    </div>
+                                  </div>
 
-                          <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
-                            <span>Kalori: {rec.menu.calories} kcal</span>
-                            <span>Protein: {rec.menu.protein} g</span>
-                          </div>
+                                  <div className="flex flex-col items-end">
+                                    <div className={`text-lg font-bold ${rec.match_percentage >= 70 ? 'text-green-600' :
+                                      rec.match_percentage >= 50 ? 'text-yellow-600' : 'text-gray-400'
+                                      }`}>
+                                      {rec.match_percentage.toFixed(0)}%
+                                    </div>
+                                    <div className="text-xs text-gray-400">Kecocokan</div>
+                                  </div>
+                                </div>
 
-                          {rec.matched_ingredients && rec.matched_ingredients.length > 0 && (
-                            <div>
-                              <p className="text-sm font-medium text-gray-700 mb-2">Bahan yang Cocok:</p>
-                              <div className="flex flex-wrap gap-2">
-                                {rec.matched_ingredients.map((ingredient, idx) => (
-                                  <span
-                                    key={idx}
-                                    className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full"
-                                  >
-                                    {ingredient}
-                                  </span>
-                                ))}
+                                <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+                                  {rec.menu.description}
+                                </p>
+
+                                {rec.matched_ingredients && rec.matched_ingredients.length > 0 && (
+                                  <div className="pt-4 border-t border-gray-100">
+                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                                      Bahan Terpakai
+                                    </p>
+                                    <div className="flex flex-wrap gap-2">
+                                      {rec.matched_ingredients.map((ingredient, idx) => (
+                                        <span
+                                          key={idx}
+                                          className="px-2.5 py-1 bg-green-100/50 text-green-700 text-xs font-medium rounded-lg border border-green-100 flex items-center gap-1"
+                                        >
+                                          <CheckCircle2 className="w-3 h-3" />
+                                          {ingredient}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
-              </div>
-            )}
-          </>
-        )}
+              </motion.div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
-
