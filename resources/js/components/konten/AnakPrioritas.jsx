@@ -6,6 +6,7 @@ import api from "../../lib/api";
 import { formatAge } from "../../lib/utils";
 import kepalaBayi from "../../assets/kepala_bayi.png";
 import kepalaBayiCewe from "../../assets/kepala_bayi_cewe.png";
+import AnakPrioritasSkeleton from "../loading/AnakPrioritasSkeleton";
 
 export default function AnakPrioritas() {
     const [loading, setLoading] = useState(true);
@@ -97,22 +98,11 @@ export default function AnakPrioritas() {
     });
 
     if (loading) {
-        return (
-            <div className="flex flex-1 w-full h-full overflow-auto">
-                <div className="p-4 md:p-10 w-full h-full bg-gray-50 flex flex-col gap-4">
-                    <div className="flex items-center justify-center h-64">
-                        <div className="text-center">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                            <p className="text-gray-600">Memuat data anak prioritas...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
+        return <AnakPrioritasSkeleton cardCount={6} />;
     }
 
     return (
-        <div className="flex flex-1 w-full h-full overflow-auto bg-gray-50/50">
+        <div className="flex flex-1 w-full h-full overflow-auto no-scrollbar bg-gray-50/50">
             <div className="w-full flex flex-col gap-6 p-4">
                 {/* Header */}
                 <div className="flex items-center justify-between">
@@ -132,54 +122,54 @@ export default function AnakPrioritas() {
 
                 {/* Summary Cards */}
                 {summary && (
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all">
                             <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
                             <div className="relative z-10">
-                                <p className="text-sm font-medium text-gray-500 mb-1">Total Prioritas</p>
+                                <p className="text-xs md:text-sm font-medium text-gray-500 mb-1">Total Prioritas</p>
                                 <div className="flex items-baseline gap-2">
-                                    <h3 className="text-3xl font-bold text-gray-900">{summary.total_priority}</h3>
-                                    <span className="text-sm text-gray-500">Anak</span>
+                                    <h3 className="text-2xl md:text-3xl font-bold text-gray-900">{summary.total_priority}</h3>
+                                    <span className="text-xs md:text-sm text-gray-500">Anak</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all">
+                        <div className="bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all">
                             <div className="absolute top-0 right-0 w-24 h-24 bg-red-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
                             <div className="relative z-10">
                                 <div className="flex items-center gap-2 mb-1">
                                     <div className="p-1 bg-red-100 rounded-lg">
-                                        <AlertTriangle className="w-3.5 h-3.5 text-red-600" />
+                                        <AlertTriangle className="w-3 md:w-3.5 h-3 md:h-3.5 text-red-600" />
                                     </div>
-                                    <p className="text-sm font-medium text-gray-500">Gizi Buruk</p>
+                                    <p className="text-xs md:text-sm font-medium text-gray-500">Gizi Buruk</p>
                                 </div>
-                                <h3 className="text-2xl font-bold text-gray-900">{summary.by_reason.bad_nutritional_status}</h3>
+                                <h3 className="text-xl md:text-2xl font-bold text-gray-900">{summary.by_reason.bad_nutritional_status}</h3>
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all">
+                        <div className="bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all">
                             <div className="absolute top-0 right-0 w-24 h-24 bg-orange-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
                             <div className="relative z-10">
                                 <div className="flex items-center gap-2 mb-1">
                                     <div className="p-1 bg-orange-100 rounded-lg">
-                                        <TrendingDown className="w-3.5 h-3.5 text-orange-600" />
+                                        <TrendingDown className="w-3 md:w-3.5 h-3 md:h-3.5 text-orange-600" />
                                     </div>
-                                    <p className="text-sm font-medium text-gray-500">Berat Stagnan</p>
+                                    <p className="text-xs md:text-sm font-medium text-gray-500">Berat Stagnan</p>
                                 </div>
-                                <h3 className="text-2xl font-bold text-gray-900">{summary.by_reason.weight_stagnation}</h3>
+                                <h3 className="text-xl md:text-2xl font-bold text-gray-900">{summary.by_reason.weight_stagnation}</h3>
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all">
+                        <div className="bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all">
                             <div className="absolute top-0 right-0 w-24 h-24 bg-yellow-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
                             <div className="relative z-10">
                                 <div className="flex items-center gap-2 mb-1">
                                     <div className="p-1 bg-yellow-100 rounded-lg">
-                                        <Clock className="w-3.5 h-3.5 text-yellow-600" />
+                                        <Clock className="w-3 md:w-3.5 h-3 md:h-3.5 text-yellow-600" />
                                     </div>
-                                    <p className="text-sm font-medium text-gray-500">Jarang Hadir</p>
+                                    <p className="text-xs md:text-sm font-medium text-gray-500">Jarang Hadir</p>
                                 </div>
-                                <h3 className="text-2xl font-bold text-gray-900">{summary.by_reason.long_absence}</h3>
+                                <h3 className="text-xl md:text-2xl font-bold text-gray-900">{summary.by_reason.long_absence}</h3>
                             </div>
                         </div>
                     </div>

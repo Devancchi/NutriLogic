@@ -20,8 +20,9 @@ const MobileBottomNavKader = () => {
         { id: 3, icon: "lucide:alert-triangle", label: "Prioritas", href: "/dashboard/anak-prioritas" },
         { id: 4, icon: "lucide:calendar", label: "Jadwal", href: "/dashboard/jadwal" },
         { id: 5, icon: "lucide:message-square", label: "Chat", href: "/dashboard/konsultasi" },
-        { id: 6, icon: "lucide:file-text", label: "Laporan", href: "/dashboard/laporan" },
-        { id: 7, icon: "lucide:globe", label: "Web", href: "/" },
+        { id: 6, icon: "lucide:megaphone", label: "Broadcast", href: "/dashboard/broadcast" },
+        { id: 7, icon: "lucide:file-text", label: "Laporan", href: "/dashboard/laporan" },
+        { id: 8, icon: "lucide:globe", label: "Web", href: "/" },
     ];
 
     useEffect(() => {
@@ -78,9 +79,9 @@ const MobileBottomNavKader = () => {
                                     }}
                                     className={`flex flex-col items-center justify-center w-full py-1.5 rounded-xl transition-colors ${isActive ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
                                 >
-                                    <Icon icon={item.icon} width={20} height={20} />
+                                    <Icon icon={item.icon} width={18} height={18} />
                                     {/* Hide label on very small screens if needed, or keep it tiny */}
-                                    <span className="text-[8px] font-medium mt-0.5 truncate w-full text-center px-0.5">{item.label}</span>
+                                    <span className="text-[7px] font-medium mt-0.5 truncate w-full text-center px-0.5">{item.label}</span>
                                 </motion.button>
                             </motion.div>
                         );

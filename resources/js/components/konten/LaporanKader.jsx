@@ -13,6 +13,7 @@ import { Icon } from "@iconify/react";
 import { motion, AnimatePresence } from "framer-motion";
 import kepalaBayi from "../../assets/kepala_bayi.png";
 import kepalaBayiCewe from "../../assets/kepala_bayi_cewe.png";
+import LaporanKaderSkeleton from "../loading/LaporanKaderSkeleton";
 
 export default function LaporanKader() {
     const [loading, setLoading] = useState(true);
@@ -332,12 +333,7 @@ export default function LaporanKader() {
             {/* Content */}
             <div className="flex-1 overflow-auto bg-white [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
                 {loading && historyData.length === 0 ? (
-                    <div className="flex items-center justify-center h-64">
-                        <div className="flex flex-col items-center gap-3">
-                            <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-                            <p className="text-sm text-gray-500">Memuat data...</p>
-                        </div>
-                    </div>
+                    <LaporanKaderSkeleton rowCount={6} />
                 ) : historyData.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-64 text-gray-400">
                         <div className="text-4xl mb-3">⚖️</div>

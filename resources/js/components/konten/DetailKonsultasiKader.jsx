@@ -4,6 +4,7 @@ import api from "../../lib/api";
 import { ArrowLeft, Send, CheckCircle, Clock, User, MoreVertical, Phone, Video, Trash2, AlertTriangle, Paperclip, Image as ImageIcon, FileText, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDataCache } from "../../contexts/DataCacheContext";
+import DetailKonsultasiKaderSkeleton from "../loading/DetailKonsultasiKaderSkeleton";
 
 export default function DetailKonsultasiKader({ selectedId, onBack, onDeleteSuccess, className = "" }) {
     const { id: paramId } = useParams();
@@ -236,14 +237,7 @@ Catatan: ${data.notes || '-'}`;
     };
 
     if (loading) {
-        return (
-            <div className="flex flex-1 w-full h-full items-center justify-center bg-slate-50">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-slate-500 font-medium">Memuat percakapan...</p>
-                </div>
-            </div>
-        );
+        return <DetailKonsultasiKaderSkeleton />;
     }
 
     if (error && !consultation) {

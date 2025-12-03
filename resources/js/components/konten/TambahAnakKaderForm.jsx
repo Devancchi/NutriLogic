@@ -8,6 +8,7 @@ import PageHeader from "../dashboard/PageHeader";
 export default function TambahAnakKaderForm() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    const [parentsLoading, setParentsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [parents, setParents] = useState([]);
     const [useExistingParent, setUseExistingParent] = useState(true);
@@ -60,10 +61,14 @@ export default function TambahAnakKaderForm() {
 
     const fetchParents = async () => {
         try {
+            setParentsLoading(true);
             const response = await api.get('/kader/parents');
             setParents(response.data.data);
         } catch (err) {
             console.error('Failed to fetch parents:', err);
+            setError('Gagal memuat data orang tua. Silakan refresh halaman.');
+        } finally {
+            setParentsLoading(false);
         }
     };
 
@@ -255,14 +260,21 @@ export default function TambahAnakKaderForm() {
                                     <button
                                         type="button"
                                         onClick={() => setIsParentDropdownOpen(!isParentDropdownOpen)}
-                                        className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl text-left text-gray-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all flex items-center justify-between ${errors.parent_id ? 'border-red-500 bg-red-50/50' : 'border-transparent'}`}
+                                        disabled={parentsLoading}
+                                        className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl text-left text-gray-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed ${errors.parent_id ? 'border-red-500 bg-red-50/50' : 'border-transparent'}`}
                                     >
                                         <span className={!formData.parent_id ? "text-gray-400" : ""}>
-                                            {formData.parent_id
-                                                ? parents.find(p => p.id === parseInt(formData.parent_id))?.name || "Orang Tua Terpilih"
-                                                : "-- Pilih Orang Tua --"}
+                                            {parentsLoading
+                                                ? "Memuat data orang tua..."
+                                                : formData.parent_id
+                                                    ? parents.find(p => p.id === parseInt(formData.parent_id))?.name || "Orang Tua Terpilih"
+                                                    : "-- Pilih Orang Tua --"}
                                         </span>
-                                        <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${isParentDropdownOpen ? "rotate-180" : ""}`} />
+                                        {parentsLoading ? (
+                                            <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+                                        ) : (
+                                            <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${isParentDropdownOpen ? "rotate-180" : ""}`} />
+                                        )}
                                     </button>
 
                                     <AnimatePresence>
