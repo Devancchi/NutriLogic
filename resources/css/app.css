@@ -5,12 +5,15 @@
 
 @keyframes shimmer {
   0% {
-    background-position: -200% 0;
+    transform: translateX(-100%);
   }
-
   100% {
-    background-position: 200% 0;
+    transform: translateX(100%);
   }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.5s ease-in-out infinite;
 }
 
 @custom-variant dark (&:is(.dark *));

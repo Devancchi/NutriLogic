@@ -6,6 +6,7 @@ import { Calendar, ChevronLeft, ChevronRight, Search, Save, ArrowLeft, Check } f
 import api from "../../lib/api";
 import { formatAge, getStatusColor, getStatusLabel } from "../../lib/utils";
 import PageHeader from "../dashboard/PageHeader";
+import PenimbanganMassalSkeleton from "../loading/PenimbanganMassalSkeleton";
 
 export default function PenimbanganMassal() {
     const [loading, setLoading] = useState(true);
@@ -137,18 +138,7 @@ export default function PenimbanganMassal() {
     };
 
     if (loading) {
-        return (
-            <div className="flex flex-1 w-full h-full overflow-auto">
-                <div className="p-4 md:p-10 w-full h-full bg-gray-50 flex flex-col gap-4">
-                    <div className="flex items-center justify-center h-64">
-                        <div className="text-center">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                            <p className="text-gray-600">Memuat data anak...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
+        return <PenimbanganMassalSkeleton childCount={6} />;
     }
 
     return (
@@ -231,7 +221,7 @@ export default function PenimbanganMassal() {
                                 {isDatePickerOpen && createPortal(
                                     <>
                                         <div
-                                            className="fixed inset-0 z-[9998] bg-transparent"
+                                            className="fixed inset-0 z-9998 bg-transparent"
                                             onClick={() => setIsDatePickerOpen(false)}
                                         />
                                         <motion.div
@@ -242,7 +232,7 @@ export default function PenimbanganMassal() {
                                                 top: dropdownPos.top,
                                                 left: dropdownPos.left
                                             }}
-                                            className="fixed z-[9999] p-4 bg-white/90 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-xl w-[320px]"
+                                            className="fixed z-9999 p-4 bg-white/90 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-xl w-[320px]"
                                         >
                                             {/* Calendar Header */}
                                             <div className="flex items-center justify-between mb-4">
@@ -344,7 +334,101 @@ export default function PenimbanganMassal() {
 
                     {/* Table */}
                     <form onSubmit={handleSubmit}>
-                        <div className="overflow-x-auto">
+                        {/* Mobile Card View */}
+                        <div className="md:hidden flex flex-col divide-y divide-gray-100">
+                            {children.length === 0 ? (
+                                <div className="p-8 text-center text-gray-500">
+                                    Belum ada data anak yang terdaftar.
+                                </div>
+                            ) : (
+                                children.map((child, index) => (
+                                    <div key={child.id} className="p-4 bg-white flex flex-col gap-4">
+                                        {/* Child Info */}
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <div className="font-bold text-gray-900">{child.full_name}</div>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${child.gender === 'L' ? 'bg-blue-50 text-blue-600' : 'bg-pink-50 text-pink-600'}`}>
+                                                        {child.gender === 'L' ? 'Laki-laki' : 'Perempuan'}
+                                                    </span>
+                                                    <span className="text-xs text-gray-400">•</span>
+                                                    <span className="text-xs text-gray-500">{formatAge(child.age_in_months)}</span>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-1">Data Terakhir</div>
+                                                {child.latest_weighing ? (
+                                                    <div className="flex flex-col items-end">
+                                                        <div className="text-xs font-medium text-gray-700">
+                                                            {child.latest_weighing.weight_kg} kg / {child.latest_weighing.height_cm} cm
+                                                        </div>
+                                                        <span className="text-[10px] text-gray-400">
+                                                            {new Date(child.latest_weighing.measured_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-xs text-gray-400 italic">Belum ada data</span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Inputs */}
+                                        <div className="grid grid-cols-3 gap-3">
+                                            <div>
+                                                <label className="text-[10px] font-bold text-gray-500 uppercase mb-1 block">Berat (kg)</label>
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    min="0"
+                                                    max="100"
+                                                    value={weighingData[child.id]?.weight_kg || ''}
+                                                    onChange={(e) => handleInputChange(child.id, 'weight_kg', e.target.value)}
+                                                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all text-sm font-medium text-gray-900 placeholder:text-gray-400"
+                                                    placeholder="0.00"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] font-bold text-gray-500 uppercase mb-1 block">Tinggi (cm)</label>
+                                                <input
+                                                    type="number"
+                                                    step="0.1"
+                                                    min="0"
+                                                    max="200"
+                                                    value={weighingData[child.id]?.height_cm || ''}
+                                                    onChange={(e) => handleInputChange(child.id, 'height_cm', e.target.value)}
+                                                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all text-sm font-medium text-gray-900 placeholder:text-gray-400"
+                                                    placeholder="0.0"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] font-bold text-gray-500 uppercase mb-1 block">Lengan (cm)</label>
+                                                <input
+                                                    type="number"
+                                                    step="0.1"
+                                                    min="0"
+                                                    max="50"
+                                                    value={weighingData[child.id]?.muac_cm || ''}
+                                                    onChange={(e) => handleInputChange(child.id, 'muac_cm', e.target.value)}
+                                                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all text-sm font-medium text-gray-900 placeholder:text-gray-400"
+                                                    placeholder="0.0"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <input
+                                                type="text"
+                                                value={weighingData[child.id]?.notes || ''}
+                                                onChange={(e) => handleInputChange(child.id, 'notes', e.target.value)}
+                                                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all text-sm text-gray-900 placeholder:text-gray-400"
+                                                placeholder="Catatan tambahan..."
+                                            />
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        <div className="hidden md:block overflow-x-auto">
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b border-gray-100 bg-gray-50/50">
@@ -453,7 +537,7 @@ export default function PenimbanganMassal() {
                         </div>
 
                         {/* Footer / Submit */}
-                        <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-end">
+                        <div className="hidden md:flex p-6 border-t border-gray-100 bg-gray-50 justify-end">
                             <button
                                 type="submit"
                                 disabled={submitting || children.length === 0}
@@ -472,6 +556,20 @@ export default function PenimbanganMassal() {
                                 )}
                             </button>
                         </div>
+
+                        {/* Mobile Floating Save Button */}
+                        <button
+                            type="submit"
+                            disabled={submitting || children.length === 0}
+                            className="md:hidden fixed bottom-24 right-4 z-50 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg shadow-blue-600/30 flex items-center justify-center hover:bg-blue-700 transition-all active:scale-95 disabled:bg-blue-400 disabled:cursor-not-allowed"
+                            aria-label="Simpan Data"
+                        >
+                            {submitting ? (
+                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                            ) : (
+                                <Save className="w-7 h-7" />
+                            )}
+                        </button>
                     </form>
                 </div>
             </div>

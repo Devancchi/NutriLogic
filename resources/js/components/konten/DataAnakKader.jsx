@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Search, Filter, Plus, ChevronDown, MoreHorizontal, User, Calendar, Activity } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Search, Filter, Plus, ChevronDown, MoreHorizontal, User, Calendar, Activity, Check } from "lucide-react";
 import api from "../../lib/api";
 import { formatAge, getStatusColor, getStatusLabel } from "../../lib/utils";
 import GenericListSkeleton from "../loading/GenericListSkeleton";
@@ -21,6 +22,25 @@ export default function DataAnakKader() {
     const location = useLocation();
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedChildId, setSelectedChildId] = useState(null);
+    const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+    const [isActiveDropdownOpen, setIsActiveDropdownOpen] = useState(false);
+
+    const statusOptions = [
+        { value: "", label: "Semua Status" },
+        { value: "normal", label: "Normal" },
+        { value: "pendek", label: "Pendek" },
+        { value: "sangat_pendek", label: "Sangat Pendek" },
+        { value: "kurang", label: "Kurang" },
+        { value: "sangat_kurang", label: "Sangat Kurang" },
+        { value: "kurus", label: "Kurus" },
+        { value: "sangat_kurus", label: "Sangat Kurus" },
+    ];
+
+    const activeOptions = [
+        { value: "", label: "Semua" },
+        { value: "1", label: "Aktif" },
+        { value: "0", label: "Tidak Aktif" },
+    ];
 
     useEffect(() => {
         if (location.state?.message) {
@@ -64,7 +84,7 @@ export default function DataAnakKader() {
     }
 
     return (
-        <div className="flex flex-1 w-full h-full overflow-auto bg-gray-50/50">
+        <div className="flex flex-1 w-full h-full overflow-auto no-scrollbar bg-gray-50/50">
             <div className="w-full flex flex-col gap-6 p-4">
                 {/* Success Message */}
                 {successMessage && (
@@ -99,7 +119,7 @@ export default function DataAnakKader() {
 
                     <div className="flex flex-col xl:flex-row gap-4 items-end xl:items-center justify-between">
                         <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4 items-end md:items-center flex-1 w-full">
-                            <div className="flex-1 w-full">
+                            <div className="w-full md:flex-1">
                                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block ml-1">Pencarian</label>
                                 <div className="relative group">
                                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
@@ -113,45 +133,100 @@ export default function DataAnakKader() {
                                 </div>
                             </div>
 
-                            <div className="w-full md:w-48">
-                                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block ml-1">Status Gizi</label>
-                                <div className="relative">
-                                    <select
-                                        value={filterStatus}
-                                        onChange={(e) => setFilterStatus(e.target.value)}
-                                        className="w-full pl-4 pr-10 py-2.5 bg-gray-50 border-transparent focus:bg-white border focus:border-blue-500 rounded-xl focus:ring-4 focus:ring-blue-500/10 transition-all outline-none appearance-none cursor-pointer text-gray-700"
-                                    >
-                                        <option value="">Semua Status</option>
-                                        <option value="normal">Normal</option>
-                                        <option value="pendek">Pendek</option>
-                                        <option value="sangat_pendek">Sangat Pendek</option>
-                                        <option value="kurang">Kurang</option>
-                                        <option value="sangat_kurang">Sangat Kurang</option>
-                                        <option value="kurus">Kurus</option>
-                                        <option value="sangat_kurus">Sangat Kurus</option>
-                                    </select>
-                                    <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                            <div className="flex flex-row gap-4 w-full md:w-auto">
+                                <div className="flex-1 md:w-48">
+                                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block ml-1">Status Gizi</label>
+                                    <div className="relative">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
+                                            className="w-full pl-4 pr-10 py-2.5 bg-gray-50 border-transparent focus:bg-white border focus:border-blue-500 rounded-xl focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-left text-gray-700 flex items-center justify-between"
+                                        >
+                                            <span className="truncate text-sm">{statusOptions.find(opt => opt.value === filterStatus)?.label || "Semua Status"}</span>
+                                            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isStatusDropdownOpen ? "rotate-180" : ""}`} />
+                                        </button>
+                                        <AnimatePresence>
+                                            {isStatusDropdownOpen && (
+                                                <>
+                                                    <div className="fixed inset-0 z-30" onClick={() => setIsStatusDropdownOpen(false)} />
+                                                    <motion.div
+                                                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                                        className="absolute z-40 w-full mt-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden"
+                                                    >
+                                                        {statusOptions.map((option) => (
+                                                            <div
+                                                                key={option.value}
+                                                                onClick={() => {
+                                                                    setFilterStatus(option.value);
+                                                                    setIsStatusDropdownOpen(false);
+                                                                }}
+                                                                className="px-4 py-2.5 hover:bg-blue-50 cursor-pointer transition-colors flex items-center justify-between group border-b border-gray-50 last:border-0"
+                                                            >
+                                                                <span className={`text-sm ${filterStatus === option.value ? 'text-blue-700 font-semibold' : 'text-gray-700 group-hover:text-blue-700'}`}>
+                                                                    {option.label}
+                                                                </span>
+                                                                {filterStatus === option.value && (
+                                                                    <Check className="w-4 h-4 text-blue-600" />
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </motion.div>
+                                                </>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="w-full md:w-40">
-                                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block ml-1">Status Aktif</label>
-                                <div className="relative">
-                                    <select
-                                        value={filterActive}
-                                        onChange={(e) => setFilterActive(e.target.value)}
-                                        className="w-full pl-4 pr-10 py-2.5 bg-gray-50 border-transparent focus:bg-white border focus:border-blue-500 rounded-xl focus:ring-4 focus:ring-blue-500/10 transition-all outline-none appearance-none cursor-pointer text-gray-700"
-                                    >
-                                        <option value="">Semua</option>
-                                        <option value="1">Aktif</option>
-                                        <option value="0">Tidak Aktif</option>
-                                    </select>
-                                    <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                                <div className="flex-1 md:w-40">
+                                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block ml-1">Status Aktif</label>
+                                    <div className="relative">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsActiveDropdownOpen(!isActiveDropdownOpen)}
+                                            className="w-full pl-4 pr-10 py-2.5 bg-gray-50 border-transparent focus:bg-white border focus:border-blue-500 rounded-xl focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-left text-gray-700 flex items-center justify-between"
+                                        >
+                                            <span className="truncate text-sm">{activeOptions.find(opt => opt.value === filterActive)?.label || "Semua"}</span>
+                                            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isActiveDropdownOpen ? "rotate-180" : ""}`} />
+                                        </button>
+                                        <AnimatePresence>
+                                            {isActiveDropdownOpen && (
+                                                <>
+                                                    <div className="fixed inset-0 z-30" onClick={() => setIsActiveDropdownOpen(false)} />
+                                                    <motion.div
+                                                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                                        className="absolute z-40 w-full mt-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden"
+                                                    >
+                                                        {activeOptions.map((option) => (
+                                                            <div
+                                                                key={option.value}
+                                                                onClick={() => {
+                                                                    setFilterActive(option.value);
+                                                                    setIsActiveDropdownOpen(false);
+                                                                }}
+                                                                className="px-4 py-2.5 hover:bg-blue-50 cursor-pointer transition-colors flex items-center justify-between group border-b border-gray-50 last:border-0"
+                                                            >
+                                                                <span className={`text-sm ${filterActive === option.value ? 'text-blue-700 font-semibold' : 'text-gray-700 group-hover:text-blue-700'}`}>
+                                                                    {option.label}
+                                                                </span>
+                                                                {filterActive === option.value && (
+                                                                    <Check className="w-4 h-4 text-blue-600" />
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </motion.div>
+                                                </>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
                                 </div>
                             </div>
                         </form>
 
-                        <div className="w-full xl:w-auto flex-shrink-0">
+                        <div className="hidden md:block w-full xl:w-auto flex-shrink-0">
                             <label className="text-xs font-semibold text-transparent uppercase tracking-wider mb-1.5 block ml-1 select-none">Action</label>
                             <button
                                 className="w-full xl:w-auto px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 hover:shadow-blue-300 flex items-center justify-center gap-2 font-medium"
@@ -163,6 +238,15 @@ export default function DataAnakKader() {
                         </div>
                     </div>
                 </div>
+
+                {/* Mobile Floating Action Button */}
+                <button
+                    onClick={() => navigate('/dashboard/data-anak/tambah')}
+                    className="md:hidden fixed bottom-24 right-4 z-40 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg shadow-blue-600/30 flex items-center justify-center hover:bg-blue-700 transition-all active:scale-95"
+                    aria-label="Tambah Anak"
+                >
+                    <Plus className="w-8 h-8" />
+                </button>
 
                 {/* Error State */}
                 {error && (
@@ -191,99 +275,179 @@ export default function DataAnakKader() {
                         </button>
                     </div>
                 ) : (
-                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="border-b border-gray-100 bg-gray-50/50">
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Anak</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Orang Tua</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Umur</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status Gizi</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status Aktif</th>
-                                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-50">
-                                    {children.map((child) => {
-                                        const status = child.latest_nutritional_status || {};
-                                        return (
-                                            <tr key={child.id} className="group hover:bg-blue-50/30 transition-colors">
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="w-12 h-12 rounded-full bg-blue-50 p-0.5 shadow-sm flex items-center justify-center overflow-hidden">
-                                                            <img
-                                                                src={child.gender === 'L' ? assets.kepala_bayi : child.gender === 'P' ? assets.kepala_bayi_cewe : `https://api.dicebear.com/9.x/adventurer/svg?seed=${child.full_name}&backgroundColor=b6e3f4`}
-                                                                alt={child.full_name}
-                                                                className="w-full h-full rounded-full object-cover"
-                                                            />
-                                                        </div>
-                                                        <div>
-                                                            <div className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{child.full_name}</div>
-                                                            <div className="text-xs text-gray-500 flex items-center gap-1">
-                                                                {child.gender === 'L' ? (
-                                                                    <span className="text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded text-[10px] font-medium">Laki-laki</span>
-                                                                ) : (
-                                                                    <span className="text-pink-500 bg-pink-50 px-1.5 py-0.5 rounded text-[10px] font-medium">Perempuan</span>
-                                                                )}
+                    <>
+                        {/* Mobile Card View */}
+                        <div className="grid grid-cols-1 gap-4 md:hidden">
+                            {children.map((child) => {
+                                const status = child.latest_nutritional_status || {};
+                                return (
+                                    <div key={child.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col gap-4">
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-12 h-12 rounded-full bg-blue-50 p-0.5 shadow-sm flex items-center justify-center overflow-hidden shrink-0">
+                                                    <img
+                                                        src={child.gender === 'L' ? assets.kepala_bayi : child.gender === 'P' ? assets.kepala_bayi_cewe : `https://api.dicebear.com/9.x/adventurer/svg?seed=${child.full_name}&backgroundColor=b6e3f4`}
+                                                        alt={child.full_name}
+                                                        className="w-full h-full rounded-full object-cover"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <div className="font-bold text-gray-900">{child.full_name}</div>
+                                                    <div className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                                                        {child.gender === 'L' ? (
+                                                            <span className="text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded text-[10px] font-medium">Laki-laki</span>
+                                                        ) : (
+                                                            <span className="text-pink-500 bg-pink-50 px-1.5 py-0.5 rounded text-[10px] font-medium">Perempuan</span>
+                                                        )}
+                                                        <span className="text-gray-300">•</span>
+                                                        <span>{formatAge(child.age_in_months)}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col items-end gap-2">
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border ${child.is_active ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+                                                    {child.is_active ? 'Aktif' : 'Nonaktif'}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-3 py-3 border-t border-b border-gray-50">
+                                            <div>
+                                                <div className="text-xs text-gray-400 mb-1">Orang Tua</div>
+                                                <div className="text-sm font-medium text-gray-900">{child.parent?.name || '-'}</div>
+                                                <div className="text-xs text-gray-500">{child.parent?.phone || '-'}</div>
+                                            </div>
+                                            <div>
+                                                <div className="text-xs text-gray-400 mb-1">Status Gizi</div>
+                                                {status?.status === 'tidak_diketahui' || !status?.measured_at ? (
+                                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500 border border-gray-200">
+                                                        Belum ada data
+                                                    </span>
+                                                ) : (
+                                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(status?.status)} shadow-sm`}>
+                                                        {getStatusLabel(status?.status)}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => navigate(`/dashboard/data-anak/${child.id}`)}
+                                                className="flex-1 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors"
+                                            >
+                                                Detail
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedChildId(child.id);
+                                                    setIsEditModalOpen(true);
+                                                }}
+                                                className="flex-1 py-2 text-sm font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors"
+                                            >
+                                                Edit
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Desktop Table View */}
+                        <div className="hidden md:block bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="border-b border-gray-100 bg-gray-50/50">
+                                            <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Anak</th>
+                                            <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Orang Tua</th>
+                                            <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Umur</th>
+                                            <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status Gizi</th>
+                                            <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status Aktif</th>
+                                            <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-50">
+                                        {children.map((child) => {
+                                            const status = child.latest_nutritional_status || {};
+                                            return (
+                                                <tr key={child.id} className="group hover:bg-blue-50/30 transition-colors">
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-12 h-12 rounded-full bg-blue-50 p-0.5 shadow-sm flex items-center justify-center overflow-hidden">
+                                                                <img
+                                                                    src={child.gender === 'L' ? assets.kepala_bayi : child.gender === 'P' ? assets.kepala_bayi_cewe : `https://api.dicebear.com/9.x/adventurer/svg?seed=${child.full_name}&backgroundColor=b6e3f4`}
+                                                                    alt={child.full_name}
+                                                                    className="w-full h-full rounded-full object-cover"
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <div className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{child.full_name}</div>
+                                                                <div className="text-xs text-gray-500 flex items-center gap-1">
+                                                                    {child.gender === 'L' ? (
+                                                                        <span className="text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded text-[10px] font-medium">Laki-laki</span>
+                                                                    ) : (
+                                                                        <span className="text-pink-500 bg-pink-50 px-1.5 py-0.5 rounded text-[10px] font-medium">Perempuan</span>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-sm font-medium text-gray-900">{child.parent?.name || '-'}</span>
-                                                        <span className="text-xs text-gray-500">{child.parent?.phone || '-'}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="flex items-center gap-1.5 text-gray-600 bg-gray-50 px-2.5 py-1 rounded-lg w-fit">
-                                                        <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                                                        <span className="text-sm font-medium">{formatAge(child.age_in_months)}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    {status?.status === 'tidak_diketahui' || !status?.measured_at ? (
-                                                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500 border border-gray-200">
-                                                            Belum ada data
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-sm font-medium text-gray-900">{child.parent?.name || '-'}</span>
+                                                            <span className="text-xs text-gray-500">{child.parent?.phone || '-'}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="flex items-center gap-1.5 text-gray-600 bg-gray-50 px-2.5 py-1 rounded-lg w-fit">
+                                                            <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                                                            <span className="text-sm font-medium">{formatAge(child.age_in_months)}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        {status?.status === 'tidak_diketahui' || !status?.measured_at ? (
+                                                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500 border border-gray-200">
+                                                                Belum ada data
+                                                            </span>
+                                                        ) : (
+                                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(status?.status)} shadow-sm`}>
+                                                                {getStatusLabel(status?.status)}
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${child.is_active ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+                                                            {child.is_active ? 'Aktif' : 'Tidak Aktif'}
                                                         </span>
-                                                    ) : (
-                                                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(status?.status)} shadow-sm`}>
-                                                            {getStatusLabel(status?.status)}
-                                                        </span>
-                                                    )}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${child.is_active ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
-                                                        {child.is_active ? 'Aktif' : 'Tidak Aktif'}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-right">
-                                                    <div className="flex items-center justify-end gap-2">
-                                                        <button
-                                                            onClick={() => navigate(`/dashboard/data-anak/${child.id}`)}
-                                                            className="px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
-                                                        >
-                                                            Detail
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                setSelectedChildId(child.id);
-                                                                setIsEditModalOpen(true);
-                                                            }}
-                                                            className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
-                                                        >
-                                                            Edit
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            <button
+                                                                onClick={() => navigate(`/dashboard/data-anak/${child.id}`)}
+                                                                className="px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                                                            >
+                                                                Detail
+                                                            </button>
+                                                            <button
+                                                                onClick={() => {
+                                                                    setSelectedChildId(child.id);
+                                                                    setIsEditModalOpen(true);
+                                                                }}
+                                                                className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
+                                                            >
+                                                                Edit
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                    </div>
+                    </>
                 )}
 
                 <EditChildModal

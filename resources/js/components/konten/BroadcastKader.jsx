@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import api from "../../lib/api";
-import GenericListSkeleton from "../loading/GenericListSkeleton";
 import PageHeader from "../dashboard/PageHeader";
 import { Icon } from "@iconify/react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -25,10 +24,12 @@ export default function BroadcastKader() {
     const fetchBroadcasts = async () => {
         try {
             setLoading(true);
+            setError(null);
             const response = await api.get('/kader/broadcast');
             setBroadcasts(response.data.data);
         } catch (err) {
             console.error('Failed to fetch broadcasts:', err);
+            setError('Gagal memuat riwayat broadcast. Silakan coba lagi.');
         } finally {
             setLoading(false);
         }
@@ -319,11 +320,32 @@ export default function BroadcastKader() {
 
                     {loading ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {[1, 2, 3].map(i => (
-                                <div key={i} className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm h-40 animate-pulse">
-                                    <div className="h-4 bg-gray-100 rounded w-1/3 mb-4"></div>
-                                    <div className="h-3 bg-gray-100 rounded w-full mb-2"></div>
-                                    <div className="h-3 bg-gray-100 rounded w-2/3"></div>
+                            {[0.1, 0.15, 0.2, 0.25, 0.3, 0.35].map((delay, i) => (
+                                <div key={i} className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+                                    <div className="flex items-start justify-between mb-4">
+                                        <div className="h-8 w-8 rounded-lg bg-gray-200 overflow-hidden relative">
+                                            <div className="absolute inset-0 -translate-x-full animate-shimmer bg-linear-to-r from-transparent via-white/60 to-transparent" style={{ animationDelay: `${delay}s` }}></div>
+                                        </div>
+                                        <div className="h-5 w-20 rounded-full bg-gray-200 overflow-hidden relative">
+                                            <div className="absolute inset-0 -translate-x-full animate-shimmer bg-linear-to-r from-transparent via-white/60 to-transparent" style={{ animationDelay: `${delay + 0.05}s` }}></div>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2 mb-4">
+                                        <div className="h-4 w-full rounded bg-gray-200 overflow-hidden relative">
+                                            <div className="absolute inset-0 -translate-x-full animate-shimmer bg-linear-to-r from-transparent via-white/60 to-transparent" style={{ animationDelay: `${delay + 0.1}s` }}></div>
+                                        </div>
+                                        <div className="h-4 w-3/4 rounded bg-gray-200 overflow-hidden relative">
+                                            <div className="absolute inset-0 -translate-x-full animate-shimmer bg-linear-to-r from-transparent via-white/60 to-transparent" style={{ animationDelay: `${delay + 0.15}s` }}></div>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
+                                        <div className="h-3 w-3 rounded-full bg-gray-200 overflow-hidden relative">
+                                            <div className="absolute inset-0 -translate-x-full animate-shimmer bg-linear-to-r from-transparent via-white/60 to-transparent" style={{ animationDelay: `${delay + 0.2}s` }}></div>
+                                        </div>
+                                        <div className="h-3 w-24 rounded bg-gray-200 overflow-hidden relative">
+                                            <div className="absolute inset-0 -translate-x-full animate-shimmer bg-linear-to-r from-transparent via-white/60 to-transparent" style={{ animationDelay: `${delay + 0.25}s` }}></div>
+                                        </div>
+                                    </div>
                                 </div>
                             ))}
                         </div>

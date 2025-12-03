@@ -18,8 +18,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import api from "../../lib/api";
 import { formatAge } from "../../lib/utils";
 import AddScheduleModal from "./AddScheduleModal";
+import PageHeader from "../dashboard/PageHeader";
 import kepalaBayi from "../../assets/kepala_bayi.png";
 import kepalaBayiCewe from "../../assets/kepala_bayi_cewe.png";
+import JadwalPosyanduSkeleton from "../loading/JadwalPosyanduSkeleton";
 
 export default function JadwalPosyandu() {
     const [loading, setLoading] = useState(true);
@@ -179,42 +181,27 @@ export default function JadwalPosyandu() {
     ];
 
     if (loading) {
-        return (
-            <div className="flex flex-1 w-full h-full overflow-auto">
-                <div className="p-4 md:p-10 w-full h-full bg-gray-50 flex flex-col gap-4">
-                    <div className="flex items-center justify-center h-64">
-                        <div className="text-center">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                            <p className="text-gray-600">Memuat jadwal...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
+        return <JadwalPosyanduSkeleton scheduleCount={6} />;
     }
 
     return (
-        <div className="flex flex-1 w-full h-full overflow-auto bg-gray-50/50">
-            <div className="w-full flex flex-col gap-6 p-4">
+        <div className="flex flex-1 w-full h-full overflow-auto bg-gray-50/50 [&::-webkit-scrollbar]:hidden">
+            <div className="w-full flex flex-col gap-6 p-4 md:p-8">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Jadwal Kegiatan</h1>
-                        <p className="text-gray-500 mt-1">Kelola jadwal posyandu dan imunisasi</p>
-                    </div>
+                <PageHeader title="Jadwal Kegiatan" subtitle="Portal Kader">
                     <button
                         onClick={() => setIsAddModalOpen(true)}
-                        className="px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-lg shadow-blue-200 font-medium"
+                        className="hidden md:flex px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors items-center gap-2 shadow-lg shadow-blue-200 font-medium"
                     >
                         <Plus className="w-5 h-5" />
-                        Tambah Jadwal
+                        <span>Tambah Jadwal</span>
                     </button>
-                </div>
+                </PageHeader>
 
                 {/* Filters & Search */}
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 flex flex-col lg:flex-row gap-4 z-20 relative">
+                <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 grid grid-cols-2 lg:flex lg:flex-row gap-3 md:gap-4 z-20 relative">
                     {/* Search */}
-                    <div className="relative flex-1">
+                    <div className="relative col-span-2 lg:flex-1">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <Search className="h-5 w-5 text-gray-400" />
                         </div>
@@ -306,7 +293,7 @@ export default function JadwalPosyandu() {
                     </div>
 
                     {/* Child Filter */}
-                    <div className="relative w-full lg:w-56" ref={childDropdownRef}>
+                    <div className="relative col-span-2 lg:w-56" ref={childDropdownRef}>
                         <button
                             onClick={() => setIsChildDropdownOpen(!isChildDropdownOpen)}
                             className="w-full flex items-center justify-between px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
@@ -372,110 +359,192 @@ export default function JadwalPosyandu() {
                         </p>
                     </div>
                 ) : (
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden z-0">
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wider text-gray-500 font-semibold">
-                                        <th className="px-6 py-4">No</th>
-                                        <th className="px-6 py-4">Nama Anak</th>
-                                        <th className="px-6 py-4">Jenis</th>
-                                        <th className="px-6 py-4">Judul</th>
-                                        <th className="px-6 py-4">Waktu</th>
-                                        <th className="px-6 py-4">Lokasi</th>
-                                        <th className="px-6 py-4">Status</th>
-                                        <th className="px-6 py-4 text-right">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100">
-                                    {filteredSchedules.map((schedule, index) => {
-                                        const statusConfig = getStatusConfig(schedule.status);
-                                        const StatusIcon = statusConfig.icon;
-                                        const scheduleDate = new Date(schedule.scheduled_for);
+                    <>
+                        {/* Mobile View (Cards) */}
+                        <div className="md:hidden flex flex-col gap-4">
+                            {filteredSchedules.map((schedule) => {
+                                const statusConfig = getStatusConfig(schedule.status);
+                                const StatusIcon = statusConfig.icon;
+                                const scheduleDate = new Date(schedule.scheduled_for);
 
-                                        return (
-                                            <tr key={schedule.id} className="hover:bg-gray-50 transition-colors group">
-                                                <td className="px-6 py-4 text-sm text-gray-500">
-                                                    {index + 1}
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-full overflow-hidden border border-blue-100 shrink-0">
-                                                            <img
-                                                                src={schedule.child?.gender === 'L' ? kepalaBayi : kepalaBayiCewe}
-                                                                alt={schedule.child?.full_name || 'Anak'}
-                                                                className="w-full h-full object-cover"
-                                                            />
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-sm font-medium text-gray-900">
-                                                                {schedule.child?.full_name || 'Tidak ada nama'}
-                                                            </p>
-                                                            <p className="text-xs text-gray-500">
-                                                                {schedule.child?.parent?.name || '-'}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className="text-sm text-gray-700 capitalize">
-                                                        {getTypeLabel(schedule.type)}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <p className="text-sm font-medium text-gray-900 line-clamp-1 max-w-[200px]">
-                                                        {schedule.title}
+                                return (
+                                    <div key={schedule.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 space-y-4">
+                                        <div className="flex justify-between items-start">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-full overflow-hidden border border-blue-100 shrink-0">
+                                                    <img
+                                                        src={schedule.child?.gender === 'L' ? kepalaBayi : kepalaBayiCewe}
+                                                        alt={schedule.child?.full_name || 'Anak'}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-bold text-gray-900">
+                                                        {schedule.child?.full_name || 'Tidak ada nama'}
                                                     </p>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex flex-col text-sm text-gray-600">
-                                                        <span className="font-medium text-gray-900">
-                                                            {scheduleDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                                        </span>
-                                                        <span className="text-xs text-gray-500">
-                                                            {schedule.scheduled_time?.substring(0, 5) || '-'} WIB
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                                                        <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                                                        <span className="truncate max-w-[150px]">{schedule.location || '-'}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}>
-                                                        <StatusIcon className="w-3 h-3" />
-                                                        {statusConfig.label}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 text-right">
-                                                    <div className="flex items-center justify-end gap-2">
-                                                        {schedule.status !== 'completed' && (
-                                                            <button
-                                                                onClick={(e) => handleMarkComplete(schedule.id, e)}
-                                                                className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                                                                title="Tandai Selesai"
-                                                            >
-                                                                <CheckCircle className="w-4 h-4" />
-                                                            </button>
-                                                        )}
-                                                        <button
-                                                            onClick={(e) => handleDelete(schedule.id, e)}
-                                                            className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                            title="Hapus Jadwal"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
+                                                    <p className="text-xs text-gray-500">
+                                                        {schedule.child?.parent?.name || '-'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold border ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}>
+                                                <StatusIcon className="w-3 h-3" />
+                                                {statusConfig.label}
+                                            </span>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <h4 className="font-bold text-gray-900 text-sm">{schedule.title}</h4>
+                                            <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                                                <div className="flex items-center gap-2">
+                                                    <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                                                    <span>{scheduleDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <Clock className="w-3.5 h-3.5 text-gray-400" />
+                                                    <span>{schedule.scheduled_time?.substring(0, 5) || '-'} WIB</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 col-span-2">
+                                                    <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                                                    <span className="truncate">{schedule.location || '-'}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                                            <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                {getTypeLabel(schedule.type)}
+                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                {schedule.status !== 'completed' && (
+                                                    <button
+                                                        onClick={(e) => handleMarkComplete(schedule.id, e)}
+                                                        className="p-2 text-green-600 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
+                                                        title="Tandai Selesai"
+                                                    >
+                                                        <CheckCircle className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={(e) => handleDelete(schedule.id, e)}
+                                                    className="p-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                                                    title="Hapus Jadwal"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
-                    </div>
+
+                        {/* Desktop View (Table) */}
+                        <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden z-0">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                                            <th className="px-6 py-4">No</th>
+                                            <th className="px-6 py-4">Nama Anak</th>
+                                            <th className="px-6 py-4">Jenis</th>
+                                            <th className="px-6 py-4">Judul</th>
+                                            <th className="px-6 py-4">Waktu</th>
+                                            <th className="px-6 py-4">Lokasi</th>
+                                            <th className="px-6 py-4">Status</th>
+                                            <th className="px-6 py-4 text-right">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {filteredSchedules.map((schedule, index) => {
+                                            const statusConfig = getStatusConfig(schedule.status);
+                                            const StatusIcon = statusConfig.icon;
+                                            const scheduleDate = new Date(schedule.scheduled_for);
+
+                                            return (
+                                                <tr key={schedule.id} className="hover:bg-gray-50 transition-colors group">
+                                                    <td className="px-6 py-4 text-sm text-gray-500">
+                                                        {index + 1}
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 rounded-full overflow-hidden border border-blue-100 shrink-0">
+                                                                <img
+                                                                    src={schedule.child?.gender === 'L' ? kepalaBayi : kepalaBayiCewe}
+                                                                    alt={schedule.child?.full_name || 'Anak'}
+                                                                    className="w-full h-full object-cover"
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-sm font-medium text-gray-900">
+                                                                    {schedule.child?.full_name || 'Tidak ada nama'}
+                                                                </p>
+                                                                <p className="text-xs text-gray-500">
+                                                                    {schedule.child?.parent?.name || '-'}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <span className="text-sm text-gray-700 capitalize">
+                                                            {getTypeLabel(schedule.type)}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <p className="text-sm font-medium text-gray-900 line-clamp-1 max-w-[200px]">
+                                                            {schedule.title}
+                                                        </p>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex flex-col text-sm text-gray-600">
+                                                            <span className="font-medium text-gray-900">
+                                                                {scheduleDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                            </span>
+                                                            <span className="text-xs text-gray-500">
+                                                                {schedule.scheduled_time?.substring(0, 5) || '-'} WIB
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                                                            <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                                                            <span className="truncate max-w-[150px]">{schedule.location || '-'}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}>
+                                                            <StatusIcon className="w-3 h-3" />
+                                                            {statusConfig.label}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right">
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            {schedule.status !== 'completed' && (
+                                                                <button
+                                                                    onClick={(e) => handleMarkComplete(schedule.id, e)}
+                                                                    className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                                                    title="Tandai Selesai"
+                                                                >
+                                                                    <CheckCircle className="w-4 h-4" />
+                                                                </button>
+                                                            )}
+                                                            <button
+                                                                onClick={(e) => handleDelete(schedule.id, e)}
+                                                                className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                                title="Hapus Jadwal"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </>
                 )}
             </div>
 
@@ -488,6 +557,14 @@ export default function JadwalPosyandu() {
                     setIsAddModalOpen(false);
                 }}
             />
+
+            {/* Floating Action Button for Mobile */}
+            <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="md:hidden fixed bottom-24 right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-xl shadow-blue-300 flex items-center justify-center z-50 hover:bg-blue-700 active:scale-95 transition-all"
+            >
+                <Plus className="w-7 h-7" />
+            </button>
         </div>
     );
 }
