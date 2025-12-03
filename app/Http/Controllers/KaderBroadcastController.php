@@ -77,4 +77,27 @@ class KaderBroadcastController extends Controller
      *     // n8n will handle WhatsApp/Telegram delivery
      * }
      */
+    /**
+     * Delete a broadcast message
+     */
+    public function destroy(Request $request, $id): JsonResponse
+    {
+        $user = $request->user();
+
+        $broadcast = BroadcastLog::where('id', $id)
+            ->where('posyandu_id', $user->posyandu_id)
+            ->first();
+
+        if (!$broadcast) {
+            return response()->json([
+                'message' => 'Broadcast tidak ditemukan atau Anda tidak memiliki akses.',
+            ], 404);
+        }
+
+        $broadcast->delete();
+
+        return response()->json([
+            'message' => 'Broadcast berhasil dihapus.',
+        ], 200);
+    }
 }

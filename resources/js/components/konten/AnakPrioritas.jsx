@@ -4,6 +4,8 @@ import { Search, ArrowLeft, AlertTriangle, TrendingDown, Clock, Filter, ChevronD
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../../lib/api";
 import { formatAge } from "../../lib/utils";
+import kepalaBayi from "../../assets/kepala_bayi.png";
+import kepalaBayiCewe from "../../assets/kepala_bayi_cewe.png";
 
 export default function AnakPrioritas() {
     const [loading, setLoading] = useState(true);
@@ -118,13 +120,6 @@ export default function AnakPrioritas() {
                         <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Anak Prioritas</h1>
                         <p className="text-gray-500 mt-1">Daftar anak yang memerlukan perhatian khusus</p>
                     </div>
-                    <button
-                        onClick={() => navigate('/dashboard')}
-                        className="px-4 py-2 bg-white border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-2 shadow-sm"
-                    >
-                        <ArrowLeft className="w-4 h-4" />
-                        Kembali
-                    </button>
                 </div>
 
                 {/* Error Alert */}
@@ -274,8 +269,12 @@ export default function AnakPrioritas() {
                                 {/* Header */}
                                 <div className="flex items-start justify-between mb-4">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center border border-blue-200 text-blue-600 font-bold text-lg shadow-sm">
-                                            {child.full_name.charAt(0).toUpperCase()}
+                                        <div className="w-12 h-12 rounded-full overflow-hidden border border-blue-200 shadow-sm shrink-0">
+                                            <img
+                                                src={child.gender === 'L' ? kepalaBayi : kepalaBayiCewe}
+                                                alt={child.full_name}
+                                                className="w-full h-full object-cover"
+                                            />
                                         </div>
                                         <div>
                                             <h3 className="font-bold text-gray-900 line-clamp-1 group-hover:text-blue-600 transition-colors">

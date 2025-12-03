@@ -182,11 +182,11 @@ class PointsService
      */
     private function checkPointBadges(User $user): void
     {
-        if ($user->points >= 1000 && !$user->hasBadge('points_1000')) {
+        if ($user->points >= 1000 && ! $user->hasBadge('points_1000')) {
             $this->checkAndAwardBadge($user, 'points_1000', 'Bintang Posyandu', 'Mengumpulkan 1000 poin');
         }
 
-        if ($user->points >= 5000 && !$user->hasBadge('points_5000')) {
+        if ($user->points >= 5000 && ! $user->hasBadge('points_5000')) {
             $this->checkAndAwardBadge($user, 'points_5000', 'Super Parent', 'Mengumpulkan 5000 poin');
         }
     }
@@ -197,18 +197,18 @@ class PointsService
     private function checkLoginBadges(User $user): void
     {
         // First login badge
-        if (!$user->hasBadge('first_login')) {
+        if (! $user->hasBadge('first_login')) {
             $this->checkAndAwardBadge($user, 'first_login', 'Pendatang Baru', 'Login pertama kali');
         }
 
         // Time based badges
         $hour = (int) now()->format('H');
-        
-        if ($hour >= 5 && $hour < 7 && !$user->hasBadge('early_bird')) {
+
+        if ($hour >= 5 && $hour < 7 && ! $user->hasBadge('early_bird')) {
             $this->checkAndAwardBadge($user, 'early_bird', 'Burung Pagi', 'Login antara jam 05:00 - 07:00 pagi');
         }
 
-        if ($hour >= 21 && $hour < 23 && !$user->hasBadge('night_owl')) {
+        if ($hour >= 21 && $hour < 23 && ! $user->hasBadge('night_owl')) {
             $this->checkAndAwardBadge($user, 'night_owl', 'Ronda Malam', 'Login antara jam 21:00 - 23:00 malam');
         }
 
@@ -225,11 +225,61 @@ class PointsService
             Cache::put("user_last_login_{$user->id}", $today, now()->addDay());
 
             // Check consecutive login badges
-            $this->checkConsecutiveLoginBadges($user);
+            $this->checkConsecutiveLoginBadges($user, $lastLoginDate);
         }
     }
 
-    // ... (checkConsecutiveLoginBadges and getConsecutiveLoginDays remain same)
+    /**
+     * Update consecutive login streak cache and award related badges
+     */
+    private function checkConsecutiveLoginBadges(User $user, ?string $previousLoginDate = null): void
+    {
+        $streak = $this->updateConsecutiveLoginDays($user, $previousLoginDate);
+
+        if ($streak >= 7 && ! $user->hasBadge('daily_login_7')) {
+            $this->checkAndAwardBadge($user, 'daily_login_7', 'Konsisten', 'Login 7 hari berturut-turut');
+        }
+
+        if ($streak >= 30 && ! $user->hasBadge('daily_login_30')) {
+            $this->checkAndAwardBadge($user, 'daily_login_30', 'Dedikasi Tinggi', 'Login 30 hari berturut-turut');
+        }
+    }
+
+    /**
+     * Calculate & persist consecutive login streak
+     */
+    private function updateConsecutiveLoginDays(User $user, ?string $previousLoginDate = null): int
+    {
+        $streakKey = "user_login_streak_{$user->id}";
+        $currentStreak = Cache::get($streakKey, 0);
+        $today = Carbon::today();
+
+        if (empty($previousLoginDate)) {
+            $newStreak = 1;
+        } else {
+            $lastLogin = Carbon::parse($previousLoginDate);
+
+            if ($lastLogin->isSameDay($today)) {
+                $newStreak = max(1, $currentStreak);
+            } elseif ($lastLogin->isSameDay($today->copy()->subDay())) {
+                $newStreak = $currentStreak > 0 ? $currentStreak + 1 : 2;
+            } else {
+                $newStreak = 1;
+            }
+        }
+
+        Cache::put($streakKey, $newStreak, now()->addDays(40));
+
+        return $newStreak;
+    }
+
+    /**
+     * Public helper to fetch current consecutive login streak
+     */
+    public function getConsecutiveLoginDays(User $user): int
+    {
+        return Cache::get("user_login_streak_{$user->id}", 0);
+    }
 
     /**
      * Check badges related to meal log activity
@@ -241,15 +291,15 @@ class PointsService
             ->get()
             ->sum('meal_logs_count');
 
-        if ($mealLogCount >= 10 && !$user->hasBadge('meal_logger_10')) {
+        if ($mealLogCount >= 10 && ! $user->hasBadge('meal_logger_10')) {
             $this->checkAndAwardBadge($user, 'meal_logger_10', 'Pencatat Makanan', 'Mencatat 10 kali log makanan');
         }
 
-        if ($mealLogCount >= 50 && !$user->hasBadge('meal_logger_50')) {
+        if ($mealLogCount >= 50 && ! $user->hasBadge('meal_logger_50')) {
             $this->checkAndAwardBadge($user, 'meal_logger_50', 'Ahli Nutrisi', 'Mencatat 50 kali log makanan');
         }
 
-        if ($mealLogCount >= 100 && !$user->hasBadge('meal_logger_100')) {
+        if ($mealLogCount >= 100 && ! $user->hasBadge('meal_logger_100')) {
             $this->checkAndAwardBadge($user, 'meal_logger_100', 'Master Nutrisi', 'Mencatat 100 kali log makanan');
         }
     }
@@ -264,11 +314,11 @@ class PointsService
             ->get()
             ->sum('weighing_logs_count');
 
-        if ($weighingLogCount >= 10 && !$user->hasBadge('weighing_logger_10')) {
+        if ($weighingLogCount >= 10 && ! $user->hasBadge('weighing_logger_10')) {
             $this->checkAndAwardBadge($user, 'weighing_logger_10', 'Pemantau Aktif', 'Mencatat 10 kali penimbangan');
         }
 
-        if ($weighingLogCount >= 50 && !$user->hasBadge('weighing_logger_50')) {
+        if ($weighingLogCount >= 50 && ! $user->hasBadge('weighing_logger_50')) {
             $this->checkAndAwardBadge($user, 'weighing_logger_50', 'Pemantau Setia', 'Mencatat 50 kali penimbangan');
         }
     }
@@ -280,11 +330,11 @@ class PointsService
     {
         $messageCount = $user->consultationMessages()->count();
 
-        if ($messageCount >= 10 && !$user->hasBadge('consultation_active')) {
+        if ($messageCount >= 10 && ! $user->hasBadge('consultation_active')) {
             $this->checkAndAwardBadge($user, 'consultation_active', 'Aktif Konsultasi', 'Mengirim 10 pesan konsultasi');
         }
 
-        if ($messageCount >= 50 && !$user->hasBadge('consultation_active_50')) {
+        if ($messageCount >= 50 && ! $user->hasBadge('consultation_active_50')) {
             $this->checkAndAwardBadge($user, 'consultation_active_50', 'Teman Curhat', 'Mengirim 50 pesan konsultasi');
         }
     }
@@ -298,15 +348,16 @@ class PointsService
         $dayOfWeek = now()->dayOfWeek; // 0 (Sunday) - 6 (Saturday)
 
         // Weekend Warrior (Login on Saturday or Sunday)
-        if (($dayOfWeek === 0 || $dayOfWeek === 6) && !$user->hasBadge('weekend_warrior')) {
+        if (($dayOfWeek === 0 || $dayOfWeek === 6) && ! $user->hasBadge('weekend_warrior')) {
             $this->checkAndAwardBadge($user, 'weekend_warrior', 'Pejuang Akhir Pekan', 'Login di hari Sabtu atau Minggu');
         }
 
         // Lunch Time (Login between 11:00 - 13:00)
-        if ($hour >= 11 && $hour < 13 && !$user->hasBadge('lunch_time')) {
+        if ($hour >= 11 && $hour < 13 && ! $user->hasBadge('lunch_time')) {
             $this->checkAndAwardBadge($user, 'lunch_time', 'Waktu Makan Siang', 'Login saat jam makan siang (11-13)');
         }
     }
+
     /**
      * Get total activities count for user
      */
@@ -327,4 +378,3 @@ class PointsService
         return $mealLogCount + $weighingLogCount + $messageCount;
     }
 }
-

@@ -97,6 +97,82 @@ class KaderReportController extends Controller
     }
 
     /**
+     * Get paginated weighing history for kader's posyandu
+     */
+    public function history(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->posyandu_id) {
+            return response()->json([
+                'message' => 'Kader tidak memiliki posyandu yang terdaftar.',
+            ], 400);
+        }
+
+        $request->validate([
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'child_id' => ['nullable', 'integer', 'exists:children,id'],
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date'],
+        ]);
+
+        $perPage = $request->input('per_page', 20);
+
+        // Get all children IDs in posyandu
+        $childIds = Child::where('posyandu_id', $user->posyandu_id)
+            ->pluck('id');
+
+        // Build query
+        $query = WeighingLog::with(['child'])
+            ->whereIn('child_id', $childIds);
+
+        // Apply filters
+        if ($request->filled('child_id')) {
+            $query->where('child_id', $request->input('child_id'));
+        }
+
+        if ($request->filled('start_date')) {
+            $query->where('measured_at', '>=', $request->input('start_date'));
+        }
+
+        if ($request->filled('end_date')) {
+            $query->where('measured_at', '<=', $request->input('end_date'));
+        }
+
+        // Get paginated results
+        $weighings = $query->orderBy('measured_at', 'desc')
+            ->paginate($perPage);
+
+        // Transform data
+        $data = $weighings->map(function ($weighing) {
+            return [
+                'id' => $weighing->id,
+                'type' => 'weighing',
+                'datetime' => $weighing->measured_at,
+                'child_name' => $weighing->child ? $weighing->child->full_name : 'Unknown',
+                'child_gender' => $weighing->child ? $weighing->child->gender : null,
+                'child_id' => $weighing->child_id,
+                'data' => [
+                    'weight_kg' => $weighing->weight_kg,
+                    'height_cm' => $weighing->height_cm,
+                    'nutritional_status' => $weighing->nutritional_status,
+                    'notes' => $weighing->notes,
+                ],
+            ];
+        });
+
+        return response()->json([
+            'data' => $data,
+            'meta' => [
+                'current_page' => $weighings->currentPage(),
+                'per_page' => $weighings->perPage(),
+                'total' => $weighings->total(),
+                'last_page' => $weighings->lastPage(),
+            ],
+        ], 200);
+    }
+
+    /**
      * Export children data to CSV
      */
     public function exportChildren(Request $request)

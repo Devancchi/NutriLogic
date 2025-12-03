@@ -181,11 +181,14 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/{id}', [App\Http\Controllers\KaderConsultationController::class, 'show']);
             Route::post('/{id}/messages', [App\Http\Controllers\KaderConsultationController::class, 'storeMessage']);
             Route::put('/{id}/close', [App\Http\Controllers\KaderConsultationController::class, 'close']);
+            Route::delete('/{id}', [App\Http\Controllers\KaderConsultationController::class, 'destroy']);
+            Route::get('/{id}/child-data', [App\Http\Controllers\KaderConsultationController::class, 'getChildData']);
         });
 
         // Report & Export
         Route::prefix('report')->group(function () {
             Route::get('/summary', [App\Http\Controllers\KaderReportController::class, 'summary']);
+            Route::get('/history', [App\Http\Controllers\KaderReportController::class, 'history']);
             Route::get('/export/children', [App\Http\Controllers\KaderReportController::class, 'exportChildren']);
             Route::get('/export/weighings', [App\Http\Controllers\KaderReportController::class, 'exportWeighings']);
         });
@@ -194,6 +197,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::prefix('broadcast')->group(function () {
             Route::post('/', [App\Http\Controllers\KaderBroadcastController::class, 'store']);
             Route::get('/', [App\Http\Controllers\KaderBroadcastController::class, 'index']);
+            Route::delete('/{id}', [App\Http\Controllers\KaderBroadcastController::class, 'destroy']);
         });
 
         // Profile Management

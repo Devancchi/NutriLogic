@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { MapPin } from "lucide-react";
+import { MapPin, Calendar as CalendarIcon, X } from "lucide-react";
 import api from "../../lib/api";
 import DashboardKaderSkeleton from "../loading/DashboardKaderSkeleton";
 import PageHeader from "../dashboard/PageHeader";
@@ -12,6 +12,7 @@ export default function DashboardKaderContent() {
   const [dashboardData, setDashboardData] = useState(null);
   const [allSchedules, setAllSchedules] = useState([]);
   const [calendarDate, setCalendarDate] = useState(new Date()); // Track calendar's current month
+  const [showMobileCalendar, setShowMobileCalendar] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -52,7 +53,7 @@ export default function DashboardKaderContent() {
   // Error state
   if (error) {
     return (
-      <div className="flex flex-1 w-full h-full overflow-auto font-montserrat">
+      <div className="flex flex-1 w-full min-h-full font-montserrat">
         <div className="p-4 md:p-10 w-full h-full bg-gray-50 flex flex-col gap-4">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
@@ -89,8 +90,8 @@ export default function DashboardKaderContent() {
     (statistics.nutritional_status.sangat_kurus || 0);
 
   return (
-    <div className="flex flex-1 w-full h-full overflow-auto font-montserrat bg-gray-50">
-      <div className="p-4 md:p-8 w-full flex flex-col gap-8">
+    <div className="flex flex-1 w-full min-h-full font-montserrat bg-gray-50">
+      <div className="p-4 md:p-8 w-full flex flex-col gap-4 md:gap-8">
         <PageHeader
           title="Dashboard Kader"
           subtitle="Portal Kader"
@@ -105,10 +106,10 @@ export default function DashboardKaderContent() {
         />
 
         {/* Bento Grid Layout - Compact Mode */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
 
           {/* 1. Hero Section (Span 2) - Welcome & Total Active */}
-          <div className="md:col-span-2 bg-gradient-to-br from-[#4481EB] to-[#04BEFE] rounded-3xl p-6 text-white shadow-lg shadow-blue-200/50 relative overflow-hidden group transition-all duration-500 hover:shadow-blue-300/50">
+          <div className="col-span-2 md:col-span-2 bg-gradient-to-br from-[#4481EB] to-[#04BEFE] rounded-3xl p-5 md:p-6 text-white shadow-lg shadow-blue-200/50 relative overflow-hidden group transition-all duration-500 hover:shadow-blue-300/50">
             {/* Abstract Shapes */}
             <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl group-hover:bg-white/20 transition-all duration-700"></div>
             <div className="absolute bottom-0 left-0 w-60 h-60 bg-black/5 rounded-full -ml-10 -mb-10 blur-2xl"></div>
@@ -139,7 +140,7 @@ export default function DashboardKaderContent() {
           </div>
 
           {/* 2. Priority Action Card (Span 1) */}
-          <div className="bg-red-50/80 backdrop-blur-sm rounded-3xl p-5 shadow-sm border border-red-100 hover:shadow-lg hover:shadow-red-100/50 hover:-translate-y-0.5 transition-all duration-300 flex flex-col relative overflow-hidden group cursor-pointer">
+          <div className="col-span-1 bg-red-50/80 backdrop-blur-sm rounded-3xl p-4 md:p-5 shadow-sm border border-red-100 hover:shadow-lg hover:shadow-red-100/50 hover:-translate-y-0.5 transition-all duration-300 flex flex-col relative overflow-hidden group cursor-pointer">
             <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500">
               <svg className="w-24 h-24 text-red-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" /></svg>
             </div>
@@ -165,7 +166,7 @@ export default function DashboardKaderContent() {
           </div>
 
           {/* 3. Consultation Action Card (Span 1) */}
-          <div className="bg-purple-50/80 backdrop-blur-sm rounded-3xl p-5 shadow-sm border border-purple-100 hover:shadow-lg hover:shadow-purple-100/50 hover:-translate-y-0.5 transition-all duration-300 flex flex-col relative overflow-hidden group cursor-pointer">
+          <div className="col-span-1 bg-purple-50/80 backdrop-blur-sm rounded-3xl p-4 md:p-5 shadow-sm border border-purple-100 hover:shadow-lg hover:shadow-purple-100/50 hover:-translate-y-0.5 transition-all duration-300 flex flex-col relative overflow-hidden group cursor-pointer">
             <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500">
               <svg className="w-24 h-24 text-purple-600" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" /></svg>
             </div>
@@ -191,7 +192,7 @@ export default function DashboardKaderContent() {
           </div>
 
           {/* 4. Nutrition Distribution (Span 2) */}
-          <div className="md:col-span-2 bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col">
+          <div className="col-span-2 md:col-span-2 bg-white rounded-3xl p-5 md:p-6 shadow-sm border border-gray-100 flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="font-bold text-xl text-gray-900">Status Gizi Anak</h3>
@@ -267,11 +268,11 @@ export default function DashboardKaderContent() {
           </div>
 
           {/* 5. Schedule Card (Span 2) - Sleek Redesign with Calendar */}
-          <div className="md:col-span-2 bg-white rounded-3xl p-0 shadow-sm border border-gray-100 flex flex-col relative overflow-hidden group hover:shadow-md transition-all duration-300">
+          <div className="col-span-2 md:col-span-2 bg-white rounded-3xl p-0 shadow-sm border border-gray-100 flex flex-col relative overflow-hidden group hover:shadow-md transition-all duration-300">
             {/* Decorative Top Line */}
             <div className="h-1.5 w-full bg-gradient-to-r from-blue-400 via-blue-500 to-cyan-400"></div>
 
-            <div className="p-6 flex flex-col h-full">
+            <div className="p-5 md:p-6 flex flex-col h-full">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-2">
                   <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
@@ -284,10 +285,18 @@ export default function DashboardKaderContent() {
                     </p>
                   </div>
                 </div>
-                <button className="group/btn flex items-center gap-1 text-xs font-bold text-gray-400 hover:text-blue-600 transition-colors uppercase tracking-wider">
-                  Lihat Semua
-                  <svg className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowMobileCalendar(true)}
+                    className="lg:hidden p-2 bg-blue-50 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors"
+                  >
+                    <CalendarIcon className="w-5 h-5" />
+                  </button>
+                  <button className="hidden lg:flex group/btn items-center gap-1 text-xs font-bold text-gray-400 hover:text-blue-600 transition-colors uppercase tracking-wider">
+                    Lihat Semua
+                    <svg className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                  </button>
+                </div>
               </div>
 
               <div className="flex flex-col lg:flex-row gap-6">
@@ -357,9 +366,9 @@ export default function DashboardKaderContent() {
                   })()}
                 </div>
 
-                {/* Right Side: Calendar */}
+                {/* Right Side: Calendar - Hidden on Mobile */}
                 <div className="hidden lg:block w-px bg-gray-100"></div>
-                <div className="flex-1 flex justify-center items-start">
+                <div className="hidden lg:flex flex-1 justify-center items-start">
                   <div className="scale-90 origin-top">
                     <Calendar
                       mode="single"
@@ -376,6 +385,38 @@ export default function DashboardKaderContent() {
           </div>
 
         </div>
+        {/* Mobile Calendar Modal */}
+        {showMobileCalendar && (
+          <div className="fixed inset-0 z-50 lg:hidden flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl relative animate-in zoom-in-95 duration-200">
+              <button
+                onClick={() => setShowMobileCalendar(false)}
+                className="absolute top-4 right-4 p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200 transition-colors z-10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="w-full mt-2">
+                <Calendar
+                  mode="single"
+                  selected={new Date()}
+                  className="rounded-md border-0 w-full"
+                  classNames={{
+                    month: "space-y-4 w-full",
+                    table: "w-full",
+                    head_row: "flex w-full justify-between",
+                    row: "flex w-full mt-2 justify-between",
+                    cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                    day: "h-11 w-11 p-0 font-normal aria-selected:opacity-100 hover:bg-gray-100 rounded-md flex items-center justify-center mx-auto text-base"
+                  }}
+                  schedules={allSchedules}
+                  currentDate={calendarDate}
+                  onMonthChange={setCalendarDate}
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
 
