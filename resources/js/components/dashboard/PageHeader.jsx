@@ -22,7 +22,7 @@ import { logoutWithApi, getUser } from '../../lib/auth';
 import { useProfileModal } from '../../contexts/ProfileModalContext';
 import { useSettingsModal } from '../../contexts/SettingsModalContext';
 
-export default function PageHeader({ title, subtitle = "Portal Orang Tua", children, showProfile = true, profileClassName = "" }) {
+export default function PageHeader({ title, subtitle = "Portal Orang Tua", description, children, showProfile = true, profileClassName = "" }) {
     const navigate = useNavigate();
     const { openProfileModal, profileUpdateTrigger } = useProfileModal();
     const { openSettingsModal } = useSettingsModal();

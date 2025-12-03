@@ -85,6 +85,12 @@ class ParentDashboardController extends Controller
                     'nutritional_status' => $latestWeighing->nutritional_status,
                 ]] : [],
                 'latest_nutritional_status' => $nutritionalStatus,
+                'weighing_logs' => $latestWeighing ? [[
+                    'weight_kg' => $latestWeighing->weight_kg,
+                    'height_cm' => $latestWeighing->height_cm,
+                    'muac_cm' => $latestWeighing->muac_cm,
+                    'measured_at' => $latestWeighing->measured_at->format('Y-m-d'),
+                ]] : [],
             ];
         }
 

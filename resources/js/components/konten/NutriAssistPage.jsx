@@ -438,7 +438,11 @@ export default function NutriAssistPage() {
                                 <div className="flex items-center justify-between mb-4">
                                   <button
                                     type="button"
-                                    onClick={() => setPickerDate(new Date(pickerDate.setMonth(pickerDate.getMonth() - 1)))}
+                                    onClick={() => setPickerDate(prev => {
+                                      const next = new Date(prev);
+                                      next.setMonth(next.getMonth() - 1);
+                                      return next;
+                                    })}
                                     className="p-1 hover:bg-gray-100 rounded-full transition-colors"
                                   >
                                     <ChevronLeft className="w-5 h-5 text-gray-600" />
@@ -448,7 +452,11 @@ export default function NutriAssistPage() {
                                   </span>
                                   <button
                                     type="button"
-                                    onClick={() => setPickerDate(new Date(pickerDate.setMonth(pickerDate.getMonth() + 1)))}
+                                    onClick={() => setPickerDate(prev => {
+                                      const next = new Date(prev);
+                                      next.setMonth(next.getMonth() + 1);
+                                      return next;
+                                    })}
                                     className="p-1 hover:bg-gray-100 rounded-full transition-colors"
                                   >
                                     <ChevronRight className="w-5 h-5 text-gray-600" />

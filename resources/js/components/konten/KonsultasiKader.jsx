@@ -1,26 +1,42 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../lib/api";
-import { Search, MessageSquare, Clock, CheckCircle, User, ChevronRight, Filter } from "lucide-react";
+import { Search, MessageSquare, Clock, CheckCircle, User, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
+import PageHeader from "../dashboard/PageHeader";
 
 export default function KonsultasiKader() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [consultations, setConsultations] = useState([]);
     const [activeTab, setActiveTab] = useState("open");
+    const [searchTerm, setSearchTerm] = useState("");
     const navigate = useNavigate();
 
     useEffect(() => {
         fetchConsultations();
     }, [activeTab]);
 
+    // Debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            fetchConsultations();
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
     const fetchConsultations = async () => {
         try {
             setLoading(true);
             setError(null);
 
-            const response = await api.get(`/kader/consultations?status=${activeTab}`);
+            const params = new URLSearchParams();
+            params.append('status', activeTab);
+            if (searchTerm.trim()) {
+                params.append('search', searchTerm.trim());
+            }
+
+            const response = await api.get(`/kader/consultations?${params.toString()}`);
             setConsultations(response.data.data);
         } catch (err) {
             const errorMessage = err.response?.data?.message || 'Gagal memuat konsultasi. Silakan coba lagi.';
@@ -48,36 +64,30 @@ export default function KonsultasiKader() {
 
     return (
         <div className="flex flex-col h-full bg-slate-50 overflow-hidden">
-            {/* Header Section */}
-            <div className="bg-white border-b border-slate-200 px-6 py-8">
+            <div className="bg-white border-b border-slate-200 px-6 py-4">
                 <div className="max-w-5xl mx-auto w-full">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                        <div>
-                            <h1 className="text-2xl font-bold text-slate-800">Konsultasi</h1>
-                            <p className="text-slate-500 mt-1">Kelola pesan dan konsultasi dari orang tua</p>
-                        </div>
+                    <PageHeader title="Konsultasi" subtitle="Portal Kader">
                         <div className="flex items-center gap-3">
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                 <input
                                     type="text"
                                     placeholder="Cari nama..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
                                     className="pl-9 pr-4 py-2 bg-slate-100 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 w-full md:w-64 transition-all"
                                 />
                             </div>
-                            <button className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 transition-colors">
-                                <Filter className="w-5 h-5" />
-                            </button>
                         </div>
-                    </div>
+                    </PageHeader>
 
                     {/* Tabs */}
-                    <div className="flex gap-1 bg-slate-100 p-1 rounded-xl w-fit">
+                    <div className="flex gap-1 bg-slate-100 p-1 rounded-xl w-fit mt-4">
                         <button
                             onClick={() => setActiveTab('open')}
                             className={`px-6 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === 'open'
-                                    ? 'bg-white text-blue-600 shadow-sm'
-                                    : 'text-slate-500 hover:text-slate-700'
+                                ? 'bg-white text-blue-600 shadow-sm'
+                                : 'text-slate-500 hover:text-slate-700'
                                 }`}
                         >
                             Aktif
@@ -85,8 +95,8 @@ export default function KonsultasiKader() {
                         <button
                             onClick={() => setActiveTab('closed')}
                             className={`px-6 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === 'closed'
-                                    ? 'bg-white text-slate-800 shadow-sm'
-                                    : 'text-slate-500 hover:text-slate-700'
+                                ? 'bg-white text-slate-800 shadow-sm'
+                                : 'text-slate-500 hover:text-slate-700'
                                 }`}
                         >
                             Selesai

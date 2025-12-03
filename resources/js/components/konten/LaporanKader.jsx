@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import api from "../../lib/api";
+import PageHeader from "../dashboard/PageHeader";
 
 export default function LaporanKader() {
     const [loading, setLoading] = useState(false);
@@ -26,21 +27,51 @@ export default function LaporanKader() {
         }
     };
 
-    const handleExportChildren = () => {
-        const token = localStorage.getItem('token');
-        window.open(`${import.meta.env.VITE_API_URL}/kader/report/export/children`, '_blank');
+    const handleExportChildren = async () => {
+        try {
+            const response = await api.get('/kader/report/export/children', {
+                responseType: 'blob'
+            });
+
+            // Create download link
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `data_anak_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            alert('Gagal mengunduh data. Silakan coba lagi.');
+            console.error('Export error:', err);
+        }
     };
 
-    const handleExportWeighings = () => {
+    const handleExportWeighings = async () => {
         if (!dateFrom || !dateTo) {
             alert('Silakan pilih rentang tanggal terlebih dahulu.');
             return;
         }
-        const token = localStorage.getItem('token');
-        window.open(
-            `${import.meta.env.VITE_API_URL}/kader/report/export/weighings?date_from=${dateFrom}&date_to=${dateTo}`,
-            '_blank'
-        );
+
+        try {
+            const response = await api.get(`/kader/report/export/weighings?date_from=${dateFrom}&date_to=${dateTo}`, {
+                responseType: 'blob'
+            });
+
+            // Create download link
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `riwayat_penimbangan_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            alert('Gagal mengunduh data. Silakan coba lagi.');
+            console.error('Export error:', err);
+        }
     };
 
     const getStatusLabel = (status) => {
@@ -70,11 +101,7 @@ export default function LaporanKader() {
     return (
         <div className="flex flex-1 w-full h-full overflow-auto">
             <div className="p-4 md:p-10 w-full h-full bg-gray-50 flex flex-col gap-6">
-                {/* Header */}
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-800">Laporan & Ekspor</h1>
-                    <p className="text-gray-600 mt-2">Lihat ringkasan dan unduh data dalam format CSV</p>
-                </div>
+                <PageHeader title="Laporan & Ekspor" subtitle="Portal Kader" />
 
                 {/* Date Range Filter */}
                 <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
