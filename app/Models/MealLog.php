@@ -16,6 +16,8 @@ class MealLog extends Model
         'time_of_day',
         'description',
         'ingredients',
+        'portion',
+        'notes',
         'source',
     ];
 

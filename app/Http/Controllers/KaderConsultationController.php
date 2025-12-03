@@ -62,6 +62,7 @@ class KaderConsultationController extends Controller
                 'message' => $lastMessage->message,
                 'created_at' => $lastMessage->created_at,
                 'sender_name' => $lastMessage->sender->name ?? 'Unknown',
+                'attachment_type' => $lastMessage->attachment_type,
             ] : null;
             // Remove the relation from response to avoid duplication
             unset($consultation->latestMessage);
@@ -94,17 +95,49 @@ class KaderConsultationController extends Controller
             }
         }
 
-        // Get all messages
+        // Get all messages with attachment details
         $messages = $consultation->messages()
             ->with('sender')
             ->orderBy('created_at', 'asc')
-            ->get();
+            ->get()
+            ->map(function ($message) {
+                return [
+                    'id' => $message->id,
+                    'sender_id' => $message->sender_id,
+                    'sender_name' => $message->sender->name,
+                    'sender_role' => $message->sender->role,
+                    'message' => $message->message,
+                    'attachment_path' => $message->attachment_path ? url('storage/' . $message->attachment_path) : null,
+                    'attachment_type' => $message->attachment_type,
+                    'created_at' => $message->created_at,
+                ];
+            });
+
+        // Transform consultation data
+        $consultationData = [
+            'id' => $consultation->id,
+            'title' => $consultation->title,
+            'status' => $consultation->status,
+            'parent' => $consultation->parent ? [
+                'id' => $consultation->parent->id,
+                'name' => $consultation->parent->name,
+                'is_online' => $consultation->parent->is_online,
+            ] : null,
+            'child' => $consultation->child ? [
+                'id' => $consultation->child->id,
+                'full_name' => $consultation->child->full_name,
+            ] : null,
+            'kader' => $consultation->kader ? [
+                'id' => $consultation->kader->id,
+                'name' => $consultation->kader->name,
+            ] : null,
+            'messages' => $messages,
+            'created_at' => $consultation->created_at,
+            'updated_at' => $consultation->updated_at,
+        ];
 
         return response()->json([
-            'data' => [
-                'consultation' => $consultation,
-                'messages' => $messages,
-            ],
+            'data' => $consultationData,
         ], 200);
     }
 
@@ -128,8 +161,23 @@ class KaderConsultationController extends Controller
         }
 
         $validated = $request->validate([
-            'message' => ['required', 'string', 'max:1000'],
+            'message' => ['nullable', 'string', 'max:2000'],
+            'attachment' => ['nullable', 'file', 'image', 'max:5120'], // Max 5MB
         ]);
+
+        if (empty($validated['message']) && empty($request->file('attachment'))) {
+            return response()->json(['message' => 'Message or attachment is required.'], 422);
+        }
+
+        $attachmentPath = null;
+        $attachmentType = null;
+
+        if ($request->hasFile('attachment')) {
+            $file = $request->file('attachment');
+            $path = $file->store('consultation-attachments', 'public');
+            $attachmentPath = $path;
+            $attachmentType = 'image'; // For now only images
+        }
 
         // Create message
         $message = ConsultationMessage::create([
@@ -146,8 +194,19 @@ class KaderConsultationController extends Controller
             $consultation->update(['kader_id' => $user->id]);
         }
 
+        $message->load('sender');
+
         return response()->json([
-            'data' => $message->load('sender'),
+            'data' => [
+                'id' => $message->id,
+                'sender_id' => $message->sender_id,
+                'sender_name' => $message->sender->name,
+                'sender_role' => $message->sender->role,
+                'message' => $message->message,
+                'attachment_path' => $message->attachment_path ? url('storage/' . $message->attachment_path) : null,
+                'attachment_type' => $message->attachment_type,
+                'created_at' => $message->created_at,
+            ],
             'message' => 'Pesan berhasil dikirim.',
         ], 201);
     }
@@ -176,6 +235,74 @@ class KaderConsultationController extends Controller
         return response()->json([
             'data' => $consultation,
             'message' => 'Konsultasi berhasil ditutup.',
+        ], 200);
+    }
+
+    /**
+     * Delete consultation
+     */
+    public function destroy(Request $request, string $id): JsonResponse
+    {
+        $user = $request->user();
+
+        $consultation = Consultation::with(['parent', 'child'])->findOrFail($id);
+
+        // Authorization: kader can delete if assigned OR child belongs to their posyandu
+        if (
+            $consultation->kader_id !== $user->id &&
+            (!$user->posyandu_id || $consultation->child->posyandu_id !== $user->posyandu_id)
+        ) {
+            return response()->json([
+                'message' => 'Unauthorized access.',
+            ], 403);
+        }
+
+        $consultation->delete();
+
+        return response()->json([
+            'message' => 'Consultation deleted successfully.',
+        ], 200);
+    }
+
+    /**
+     * Get child data for sharing in consultation
+     */
+    public function getChildData(Request $request, string $id): JsonResponse
+    {
+        $user = $request->user();
+
+        $consultation = Consultation::with('child.weighingLogs')->findOrFail($id);
+
+        // Authorization: kader can access if assigned OR child belongs to their posyandu
+        if (
+            $consultation->kader_id !== $user->id &&
+            (!$user->posyandu_id || $consultation->child->posyandu_id !== $user->posyandu_id)
+        ) {
+            return response()->json([
+                'message' => 'Unauthorized access.',
+            ], 403);
+        }
+
+        if (!$consultation->child) {
+            return response()->json([
+                'message' => 'No child associated with this consultation.',
+            ], 404);
+        }
+
+        $child = $consultation->child;
+        $latestLog = $child->weighingLogs()->latest('measured_at')->first();
+
+        return response()->json([
+            'data' => [
+                'name' => $child->full_name,
+                'age_months' => $child->age_in_months,
+                'gender' => $child->gender,
+                'weight' => $latestLog ? $latestLog->weight_kg : null,
+                'height' => $latestLog ? $latestLog->height_cm : null,
+                'head_circumference' => $latestLog ? $latestLog->head_circumference_cm : null,
+                'notes' => $latestLog ? $latestLog->notes : null,
+                'measured_at' => $latestLog ? $latestLog->measured_at : null,
+            ],
         ], 200);
     }
 }

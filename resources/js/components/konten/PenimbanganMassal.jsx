@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, ChevronLeft, ChevronRight, Search, Save, ArrowLeft, Check } from "lucide-react";
 import api from "../../lib/api";
 import { formatAge, getStatusColor, getStatusLabel } from "../../lib/utils";
+import PageHeader from "../dashboard/PageHeader";
 
 export default function PenimbanganMassal() {
     const [loading, setLoading] = useState(true);
@@ -154,19 +155,11 @@ export default function PenimbanganMassal() {
         <div className="flex flex-1 w-full h-full overflow-auto bg-gray-50/50">
             <div className="w-full flex flex-col gap-6 p-4">
                 {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Penimbangan Massal</h1>
-                        <p className="text-gray-500 mt-1">Input data penimbangan anak-anak di posyandu</p>
-                    </div>
-                    <button
-                        onClick={() => navigate('/dashboard/data-anak')}
-                        className="px-4 py-2 bg-white border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-2 shadow-sm"
-                    >
-                        <ArrowLeft className="w-4 h-4" />
-                        Kembali
-                    </button>
-                </div>
+                <PageHeader
+                    title="Penimbangan Massal"
+                    subtitle="Portal Kader"
+                    description="Input data penimbangan anak-anak di posyandu"
+                />
 
                 {/* Success Results */}
                 {results && (
