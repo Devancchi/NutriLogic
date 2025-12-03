@@ -1,23 +1,21 @@
-import React, { memo } from 'react';
+import React, { useState } from 'react';
+import { ChevronDown, LayoutGrid, Activity, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Check, Baby } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import ChildSelectorSkeleton from './ChildSelectorSkeleton';
 
-const EnhancedChildSelector = memo(function EnhancedChildSelector({
-    children,
-    selectedChildId,
-    onChange,
-    loading = false
-}) {
-    const [isOpen, setIsOpen] = React.useState(false);
-    const selectedChild = children.find(c => c.id === parseInt(selectedChildId));
+export default function JurnalViewSelector({ activeTab, onTabChange }) {
+    const [isOpen, setIsOpen] = useState(false);
 
-    if (loading) return <ChildSelectorSkeleton />;
-    if (children.length === 0) return null;
+    const options = [
+        { value: 'jurnal', label: 'Jurnal Harian', icon: LayoutGrid },
+        { value: 'pmt', label: 'Pantau PMT', icon: Activity },
+    ];
+
+    const selectedOption = options.find(opt => opt.value === activeTab) || options[0];
+    const Icon = selectedOption.icon;
 
     return (
-        <div className="relative w-full min-w-[200px]">
+        <div className="relative w-full">
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className={cn(
@@ -31,10 +29,13 @@ const EnhancedChildSelector = memo(function EnhancedChildSelector({
                 )}
             >
                 <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
-                        <Baby className="w-5 h-5" />
+                    <div className={cn(
+                        "p-2 rounded-lg",
+                        activeTab === 'jurnal' ? "bg-blue-50 text-blue-600" : "bg-purple-50 text-purple-600"
+                    )}>
+                        <Icon className="w-5 h-5" />
                     </div>
-                    <span>{selectedChild ? selectedChild.full_name : 'Pilih Anak'}</span>
+                    <span>{selectedOption.label}</span>
                 </div>
                 <ChevronDown className={cn(
                     "w-5 h-5 text-gray-400 transition-transform duration-200",
@@ -57,14 +58,15 @@ const EnhancedChildSelector = memo(function EnhancedChildSelector({
                             className="absolute z-40 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl overflow-hidden"
                         >
                             <div className="p-1.5 space-y-1">
-                                {children.map((child) => {
-                                    const isSelected = parseInt(selectedChildId) === child.id;
+                                {options.map((option) => {
+                                    const OptionIcon = option.icon;
+                                    const isSelected = activeTab === option.value;
 
                                     return (
                                         <button
-                                            key={child.id}
+                                            key={option.value}
                                             onClick={() => {
-                                                onChange(child.id);
+                                                onTabChange(option.value);
                                                 setIsOpen(false);
                                             }}
                                             className={cn(
@@ -77,11 +79,11 @@ const EnhancedChildSelector = memo(function EnhancedChildSelector({
                                             )}
                                         >
                                             <div className="flex items-center gap-3">
-                                                <Baby className={cn(
+                                                <OptionIcon className={cn(
                                                     "w-4 h-4",
                                                     isSelected ? "text-blue-600" : "text-gray-400"
                                                 )} />
-                                                {child.full_name}
+                                                {option.label}
                                             </div>
                                             {isSelected && (
                                                 <Check className="w-4 h-4 text-blue-600" />
@@ -96,6 +98,4 @@ const EnhancedChildSelector = memo(function EnhancedChildSelector({
             </AnimatePresence>
         </div>
     );
-});
-
-export default EnhancedChildSelector;
+}
