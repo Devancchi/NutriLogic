@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus } from 'lucide-react';
 import api from '../../lib/api';
 import PageHeader from '../dashboard/PageHeader';
 import DashboardLayout from '../dashboard/DashboardLayout';
@@ -24,6 +25,7 @@ function JurnalMakanPageContent() {
     const [meals, setMeals] = useState([]);
     const [mealsLoading, setMealsLoading] = useState(false);
     const [pmtRefreshKey, setPmtRefreshKey] = useState(0);
+    const [isAddMealModalOpen, setIsAddMealModalOpen] = useState(false);
 
     useEffect(() => {
         fetchChildren();
@@ -141,16 +143,16 @@ function JurnalMakanPageContent() {
                     {/* Padded Content Area */}
                     <div className="p-4 md:p-8">
                         {/* Clean Split Layout */}
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-10">
 
                             {/* Left Sidebar: Navigation & Stats */}
-                            <div className="lg:col-span-4 space-y-6">
+                            <div className="lg:col-span-4 space-y-4 lg:space-y-6">
                                 <div className="mb-2">
                                     <h1 className="text-3xl font-bold tracking-tight text-gray-900">Jurnal Makan</h1>
                                     <p className="text-gray-500 mt-1 text-lg">Pantau asupan nutrisi {selectedChild?.full_name?.split(' ')[0] || 'anak'}.</p>
                                 </div>
 
-                                <div className="pt-4 space-y-6">
+                                <div className="pt-4 space-y-4 lg:space-y-6">
                                     <EnhancedChildSelector
                                         children={children}
                                         selectedChildId={selectedChildId}
@@ -190,14 +192,16 @@ function JurnalMakanPageContent() {
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.3 }}
-                                    className="space-y-8 mt-24"
+                                    className="space-y-8 mt-4 lg:mt-24"
                                 >
                                     {activeTab === 'jurnal' ? (
                                         <>
-                                            <QuickAddForm
-                                                childId={selectedChildId}
-                                                onSuccess={handleMealAdded}
-                                            />
+                                            <div className="hidden lg:block">
+                                                <QuickAddForm
+                                                    childId={selectedChildId}
+                                                    onSuccess={handleMealAdded}
+                                                />
+                                            </div>
 
                                             <div className="pt-4">
                                                 {meals.length === 0 && !mealsLoading && (
@@ -236,6 +240,49 @@ function JurnalMakanPageContent() {
                             loading={mealsLoading}
                             onDelete={handleDeleteMeal}
                         />
+                    )}
+
+                    {/* Mobile FAB & Modal */}
+                    {activeTab === 'jurnal' && (
+                        <>
+                            {/* FAB */}
+                            <motion.button
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                onClick={() => setIsAddMealModalOpen(true)}
+                                className="fixed bottom-24 right-6 lg:hidden z-40 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg shadow-blue-600/30 flex items-center justify-center hover:bg-blue-700 active:scale-95 transition-all"
+                            >
+                                <Plus className="w-6 h-6" />
+                            </motion.button>
+
+                            {/* Modal */}
+                            <AnimatePresence>
+                                {isAddMealModalOpen && (
+                                    <>
+                                        <div
+                                            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm lg:hidden"
+                                            onClick={() => setIsAddMealModalOpen(false)}
+                                        />
+                                        <motion.div
+                                            initial={{ opacity: 0, y: '100%' }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: '100%' }}
+                                            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                                            className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl p-6 lg:hidden max-h-[90vh] overflow-y-auto"
+                                        >
+                                            <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6" />
+                                            <QuickAddForm
+                                                childId={selectedChildId}
+                                                onSuccess={() => {
+                                                    handleMealAdded();
+                                                    setIsAddMealModalOpen(false);
+                                                }}
+                                            />
+                                        </motion.div>
+                                    </>
+                                )}
+                            </AnimatePresence>
+                        </>
                     )}
 
                 </main>
