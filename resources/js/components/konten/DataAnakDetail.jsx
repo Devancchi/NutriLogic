@@ -131,8 +131,8 @@ export default function DataAnakDetail() {
     const currentHeight = latestWeighing?.height_cm;
 
     return (
-        <div className="flex flex-1 w-full h-full overflow-auto no-scrollbar md:scrollbar-auto bg-gray-50">
-            <div className="p-4 md:p-8 w-full max-w-7xl mx-auto flex flex-col gap-8">
+        <div className="flex flex-1 w-full h-full overflow-auto no-scrollbar bg-gray-50">
+            <div className="p-4 md:p-8 w-full max-w-7xl mx-auto flex flex-col gap-6 md:gap-8">
                 {/* Header */}
                 <div className="flex items-center gap-4">
                     <button
@@ -142,24 +142,24 @@ export default function DataAnakDetail() {
                         <ChevronLeft className="w-5 h-5" />
                     </button>
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Detail Anak</h1>
-                        <p className="text-gray-500 text-sm">Informasi lengkap tumbuh kembang</p>
+                        <h1 className="text-xl md:text-2xl font-bold text-gray-900">Detail Anak</h1>
+                        <p className="text-gray-500 text-xs md:text-sm">Informasi lengkap tumbuh kembang</p>
                     </div>
                 </div>
 
                 {/* Hero Section */}
-                <div className="relative bg-white rounded-[24px] shadow-sm border border-gray-100">
+                <div className="relative bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden">
                     {/* Decorative Background Layer */}
                     <div className="absolute inset-0 overflow-hidden rounded-[24px]">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-bl-full -mr-16 -mt-16 opacity-50" />
                     </div>
 
                     {/* Content Layer */}
-                    <div className="relative z-10 p-6 md:p-8 flex flex-col md:flex-row gap-8 items-start md:items-center">
+                    <div className="relative z-10 p-5 md:p-8 flex flex-col md:flex-row gap-6 md:gap-8 items-start md:items-center">
                         {/* Profile Info */}
-                        <div className="flex items-center gap-6 flex-1 w-full">
+                        <div className="flex items-center gap-4 md:gap-6 flex-1 w-full">
 
-                            <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-blue-50 p-1.5 shadow-inner flex-shrink-0">
+                            <div className="w-20 h-20 md:w-32 md:h-32 rounded-full bg-blue-50 p-1.5 shadow-inner flex-shrink-0">
                                 <img
                                     src={childData.gender === 'L' ? assets.kepala_bayi : childData.gender === 'P' ? assets.kepala_bayi_cewe : `https://api.dicebear.com/9.x/adventurer/svg?seed=${childData.full_name}&backgroundColor=b6e3f4`}
                                     alt={childData.full_name}
@@ -167,16 +167,16 @@ export default function DataAnakDetail() {
                                 />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <div className="flex flex-wrap items-center gap-3 mb-2">
-                                    <h2 className="text-2xl md:text-3xl font-bold text-gray-900 truncate">{childData.full_name}</h2>
-                                    <span className="px-3 py-1 bg-green-50 text-green-600 text-xs font-bold rounded-full border border-green-100 flex items-center gap-1.5 flex-shrink-0">
+                                <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-1 md:mb-2">
+                                    <h2 className="text-xl md:text-3xl font-bold text-gray-900 truncate">{childData.full_name}</h2>
+                                    <span className="px-2 md:px-3 py-0.5 md:py-1 bg-green-50 text-green-600 text-[10px] md:text-xs font-bold rounded-full border border-green-100 flex items-center gap-1.5 shrink-0">
                                         <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                                         Sehat
                                     </span>
                                 </div>
-                                <div className="flex flex-wrap gap-4 text-gray-500 text-sm font-medium">
+                                <div className="flex flex-wrap gap-2 md:gap-4 text-gray-500 text-xs md:text-sm font-medium">
                                     <div className="flex items-center gap-1.5 whitespace-nowrap">
-                                        <Calendar className="w-4 h-4" />
+                                        <Calendar className="w-3.5 h-3.5 md:w-4 md:h-4" />
                                         {formatAge(childData.age_in_months)}
                                     </div>
                                     <div className="hidden sm:block w-1 h-1 rounded-full bg-gray-300 self-center" />
@@ -184,12 +184,12 @@ export default function DataAnakDetail() {
                                         {childData.gender === 'L' ? 'Laki-laki' : 'Perempuan'}
                                     </div>
                                     <div className="hidden sm:block w-1 h-1 rounded-full bg-gray-300 self-center" />
-                                    <div className="whitespace-nowrap">
+                                    <div className="whitespace-nowrap hidden md:block">
                                         {new Date(childData.birth_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                                     </div>
                                 </div>
-                                <div className="mt-4 flex gap-2">
-                                    <span className="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-lg font-medium truncate max-w-full">
+                                <div className="mt-3 md:mt-4 flex gap-2">
+                                    <span className="px-2.5 py-1 md:px-3 md:py-1.5 bg-gray-100 text-gray-600 text-[10px] md:text-xs rounded-lg font-medium truncate max-w-full">
                                         Posyandu: {childData.posyandu?.name || '-'}
                                     </span>
                                 </div>
@@ -197,22 +197,22 @@ export default function DataAnakDetail() {
                         </div>
 
                         {/* Quick Stats */}
-                        <div className="flex gap-4 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 no-scrollbar">
-                            <div className="bg-blue-50/50 p-4 rounded-2xl min-w-[140px] border border-blue-100 flex-shrink-0">
-                                <div className="flex items-center gap-2 text-blue-600 mb-2">
-                                    <Weight className="w-4 h-4" />
-                                    <span className="text-xs font-bold uppercase">Berat Badan</span>
+                        <div className="flex gap-3 md:gap-4 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 no-scrollbar">
+                            <div className="bg-blue-50/50 p-3 md:p-4 rounded-2xl min-w-[120px] md:min-w-[140px] border border-blue-100 shrink-0">
+                                <div className="flex items-center gap-2 text-blue-600 mb-1 md:mb-2">
+                                    <Weight className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                    <span className="text-[10px] md:text-xs font-bold uppercase">Berat Badan</span>
                                 </div>
-                                <p className="text-2xl font-bold text-gray-900">
+                                <p className="text-xl md:text-2xl font-bold text-gray-900">
                                     {currentWeight ? `${currentWeight} kg` : '-'}
                                 </p>
                             </div>
-                            <div className="bg-purple-50/50 p-4 rounded-2xl min-w-[140px] border border-purple-100 flex-shrink-0">
-                                <div className="flex items-center gap-2 text-purple-600 mb-2">
-                                    <Ruler className="w-4 h-4" />
-                                    <span className="text-xs font-bold uppercase">Tinggi Badan</span>
+                            <div className="bg-purple-50/50 p-3 md:p-4 rounded-2xl min-w-[120px] md:min-w-[140px] border border-purple-100 shrink-0">
+                                <div className="flex items-center gap-2 text-purple-600 mb-1 md:mb-2">
+                                    <Ruler className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                    <span className="text-[10px] md:text-xs font-bold uppercase">Tinggi Badan</span>
                                 </div>
-                                <p className="text-2xl font-bold text-gray-900">
+                                <p className="text-xl md:text-2xl font-bold text-gray-900">
                                     {currentHeight ? `${currentHeight} cm` : '-'}
                                 </p>
                             </div>
@@ -221,26 +221,26 @@ export default function DataAnakDetail() {
                 </div>
 
                 {/* Content Tabs */}
-                <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-4 md:gap-6">
                     {/* Tab Navigation */}
-                    <div className="grid grid-cols-2 md:flex gap-2 p-1 bg-gray-100/80 rounded-xl w-full md:w-fit">
+                    <div className="grid grid-cols-4 md:flex gap-1 md:gap-2 p-1 bg-gray-100/80 rounded-xl w-full md:w-fit overflow-x-auto no-scrollbar">
                         {[
                             { id: 'history', label: 'Riwayat', icon: Activity },
                             { id: 'meals', label: 'Makanan', icon: Utensils },
                             { id: 'immunization', label: 'Imunisasi', icon: Syringe },
-                            { id: 'details', label: 'Info Detail', icon: Info },
+                            { id: 'details', label: 'Info', icon: Info },
                         ].map((tab) => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`
-                            px-3 py-2.5 rounded-lg text-xs md:text-sm font-medium transition-all flex items-center justify-center md:justify-start gap-2
+                            px-2 md:px-3 py-2 md:py-2.5 rounded-lg text-[10px] md:text-sm font-medium transition-all flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-2
                             ${activeTab === tab.id
                                         ? 'bg-white text-blue-600 shadow-sm'
                                         : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'}
                         `}
                             >
-                                <tab.icon className="w-4 h-4 flex-shrink-0" />
+                                <tab.icon className="w-4 h-4 md:w-4 md:h-4 shrink-0" />
                                 <span className="truncate">{tab.label}</span>
                             </button>
                         ))}
@@ -249,7 +249,7 @@ export default function DataAnakDetail() {
                     {/* Tab Content */}
                     <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 min-h-[400px]">
                         {activeTab === 'details' && (
-                            <div className="p-6">
+                            <div className="p-5 md:p-6">
                                 <h3 className="text-lg font-bold text-gray-900 mb-6">Informasi Lengkap Anak</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     {/* Identity Section */}
@@ -261,28 +261,28 @@ export default function DataAnakDetail() {
                                         <div className="grid grid-cols-1 gap-4">
                                             <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
                                                 <p className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">Nama Lengkap</p>
-                                                <p className="font-bold text-gray-900 text-lg">{childData.full_name}</p>
+                                                <p className="font-bold text-gray-900 text-base md:text-lg">{childData.full_name}</p>
                                             </div>
                                             <div className="grid grid-cols-2 gap-4">
-                                                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                                                    <p className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">NIK</p>
-                                                    <p className="font-bold text-gray-900 font-mono">{childData.nik || '-'}</p>
+                                                <div className="bg-gray-50 rounded-xl p-3 md:p-4 border border-gray-100">
+                                                    <p className="text-[10px] md:text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">NIK</p>
+                                                    <p className="font-bold text-gray-900 font-mono text-sm md:text-base truncate">{childData.nik || '-'}</p>
                                                 </div>
-                                                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                                                    <p className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">Jenis Kelamin</p>
-                                                    <p className="font-bold text-gray-900">{childData.gender === 'L' ? 'Laki-laki' : 'Perempuan'}</p>
+                                                <div className="bg-gray-50 rounded-xl p-3 md:p-4 border border-gray-100">
+                                                    <p className="text-[10px] md:text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">Jenis Kelamin</p>
+                                                    <p className="font-bold text-gray-900 text-sm md:text-base">{childData.gender === 'L' ? 'Laki-laki' : 'Perempuan'}</p>
                                                 </div>
                                             </div>
                                             <div className="grid grid-cols-2 gap-4">
-                                                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                                                    <p className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">Tanggal Lahir</p>
-                                                    <p className="font-bold text-gray-900">
+                                                <div className="bg-gray-50 rounded-xl p-3 md:p-4 border border-gray-100">
+                                                    <p className="text-[10px] md:text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">Tanggal Lahir</p>
+                                                    <p className="font-bold text-gray-900 text-sm md:text-base">
                                                         {new Date(childData.birth_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                                                     </p>
                                                 </div>
-                                                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                                                    <p className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">Usia</p>
-                                                    <p className="font-bold text-gray-900">{formatAge(childData.age_in_months)}</p>
+                                                <div className="bg-gray-50 rounded-xl p-3 md:p-4 border border-gray-100">
+                                                    <p className="text-[10px] md:text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">Usia</p>
+                                                    <p className="font-bold text-gray-900 text-sm md:text-base">{formatAge(childData.age_in_months)}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -297,15 +297,15 @@ export default function DataAnakDetail() {
                                                 Data Kelahiran
                                             </h4>
                                             <div className="grid grid-cols-2 gap-4">
-                                                <div className="bg-purple-50/50 rounded-xl p-4 border border-purple-100">
-                                                    <p className="text-xs text-purple-600 mb-1 font-medium uppercase tracking-wider">Berat Lahir</p>
-                                                    <p className="font-bold text-gray-900 text-lg">
+                                                <div className="bg-purple-50/50 rounded-xl p-3 md:p-4 border border-purple-100">
+                                                    <p className="text-[10px] md:text-xs text-purple-600 mb-1 font-medium uppercase tracking-wider">Berat Lahir</p>
+                                                    <p className="font-bold text-gray-900 text-base md:text-lg">
                                                         {childData.birth_weight_kg != null ? `${childData.birth_weight_kg} kg` : '-'}
                                                     </p>
                                                 </div>
-                                                <div className="bg-purple-50/50 rounded-xl p-4 border border-purple-100">
-                                                    <p className="text-xs text-purple-600 mb-1 font-medium uppercase tracking-wider">Tinggi Lahir</p>
-                                                    <p className="font-bold text-gray-900 text-lg">
+                                                <div className="bg-purple-50/50 rounded-xl p-3 md:p-4 border border-purple-100">
+                                                    <p className="text-[10px] md:text-xs text-purple-600 mb-1 font-medium uppercase tracking-wider">Tinggi Lahir</p>
+                                                    <p className="font-bold text-gray-900 text-base md:text-lg">
                                                         {childData.birth_height_cm != null ? `${childData.birth_height_cm} cm` : '-'}
                                                     </p>
                                                 </div>
@@ -320,7 +320,7 @@ export default function DataAnakDetail() {
                                             </h4>
                                             <div className="bg-yellow-50/50 rounded-xl p-4 border border-yellow-100 min-h-[100px]">
                                                 {childData.notes ? (
-                                                    <p className="text-gray-700 leading-relaxed">{childData.notes}</p>
+                                                    <p className="text-gray-700 leading-relaxed text-sm md:text-base">{childData.notes}</p>
                                                 ) : (
                                                     <p className="text-gray-400 italic text-sm">Tidak ada catatan khusus.</p>
                                                 )}
@@ -339,8 +339,8 @@ export default function DataAnakDetail() {
                             </div>
                         )}
                         {activeTab === 'history' && (
-                            <div className="p-6">
-                                <div className="flex justify-between items-center mb-6">
+                            <div className="p-5 md:p-6">
+                                <div className="flex justify-between items-center mb-4 md:mb-6">
                                     <h3 className="text-lg font-bold text-gray-900">Riwayat Pertumbuhan</h3>
                                 </div>
 
@@ -452,7 +452,7 @@ export default function DataAnakDetail() {
                         )}
 
                         {activeTab === 'meals' && (
-                            <div className="p-6">
+                            <div className="p-5 md:p-6">
                                 <h3 className="text-lg font-bold text-gray-900 mb-6">Log Makanan Terakhir</h3>
                                 {(!childData.meal_logs || childData.meal_logs.length === 0) ? (
                                     <EmptyState message="Belum ada log makanan" />
@@ -506,7 +506,7 @@ export default function DataAnakDetail() {
                         )}
 
                         {activeTab === 'immunization' && (
-                            <div className="p-6">
+                            <div className="p-5 md:p-6">
                                 <h3 className="text-lg font-bold text-gray-900 mb-6">Jadwal Imunisasi</h3>
                                 {(!childData.immunization_schedules || childData.immunization_schedules.length === 0) ? (
                                     <EmptyState message="Belum ada jadwal imunisasi" />

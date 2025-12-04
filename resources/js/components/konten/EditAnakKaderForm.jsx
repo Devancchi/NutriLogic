@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronDown, Check, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import api from "../../lib/api";
+import EditAnakKaderFormSkeleton from "../loading/EditAnakKaderFormSkeleton";
 
 
 export default function EditAnakKaderForm() {
@@ -181,18 +182,7 @@ export default function EditAnakKaderForm() {
 
 
     if (loading) {
-        return (
-            <div className="flex flex-1 w-full h-full overflow-auto">
-                <div className="p-4 md:p-10 w-full h-full bg-gray-50 flex flex-col gap-4">
-                    <div className="flex items-center justify-center h-64">
-                        <div className="text-center">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                            <p className="text-gray-600">Memuat data anak...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
+        return <EditAnakKaderFormSkeleton />;
     }
 
     return (
@@ -319,7 +309,7 @@ export default function EditAnakKaderForm() {
                                         {isDatePickerOpen && createPortal(
                                             <>
                                                 <div
-                                                    className="fixed inset-0 z-[9998] bg-transparent"
+                                                    className="fixed inset-0 z-9998 bg-transparent"
                                                     onClick={() => setIsDatePickerOpen(false)}
                                                 />
                                                 <motion.div
@@ -330,7 +320,7 @@ export default function EditAnakKaderForm() {
                                                         top: dropdownPos.top,
                                                         left: dropdownPos.left
                                                     }}
-                                                    className="fixed z-[9999] p-4 bg-white/90 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-xl w-[360px]"
+                                                    className="fixed z-9999 p-4 bg-white/90 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-xl w-[360px]"
                                                 >
                                                     {/* Calendar Header */}
                                                     <div className="flex items-center justify-between mb-4">
@@ -467,7 +457,7 @@ export default function EditAnakKaderForm() {
                                             {isGenderDropdownOpen && createPortal(
                                                 <>
                                                     <div
-                                                        className="fixed inset-0 z-[9998] bg-transparent"
+                                                        className="fixed inset-0 z-9998 bg-transparent"
                                                         onClick={() => setIsGenderDropdownOpen(false)}
                                                     />
                                                     <motion.div
@@ -480,7 +470,7 @@ export default function EditAnakKaderForm() {
                                                             left: dropdownPos.left,
                                                             width: 200 // Fixed width for dropdown
                                                         }}
-                                                        className="fixed z-[9999] mt-2 bg-white/90 backdrop-blur-xl border border-gray-200 rounded-xl shadow-xl overflow-hidden"
+                                                        className="fixed z-9999 mt-2 bg-white/90 backdrop-blur-xl border border-gray-200 rounded-xl shadow-xl overflow-hidden"
                                                     >
                                                         {[
                                                             { value: 'L', label: 'Laki-laki' },

@@ -1,22 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus } from 'lucide-react';
 import api from '../../lib/api';
 import PageHeader from '../dashboard/PageHeader';
 import DashboardLayout from '../dashboard/DashboardLayout';
 import QuickAddForm from '../jurnal/QuickAddForm';
-import MealTimeline from '../jurnal/MealTimeline';
+import NoMealsEmptyState from '../jurnal/NoMealsEmptyState';
 import TodayStatusCard from '../pmt/TodayStatusCard';
 import PMTCalendar from '../pmt/PMTCalendar';
 import PMTStatsCard from '../pmt/PMTStatsCard';
 import EnhancedChildSelector from '../jurnal/EnhancedChildSelector';
-import EnhancedTabNavigation from '../jurnal/EnhancedTabNavigation';
+import JurnalViewSelector from '../jurnal/JurnalViewSelector';
 import NoChildrenEmptyState from '../jurnal/NoChildrenEmptyState';
 import ChildSelectorSkeleton from '../jurnal/ChildSelectorSkeleton';
 import TimelineSkeleton from '../jurnal/TimelineSkeleton';
-import StatsSkeleton from '../pmt/StatsSkeleton';
-import CalendarSkeleton from '../pmt/CalendarSkeleton';
-import TodayStatusSkeleton from '../pmt/TodayStatusSkeleton';
 import ErrorBoundary from '../ErrorBoundary';
+import MealDataTable from '../jurnal/MealDataTable';
 
 function JurnalMakanPageContent() {
     const [activeTab, setActiveTab] = useState('jurnal'); // 'jurnal' or 'pmt'
@@ -26,6 +25,7 @@ function JurnalMakanPageContent() {
     const [meals, setMeals] = useState([]);
     const [mealsLoading, setMealsLoading] = useState(false);
     const [pmtRefreshKey, setPmtRefreshKey] = useState(0);
+    const [isAddMealModalOpen, setIsAddMealModalOpen] = useState(false);
 
     useEffect(() => {
         fetchChildren();
@@ -96,83 +96,37 @@ function JurnalMakanPageContent() {
     if (loading) {
         return (
             <DashboardLayout>
-                <motion.div 
-                    className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-white p-4 sm:p-6 md:p-8 lg:p-10"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                >
-                    <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                        >
-                            <PageHeader
-                                title="Jurnal Makan"
-                                subtitle="Catat makanan harian dan pantau konsumsi PMT"
-                            />
-                        </motion.div>
-
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1 }}
-                            role="status"
-                            aria-label="Memuat data anak"
-                        >
-                            <ChildSelectorSkeleton />
-                        </motion.div>
-
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 }}
-                            className="bg-white rounded-2xl shadow-md border border-gray-100 p-4"
-                        >
-                            <div className="flex gap-4">
-                                <div className="h-12 w-32 bg-gray-200 rounded-lg animate-pulse"></div>
-                                <div className="h-12 w-32 bg-gray-200 rounded-lg animate-pulse"></div>
-                            </div>
-                        </motion.div>
-
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3 }}
-                            className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8"
-                        >
-                            <div className="lg:col-span-4">
-                                <div className="bg-white rounded-2xl shadow-lg border-2 border-gray-100 p-6 md:p-8 space-y-4">
-                                    <div className="h-6 w-32 bg-gray-200 rounded animate-pulse"></div>
-                                    <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
-                                    <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
-                                    <div className="h-24 bg-gray-200 rounded animate-pulse"></div>
-                                    <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+                <div className="min-h-screen bg-gray-50/50 font-sans">
+                    <div className="max-w-6xl mx-auto p-6 md:p-10">
+                        <div className="animate-pulse space-y-8">
+                            <div className="h-8 w-48 bg-gray-200 rounded"></div>
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                                <div className="space-y-4">
+                                    <div className="h-12 w-full bg-gray-200 rounded"></div>
+                                    <div className="h-64 w-full bg-gray-200 rounded"></div>
+                                </div>
+                                <div className="lg:col-span-2 space-y-4">
+                                    <div className="h-32 w-full bg-gray-200 rounded"></div>
+                                    <div className="h-64 w-full bg-gray-200 rounded"></div>
                                 </div>
                             </div>
-
-                            <div className="lg:col-span-8">
-                                <div className="bg-white rounded-2xl shadow-lg border-2 border-gray-100 p-6 md:p-8">
-                                    <TimelineSkeleton />
-                                </div>
-                            </div>
-                        </motion.div>
+                        </div>
                     </div>
-                </motion.div>
+                </div>
             </DashboardLayout>
         );
     }
 
-    // Show empty state if no children
     if (children.length === 0) {
         return (
             <DashboardLayout>
-                <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-white p-4 md:p-6 lg:p-8">
-                    <div className="max-w-7xl mx-auto">
+                <div className="min-h-screen bg-gray-50/50 font-sans">
+                    <div className="max-w-6xl mx-auto p-6 md:p-10">
                         <PageHeader
                             title="Jurnal Makan"
-                            subtitle="Catat makanan harian dan pantau konsumsi PMT"
+                            subtitle="Catat nutrisi harian anak"
                         />
-                        <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-4 md:p-6 mt-4 md:mt-6">
+                        <div className="mt-8">
                             <NoChildrenEmptyState />
                         </div>
                     </div>
@@ -181,213 +135,162 @@ function JurnalMakanPageContent() {
         );
     }
 
-    const pageVariants = {
-        initial: { opacity: 0, y: 20 },
-        animate: { 
-            opacity: 1, 
-            y: 0,
-            transition: {
-                duration: 0.4,
-                staggerChildren: 0.1
-            }
-        },
-        exit: { opacity: 0, y: -20 }
-    };
-
-    const sectionVariants = {
-        initial: { opacity: 0, y: 20 },
-        animate: { opacity: 1, y: 0 }
-    };
-
     return (
         <DashboardLayout>
-            {/* Mobile-first responsive container with consistent spacing and cohesive color palette */}
-            <motion.main 
-                className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-white p-4 sm:p-6 md:p-8 lg:p-10"
-                variants={pageVariants}
-                initial="initial"
-                animate="animate"
-                role="main"
-                aria-label="Halaman Jurnal Makan"
-            >
-                {/* Constrain max width on large screens for better readability */}
-                <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
-                    <motion.div variants={sectionVariants}>
-                        <PageHeader
-                            title="Jurnal Makan"
-                            subtitle="Catat makanan harian dan pantau konsumsi PMT"
-                        />
-                    </motion.div>
+            <div className="min-h-screen bg-gray-50/50 font-sans text-gray-900">
+                <main className="w-full">
 
-                    {/* Enhanced Child Selector with proper spacing */}
-                    <motion.div 
-                        className="mt-6 md:mt-8"
-                        variants={sectionVariants}
-                    >
-                        <EnhancedChildSelector
-                            children={children}
-                            selectedChildId={selectedChildId}
-                            onChange={setSelectedChildId}
-                            loading={loading}
-                        />
-                    </motion.div>
+                    {/* Padded Content Area */}
+                    <div className="p-4 md:p-8">
+                        {/* Clean Split Layout */}
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-10">
 
-                    {/* Enhanced Tab Navigation with proper spacing */}
-                    <motion.div 
-                        className="mt-6 md:mt-8"
-                        variants={sectionVariants}
-                    >
-                        <EnhancedTabNavigation
-                            activeTab={activeTab}
-                            onTabChange={setActiveTab}
-                            mealCount={meals.length}
-                            pmtStatus={null}
-                        />
-                    </motion.div>
+                            {/* Left Sidebar: Navigation & Stats */}
+                            <div className="lg:col-span-4 space-y-4 lg:space-y-6">
+                                <div className="mb-2">
+                                    <h1 className="text-3xl font-bold tracking-tight text-gray-900">Jurnal Makan</h1>
+                                    <p className="text-gray-500 mt-1 text-lg">Pantau asupan nutrisi {selectedChild?.full_name?.split(' ')[0] || 'anak'}.</p>
+                                </div>
 
-                    {/* Tab Content with proper spacing */}
-                    <motion.div
-                        key={activeTab}
-                        initial={{ opacity: 0, x: activeTab === 'jurnal' ? -20 : 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: activeTab === 'jurnal' ? 20 : -20 }}
-                        transition={{ 
-                            duration: 0.3,
-                            ease: "easeInOut"
-                        }}
-                        className="mt-6 md:mt-8"
-                        role="tabpanel"
-                        id={`${activeTab}-panel`}
-                        aria-labelledby={`${activeTab}-tab`}
-                    >
-                        {activeTab === 'jurnal' ? (
-                            /* Single column layout on mobile, multi-column on desktop */
-                            <motion.div 
-                                className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8"
-                                initial="hidden"
-                                animate="visible"
-                                variants={{
-                                    hidden: { opacity: 0 },
-                                    visible: {
-                                        opacity: 1,
-                                        transition: {
-                                            staggerChildren: 0.15
-                                        }
-                                    }
-                                }}
-                            >
-                                {/* Quick Add Form - Full width on mobile, sidebar on desktop */}
-                                <motion.div 
-                                    className="lg:col-span-4"
-                                    variants={{
-                                        hidden: { opacity: 0, x: -20 },
-                                        visible: { opacity: 1, x: 0 }
-                                    }}
-                                >
-                                    <QuickAddForm
-                                        childId={selectedChildId}
-                                        onSuccess={handleMealAdded}
+                                <div className="pt-4 space-y-4 lg:space-y-6">
+                                    <EnhancedChildSelector
+                                        children={children}
+                                        selectedChildId={selectedChildId}
+                                        onChange={setSelectedChildId}
+                                        loading={loading}
                                     />
-                                </motion.div>
+                                    <JurnalViewSelector
+                                        activeTab={activeTab}
+                                        onTabChange={setActiveTab}
+                                    />
+                                </div>
 
-                                {/* Meal Timeline - Full width on mobile, main content on desktop */}
-                                <motion.div 
-                                    className="lg:col-span-8"
-                                    variants={{
-                                        hidden: { opacity: 0, x: 20 },
-                                        visible: { opacity: 1, x: 0 }
-                                    }}
-                                >
-                                    <div className="bg-white rounded-2xl shadow-lg border-2 border-gray-100 p-6 md:p-8">
-                                        <MealTimeline
-                                            meals={meals}
-                                            loading={mealsLoading}
-                                            onDelete={handleDeleteMeal}
-                                        />
+                                {/* Contextual Info / Stats */}
+                                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                                    <h3 className="font-semibold text-gray-900 mb-4">Ringkasan Hari Ini</h3>
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                                            <span className="text-gray-600 text-sm">Total Makan</span>
+                                            <span className="font-bold text-gray-900">{meals.length}x</span>
+                                        </div>
+                                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                                            <span className="text-gray-600 text-sm">Terakhir</span>
+                                            <span className="font-bold text-gray-900">
+                                                {meals.length > 0
+                                                    ? new Date(meals[0].created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+                                                    : '-'}
+                                            </span>
+                                        </div>
                                     </div>
-                                </motion.div>
-                            </motion.div>
-                        ) : (
-                            /* Single column on mobile, responsive grid on tablet/desktop */
-                            <motion.div 
-                                className="space-y-6 md:space-y-8"
-                                initial="hidden"
-                                animate="visible"
-                                variants={{
-                                    hidden: { opacity: 0 },
-                                    visible: {
-                                        opacity: 1,
-                                        transition: {
-                                            staggerChildren: 0.15
-                                        }
-                                    }
-                                }}
-                            >
-                                {/* Today Status Card - Full width */}
+                                </div>
+                            </div>
+
+                            {/* Right Content: Feed & Actions */}
+                            <div className="lg:col-span-8">
                                 <motion.div
-                                    variants={{
-                                        hidden: { opacity: 0, y: 20 },
-                                        visible: { opacity: 1, y: 0 }
-                                    }}
+                                    key={activeTab}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.3 }}
+                                    className="space-y-8 mt-4 lg:mt-24"
                                 >
-                                    <TodayStatusCard
-                                        childId={selectedChildId}
-                                        childName={selectedChild?.full_name || 'Anak'}
-                                        onSuccess={() => {
-                                            setPmtRefreshKey(prev => prev + 1);
-                                        }}
-                                    />
-                                </motion.div>
+                                    {activeTab === 'jurnal' ? (
+                                        <>
+                                            <div className="hidden lg:block">
+                                                <QuickAddForm
+                                                    childId={selectedChildId}
+                                                    onSuccess={handleMealAdded}
+                                                />
+                                            </div>
 
-                                {/* Stats and Calendar - Stacked on mobile, side-by-side on desktop */}
-                                <motion.div 
-                                    className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8"
-                                    variants={{
-                                        hidden: { opacity: 0 },
-                                        visible: {
-                                            opacity: 1,
-                                            transition: {
-                                                staggerChildren: 0.1
-                                            }
-                                        }
-                                    }}
-                                >
-                                    {/* Stats Card */}
-                                    <motion.div
-                                        variants={{
-                                            hidden: { opacity: 0, x: -20 },
-                                            visible: { opacity: 1, x: 0 }
-                                        }}
-                                    >
-                                        <PMTStatsCard
-                                            key={`stats-${pmtRefreshKey}`}
-                                            childId={selectedChildId}
-                                        />
-                                    </motion.div>
-
-                                    {/* Calendar */}
-                                    <motion.div
-                                        variants={{
-                                            hidden: { opacity: 0, x: 20 },
-                                            visible: { opacity: 1, x: 0 }
-                                        }}
-                                    >
-                                        <PMTCalendar
-                                            key={`calendar-${pmtRefreshKey}`}
-                                            childId={selectedChildId}
-                                        />
-                                    </motion.div>
+                                            <div className="pt-4">
+                                                {meals.length === 0 && !mealsLoading && (
+                                                    <NoMealsEmptyState />
+                                                )}
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="space-y-8">
+                                            <TodayStatusCard
+                                                childId={selectedChildId}
+                                                childName={selectedChild?.full_name || 'Anak'}
+                                                onSuccess={() => setPmtRefreshKey(prev => prev + 1)}
+                                            />
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <PMTStatsCard
+                                                    key={`stats-${pmtRefreshKey}`}
+                                                    childId={selectedChildId}
+                                                />
+                                                <PMTCalendar
+                                                    key={`calendar-${pmtRefreshKey}`}
+                                                    childId={selectedChildId}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
                                 </motion.div>
-                            </motion.div>
-                        )}
-                    </motion.div>
-                </div>
-            </motion.main>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Full Width Data Table (Outside Padded Area) */}
+                    {activeTab === 'jurnal' && meals.length > 0 && (
+                        <MealDataTable
+                            meals={meals}
+                            loading={mealsLoading}
+                            onDelete={handleDeleteMeal}
+                        />
+                    )}
+
+                    {/* Mobile FAB & Modal */}
+                    {activeTab === 'jurnal' && (
+                        <>
+                            {/* FAB */}
+                            <motion.button
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                onClick={() => setIsAddMealModalOpen(true)}
+                                className="fixed bottom-24 right-6 lg:hidden z-40 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg shadow-blue-600/30 flex items-center justify-center hover:bg-blue-700 active:scale-95 transition-all"
+                            >
+                                <Plus className="w-6 h-6" />
+                            </motion.button>
+
+                            {/* Modal */}
+                            <AnimatePresence>
+                                {isAddMealModalOpen && (
+                                    <>
+                                        <div
+                                            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm lg:hidden"
+                                            onClick={() => setIsAddMealModalOpen(false)}
+                                        />
+                                        <motion.div
+                                            initial={{ opacity: 0, y: '100%' }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: '100%' }}
+                                            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                                            className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl p-6 lg:hidden max-h-[90vh] overflow-y-auto"
+                                        >
+                                            <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6" />
+                                            <QuickAddForm
+                                                childId={selectedChildId}
+                                                onSuccess={() => {
+                                                    handleMealAdded();
+                                                    setIsAddMealModalOpen(false);
+                                                }}
+                                            />
+                                        </motion.div>
+                                    </>
+                                )}
+                            </AnimatePresence>
+                        </>
+                    )}
+
+                </main>
+            </div>
         </DashboardLayout>
     );
 }
 
-// Wrap with ErrorBoundary for graceful error handling
 export default function JurnalMakanPage() {
     return (
         <ErrorBoundary>

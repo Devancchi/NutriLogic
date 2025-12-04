@@ -16,10 +16,11 @@ const MobileBottomNav = () => {
     const items = [
         { id: 0, icon: "lucide:home", label: "Home", href: "/dashboard" },
         { id: 1, icon: "lucide:baby", label: "Anak", href: "/dashboard/anak" },
-        { id: 2, icon: "lucide:utensils-crossed", label: "Nutri", href: "/dashboard/nutri-assist" },
-        { id: 3, icon: "lucide:message-circle", label: "Chat", href: "/dashboard/konsultasi" },
-        { id: 4, icon: "lucide:award", label: "Poin", href: "/dashboard/gamification" },
-        { id: 5, icon: "lucide:globe", label: "Web", href: "/" },
+        { id: 2, icon: "lucide:utensils", label: "Jurnal", href: "/dashboard/jurnal-makan" },
+        { id: 3, icon: "lucide:utensils-crossed", label: "Nutri", href: "/dashboard/nutri-assist" },
+        { id: 4, icon: "lucide:message-circle", label: "Chat", href: "/dashboard/konsultasi" },
+        { id: 5, icon: "lucide:award", label: "Poin", href: "/dashboard/gamification" },
+        { id: 6, icon: "lucide:globe", label: "Web", href: "/" },
     ];
 
     useEffect(() => {
@@ -76,9 +77,9 @@ const MobileBottomNav = () => {
                                     }}
                                     className={`flex flex-col items-center justify-center w-full py-1.5 rounded-xl transition-colors ${isActive ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
                                 >
-                                    <Icon icon={item.icon} width={20} height={20} />
+                                    <Icon icon={item.icon} width={16} height={16} />
                                     {/* Hide label on very small screens if needed, or keep it tiny */}
-                                    <span className="text-[8px] font-medium mt-0.5 truncate w-full text-center px-0.5">{item.label}</span>
+                                    <span className="text-[6px] font-medium mt-0.5 truncate w-full text-center px-0.5">{item.label}</span>
                                 </motion.button>
                             </motion.div>
                         );
@@ -88,7 +89,7 @@ const MobileBottomNav = () => {
 
             {/* Logout Confirmation Modal */}
             {showLogoutConfirm && (
-                <div className="fixed inset-0 flex items-center justify-center z-[60] px-4" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+                <div className="fixed inset-0 flex items-center justify-center z-60 px-4" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
                     <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm">
                         <h3 className="text-lg font-bold text-gray-800 mb-2">
                             Konfirmasi Logout

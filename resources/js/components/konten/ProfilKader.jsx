@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import api from "../../lib/api";
 import PageHeader from "../dashboard/PageHeader";
+import ProfilKaderSkeleton from "../loading/ProfilKaderSkeleton";
 
 export default function ProfilKader() {
     const [loading, setLoading] = useState(true);
@@ -128,14 +129,7 @@ export default function ProfilKader() {
     };
 
     if (loading) {
-        return (
-            <div className="flex flex-1 w-full h-full items-center justify-center bg-gray-50">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Memuat profil...</p>
-                </div>
-            </div>
-        );
+        return <ProfilKaderSkeleton />;
     }
 
     return (
