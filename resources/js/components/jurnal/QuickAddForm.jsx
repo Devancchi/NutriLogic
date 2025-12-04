@@ -1,6 +1,6 @@
 import React, { useState, useRef, memo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Loader2, Check, AlertCircle, Clock, Utensils } from 'lucide-react';
+import { Plus, Loader2, Check, AlertCircle, Clock, Utensils, ChevronDown } from 'lucide-react';
 import api from '../../lib/api';
 
 const QuickAddForm = memo(function QuickAddForm({ childId, onSuccess }) {
@@ -14,6 +14,7 @@ const QuickAddForm = memo(function QuickAddForm({ childId, onSuccess }) {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState(null);
     const [showSuccess, setShowSuccess] = useState(false);
+    const [isPortionDropdownOpen, setIsPortionDropdownOpen] = useState(false);
 
     const descriptionRef = useRef(null);
 
@@ -118,17 +119,59 @@ const QuickAddForm = memo(function QuickAddForm({ childId, onSuccess }) {
                         </div>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-2 relative">
                         <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Porsi</label>
-                        <select
-                            value={formData.portion}
-                            onChange={(e) => setFormData({ ...formData, portion: e.target.value })}
-                            className="w-full p-2 bg-gray-50 border-none rounded-lg text-sm font-medium text-gray-900 focus:ring-2 focus:ring-blue-200 cursor-pointer hover:bg-blue-50 transition-colors"
+                        <button
+                            type="button"
+                            onClick={() => setIsPortionDropdownOpen(!isPortionDropdownOpen)}
+                            className="w-full flex items-center justify-between p-2.5 bg-gray-50 rounded-lg text-sm font-medium text-gray-900 hover:bg-blue-50 transition-colors focus:ring-2 focus:ring-blue-200"
                         >
-                            {portionOptions.map(opt => (
-                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                            ))}
-                        </select>
+                            <span>
+                                {portionOptions.find(opt => opt.value === formData.portion)?.label || 'Pilih Porsi'}
+                            </span>
+                            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isPortionDropdownOpen ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        <AnimatePresence>
+                            {isPortionDropdownOpen && (
+                                <>
+                                    <div
+                                        className="fixed inset-0 z-30"
+                                        onClick={() => setIsPortionDropdownOpen(false)}
+                                    />
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="absolute z-40 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl overflow-hidden"
+                                    >
+                                        <div className="p-1.5 space-y-1">
+                                            {portionOptions.map((option) => {
+                                                const isSelected = formData.portion === option.value;
+                                                return (
+                                                    <button
+                                                        key={option.value}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setFormData({ ...formData, portion: option.value });
+                                                            setIsPortionDropdownOpen(false);
+                                                        }}
+                                                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isSelected
+                                                            ? 'bg-blue-50 text-blue-700'
+                                                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                                            }`}
+                                                    >
+                                                        <span>{option.label}</span>
+                                                        {isSelected && <Check className="w-4 h-4 text-blue-600" />}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </motion.div>
+                                </>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
 

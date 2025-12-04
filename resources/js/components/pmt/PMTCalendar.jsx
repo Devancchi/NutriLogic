@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import api from '../../lib/api';
 import CalendarSkeleton from './CalendarSkeleton';
-import NoPMTDataEmptyState from './NoPMTDataEmptyState';
+
 
 const PMTCalendar = memo(function PMTCalendar({ childId }) {
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -45,13 +45,14 @@ const PMTCalendar = memo(function PMTCalendar({ childId }) {
     };
 
     const getStatusForDate = (day) => {
-        const dateStr = new Date(
-            currentDate.getFullYear(),
-            currentDate.getMonth(),
-            day
-        ).toISOString().split('T')[0];
+        const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const dayStr = String(date.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${dayStr}`;
 
-        const log = logs.find(l => l.date === dateStr);
+        // Robust matching: check if date starts with dateStr (handles time part)
+        const log = logs.find(l => l.date && l.date.startsWith(dateStr));
         return log?.status || null;
     };
 
@@ -106,192 +107,83 @@ const PMTCalendar = memo(function PMTCalendar({ childId }) {
     }
 
     return (
-        <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 border-2 border-gray-100">
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-8 h-full flex flex-col">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 md:mb-8">
-                <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-blue-100 rounded-xl shadow-sm">
-                        <CalendarIcon className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
-                    </div>
-                    <h3 className="text-xl md:text-2xl font-bold text-gray-900">
-                        Kalender PMT
-                    </h3>
+            <div className="flex items-center justify-between mb-6">
+                <div>
+                    <h3 className="text-lg font-bold text-gray-900">Kalender PMT</h3>
+                    <p className="text-sm text-gray-500 capitalize">
+                        {currentDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+                    </p>
                 </div>
-
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <motion.button
+                <div className="flex gap-1">
+                    <button
                         onClick={previousMonth}
-                        whileHover={{ scale: 1.1, x: -2 }}
-                        whileTap={{ scale: 0.9 }}
-                        aria-label="Bulan sebelumnya"
-                        className="p-2 hover:bg-gray-100 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-1"
+                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors"
                     >
-                        <ChevronLeft className="w-5 h-5 md:w-6 md:h-6 text-gray-700" aria-hidden="true" />
-                    </motion.button>
-
-                    <motion.div 
-                        key={`${currentDate.getMonth()}-${currentDate.getFullYear()}`}
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="flex-1 sm:flex-none px-4 py-2.5 bg-gray-50 rounded-xl sm:min-w-[180px] text-center border border-gray-200"
-                    >
-                        <span className="font-bold text-sm md:text-base text-gray-900">
-                            {currentDate.toLocaleDateString('id-ID', {
-                                month: 'long',
-                                year: 'numeric'
-                            })}
-                        </span>
-                    </motion.div>
-
-                    <motion.button
+                        <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <button
                         onClick={nextMonth}
-                        whileHover={{ scale: 1.1, x: 2 }}
-                        whileTap={{ scale: 0.9 }}
-                        aria-label="Bulan berikutnya"
-                        className="p-2 hover:bg-gray-100 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-1"
+                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors"
                     >
-                        <ChevronRight className="w-5 h-5 md:w-6 md:h-6 text-gray-700" aria-hidden="true" />
-                    </motion.button>
+                        <ChevronRight className="w-5 h-5" />
+                    </button>
                 </div>
             </div>
 
             {/* Calendar Grid */}
-            {logs.length === 0 ? (
-                <NoPMTDataEmptyState />
-            ) : (
-                <div role="region" aria-label="Kalender PMT bulanan">
-                    {/* Week Days Header */}
-                    <div className="grid grid-cols-7 gap-2 mb-3" role="row">
-                        {weekDays.map((day) => (
+            <div className="flex-1 flex flex-col justify-center">
+                {/* Week Days Header */}
+                <div className="grid grid-cols-7 gap-1 mb-2">
+                    {weekDays.map((day) => (
+                        <div key={day} className="text-center text-xs font-medium text-gray-400 py-1">
+                            {day}
+                        </div>
+                    ))}
+                </div>
+
+                {/* Days Grid */}
+                <div className="grid grid-cols-7 gap-1">
+                    {emptyDays.map((_, index) => (
+                        <div key={`empty-${index}`} className="aspect-square" />
+                    ))}
+
+                    {days.map((day) => {
+                        const status = getStatusForDate(day);
+                        const isToday = isCurrentMonth && day === today.getDate();
+                        const isFuture = new Date(currentDate.getFullYear(), currentDate.getMonth(), day) > today;
+
+                        let bgClass = 'bg-gray-50 text-gray-700 hover:bg-gray-100';
+                        if (status === 'consumed') bgClass = 'bg-green-500 text-white shadow-md shadow-green-200';
+                        if (status === 'partial') bgClass = 'bg-yellow-500 text-white shadow-md shadow-yellow-200';
+                        if (status === 'refused') bgClass = 'bg-red-500 text-white shadow-md shadow-red-200';
+                        if (isFuture) bgClass = 'bg-transparent text-gray-300';
+
+                        return (
                             <div
                                 key={day}
-                                className="text-center text-xs md:text-sm font-bold text-gray-600 py-2"
+                                className={`aspect-square rounded-lg flex flex-col items-center justify-center relative ${bgClass} ${isToday ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}
                             >
-                                {day}
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Days Grid */}
-                    <div className="grid grid-cols-7 gap-2" role="grid" aria-label="Hari dalam bulan">
-                        {/* Empty cells for days before month starts */}
-                        {emptyDays.map((_, index) => (
-                            <div key={`empty-${index}`} className="aspect-square" />
-                        ))}
-
-                        {/* Actual days - Enhanced with better styling and mobile optimization */}
-                        {days.map((day) => {
-                            const status = getStatusForDate(day);
-                            const isToday = isCurrentMonth && day === today.getDate();
-                            const isFuture = new Date(
-                                currentDate.getFullYear(),
-                                currentDate.getMonth(),
-                                day
-                            ) > today;
-
-                            return (
-                                <motion.div
-                                    key={day}
-                                    initial={{ opacity: 0, scale: 0.8 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    whileHover={!isFuture ? { scale: 1.1, y: -2 } : {}}
-                                    whileTap={!isFuture ? { scale: 0.95 } : {}}
-                                    transition={{ delay: day * 0.008 }}
-                                    role="gridcell"
-                                    aria-label={
-                                        isFuture
-                                            ? `${day} - Tanggal belum tiba`
-                                            : status
-                                                ? `${day} - PMT: ${status === 'consumed' ? 'Habis' : status === 'partial' ? 'Sebagian' : 'Tidak Mau'}`
-                                                : `${day} - Belum ada data`
-                                    }
-                                    tabIndex={!isFuture ? 0 : -1}
-                                    className={`aspect-square rounded-lg sm:rounded-xl border-2 flex flex-col items-center justify-center transition-all duration-200 relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-blue-600 focus:ring-offset-2 ${isFuture
-                                        ? 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
-                                        : status
-                                            ? `${getStatusColor(status)} ${getStatusHoverColor(status)} shadow-md hover:shadow-xl cursor-pointer`
-                                            : 'bg-white border-gray-200 text-gray-700 hover:border-blue-400 hover:bg-blue-50 hover:shadow-lg cursor-pointer'
-                                        } ${isToday ? 'ring-2 sm:ring-3 ring-blue-600 ring-offset-2' : ''}`}
-                                    style={{ minWidth: '44px', minHeight: '44px' }}
-                                >
-                                    {/* Background pattern for status days */}
-                                    {status && !isFuture && (
-                                        <div className="absolute inset-0 opacity-10">
-                                            <div className="absolute inset-0 bg-white transform rotate-45 scale-150"></div>
-                                        </div>
-                                    )}
-
-                                    <span className={`text-sm sm:text-base font-bold ${status && !isFuture ? 'text-white' : ''} relative z-10`}>
-                                        {day}
+                                <span className="text-sm font-medium">{day}</span>
+                                {status && (
+                                    <span className="text-[10px] leading-none mt-0.5">
+                                        {status === 'consumed' && '✓'}
+                                        {status === 'partial' && '~'}
+                                        {status === 'refused' && '✗'}
                                     </span>
-                                    {status && !isFuture && (
-                                        <motion.span 
-                                            className="text-xs sm:text-sm mt-0.5 relative z-10"
-                                            initial={{ scale: 0 }}
-                                            animate={{ scale: 1 }}
-                                            transition={{ delay: 0.2 }}
-                                        >
-                                            {getStatusEmoji(status)}
-                                        </motion.span>
-                                    )}
-
-                                    {/* Today indicator dot */}
-                                    {isToday && (
-                                        <motion.div
-                                            className="absolute top-1 right-1 w-2 h-2 bg-blue-600 rounded-full"
-                                            animate={{ scale: [1, 1.2, 1] }}
-                                            transition={{ duration: 2, repeat: Infinity }}
-                                        />
-                                    )}
-                                </motion.div>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
-
-            {/* Legend - Enhanced with better visual indicators */}
-            <div className="mt-6 md:mt-8 pt-6 md:pt-8 border-t-2 border-gray-200">
-                <p className="text-xs md:text-sm font-bold text-gray-700 uppercase tracking-wider mb-5">
-                    Keterangan Status
-                </p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
-                    <motion.div 
-                        className="flex items-center gap-2.5"
-                        whileHover={{ scale: 1.05, x: 2 }}
-                    >
-                        <div className="w-7 h-7 md:w-8 md:h-8 rounded-xl bg-gradient-to-br from-green-500 to-green-600 border-2 border-green-700 flex items-center justify-center text-white text-sm font-bold shadow-lg">
-                            ✓
-                        </div>
-                        <span className="text-xs md:text-sm text-gray-800 font-bold">Habis</span>
-                    </motion.div>
-                    <motion.div 
-                        className="flex items-center gap-2.5"
-                        whileHover={{ scale: 1.05, x: 2 }}
-                    >
-                        <div className="w-7 h-7 md:w-8 md:h-8 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-600 border-2 border-yellow-700 flex items-center justify-center text-white text-sm font-bold shadow-lg">
-                            ~
-                        </div>
-                        <span className="text-xs md:text-sm text-gray-800 font-bold">Sebagian</span>
-                    </motion.div>
-                    <motion.div 
-                        className="flex items-center gap-2.5"
-                        whileHover={{ scale: 1.05, x: 2 }}
-                    >
-                        <div className="w-7 h-7 md:w-8 md:h-8 rounded-xl bg-gradient-to-br from-red-500 to-red-600 border-2 border-red-700 flex items-center justify-center text-white text-sm font-bold shadow-lg">
-                            ✗
-                        </div>
-                        <span className="text-xs md:text-sm text-gray-800 font-bold">Tidak Mau</span>
-                    </motion.div>
-                    <motion.div 
-                        className="flex items-center gap-2.5"
-                        whileHover={{ scale: 1.05, x: 2 }}
-                    >
-                        <div className="w-7 h-7 md:w-8 md:h-8 rounded-xl bg-gray-100 border-2 border-gray-200 shadow-md"></div>
-                        <span className="text-xs md:text-sm text-gray-800 font-bold">Belum Ada Data</span>
-                    </motion.div>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
+
+            {/* DEBUG: Remove after fixing */}
+            {/* <div className="mt-4 p-4 bg-gray-100 rounded text-xs overflow-auto max-h-40">
+                <p className="font-bold">Debug Logs:</p>
+                <pre>{JSON.stringify(logs, null, 2)}</pre>
+            </div> */}
         </div>
     );
 });
