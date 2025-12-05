@@ -80,7 +80,7 @@ class KaderChildController extends Controller
     {
         $user = $request->user();
         
-        $child = Child::with(['parent', 'posyandu', 'weighingLogs', 'mealLogs', 'immunizationSchedules'])
+        $child = Child::with(['parent', 'posyandu', 'weighingLogs', 'mealLogs', 'pmtLogs', 'immunizationSchedules'])
             ->findOrFail($id);
 
         // Authorization: child must be in kader's posyandu

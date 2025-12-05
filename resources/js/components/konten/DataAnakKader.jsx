@@ -34,6 +34,8 @@ export default function DataAnakKader() {
         { value: "sangat_kurang", label: "Sangat Kurang" },
         { value: "kurus", label: "Kurus" },
         { value: "sangat_kurus", label: "Sangat Kurus" },
+        { value: "lebih", label: "Lebih" },
+        { value: "gemuk", label: "Gemuk" },
     ];
 
     const activeOptions = [
