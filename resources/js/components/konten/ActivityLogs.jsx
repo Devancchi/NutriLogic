@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import api from "../../lib/api";
 import { useDataCache } from "../../contexts/DataCacheContext";
 import { Activity, Calendar, User, Filter } from "lucide-react";
@@ -16,15 +16,12 @@ export default function ActivityLogs() {
 
     // Data caching
     const { getCachedData, setCachedData } = useDataCache();
+    const activeLogsRequestId = React.useRef(0);
 
-    useEffect(() => {
-        fetchLogs();
-    }, []);
-
-    const fetchLogs = async () => {
-        // Cache only when no filter
+    const fetchLogs = useCallback(async ({ forceRefresh = false, showLoader = false } = {}) => {
         const hasFilter = filters.action || filters.date_from || filters.date_to;
-        if (!hasFilter) {
+
+        if (!hasFilter && !forceRefresh) {
             const cachedLogs = getCachedData('admin_logs');
             if (cachedLogs) {
                 setLogs(cachedLogs);
@@ -33,29 +30,47 @@ export default function ActivityLogs() {
             }
         }
 
-        try {
+        if (showLoader) {
             setLoading(true);
-            setError(null);
-            const params = {};
-            if (filters.action) params.action = filters.action;
-            if (filters.date_from) params.date_from = filters.date_from;
-            if (filters.date_to) params.date_to = filters.date_to;
+        }
 
+        setError(null);
+        const params = {};
+        if (filters.action) params.action = filters.action;
+        if (filters.date_from) params.date_from = filters.date_from;
+        if (filters.date_to) params.date_to = filters.date_to;
+        const requestId = ++activeLogsRequestId.current;
+
+        try {
             const response = await api.get('/admin/activity-logs', { params });
+
+            if (activeLogsRequestId.current !== requestId) {
+                return;
+            }
+
             setLogs(response.data.data);
 
-            // Cache only when no filter
             if (!hasFilter) {
                 setCachedData('admin_logs', response.data.data);
             }
         } catch (err) {
+            if (activeLogsRequestId.current !== requestId) {
+                return;
+            }
+
             const errorMessage = err.response?.data?.message || 'Gagal memuat log aktivitas.';
             setError(errorMessage);
             console.error('Logs fetch error:', err);
         } finally {
-            setLoading(false);
+            if (activeLogsRequestId.current === requestId) {
+                setLoading(false);
+            }
         }
-    };
+    }, [filters, getCachedData, setCachedData]);
+
+    useEffect(() => {
+        fetchLogs({ forceRefresh: true, showLoader: true });
+    }, [fetchLogs]);
 
 
     const getActionColor = (action) => {
@@ -136,7 +151,7 @@ export default function ActivityLogs() {
 
                         <div className="flex items-end">
                             <button
-                                onClick={fetchLogs}
+                                onClick={() => fetchLogs({ forceRefresh: true, showLoader: true })}
                                 className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
                             >
                                 <Filter className="w-4 h-4" />
@@ -151,7 +166,7 @@ export default function ActivityLogs() {
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                         <p className="text-red-800">{error}</p>
                         <button
-                            onClick={fetchLogs}
+                            onClick={() => fetchLogs({ forceRefresh: true, showLoader: true })}
                             className="mt-2 text-red-600 hover:text-red-800 text-sm font-medium"
                         >
                             Coba Lagi

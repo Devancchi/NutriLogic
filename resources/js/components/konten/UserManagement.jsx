@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import api from "../../lib/api";
 import { useDataCache } from "../../contexts/DataCacheContext";
 import { UserCog, Users, Plus, Edit2, Power, Key, Building2 } from "lucide-react";
@@ -17,14 +17,72 @@ export default function UserManagement() {
 
     // Data caching
     const { getCachedData, setCachedData, invalidateCache } = useDataCache();
+    const activeUsersRequestId = React.useRef(0);
+
+    const fetchUsers = useCallback(async (targetTab, { forceRefresh = false, showLoader = false } = {}) => {
+        const cacheKey = `admin_users_${targetTab}`;
+
+        if (!forceRefresh) {
+            const cachedUsers = getCachedData(cacheKey);
+            if (cachedUsers) {
+                setUsers(cachedUsers);
+                setLoading(false);
+                return;
+            }
+        }
+
+        if (showLoader) {
+            setLoading(true);
+        }
+
+        setError(null);
+        const params = { role: targetTab };
+        const requestId = ++activeUsersRequestId.current;
+
+        try {
+            const response = await api.get('/admin/users', { params });
+
+            if (activeUsersRequestId.current !== requestId) {
+                return;
+            }
+
+            setUsers(response.data.data);
+            setCachedData(cacheKey, response.data.data);
+        } catch (err) {
+            if (activeUsersRequestId.current !== requestId) {
+                return;
+            }
+
+            const errorMessage = err.response?.data?.message || 'Gagal memuat data user.';
+            setError(errorMessage);
+            console.error('Users fetch error:', err);
+        } finally {
+            if (activeUsersRequestId.current === requestId) {
+                setLoading(false);
+            }
+        }
+    }, [getCachedData, setCachedData]);
 
     useEffect(() => {
         fetchPosyandus();
     }, []);
 
     useEffect(() => {
-        fetchUsers();
-    }, [activeTab]);
+        const cacheKey = `admin_users_${activeTab}`;
+        const cachedUsers = getCachedData(cacheKey);
+
+        if (cachedUsers) {
+            setUsers(cachedUsers);
+            setLoading(false);
+        } else {
+            setLoading(true);
+        }
+
+        fetchUsers(activeTab, {
+            forceRefresh: true,
+            showLoader: !cachedUsers,
+        });
+    }, [activeTab, fetchUsers, getCachedData]);
 
     const fetchPosyandus = async (forceRefresh = false) => {
         // Check cache first (skip if forceRefresh)
@@ -45,35 +103,22 @@ export default function UserManagement() {
         }
     };
 
-    const fetchUsers = async (forceRefresh = false) => {
-        // Check cache first based on activeTab (skip if forceRefresh)
-        const cacheKey = `admin_users_${activeTab}`;
-        if (!forceRefresh) {
-            const cachedUsers = getCachedData(cacheKey);
-            if (cachedUsers) {
-                setUsers(cachedUsers);
-                setLoading(false);
-                return;
-            }
+    
+
+    const handleTabChange = (tab) => {
+        if (tab === activeTab) return;
+
+        const cacheKey = `admin_users_${tab}`;
+        const cachedUsers = getCachedData(cacheKey);
+
+        if (cachedUsers) {
+            setUsers(cachedUsers);
+            setLoading(false);
+        } else {
+            setLoading(true);
         }
 
-        try {
-            // Only show loading on initial load
-            if (!forceRefresh) {
-                setLoading(true);
-            }
-            setError(null);
-            const params = { role: activeTab };
-            const response = await api.get('/admin/users', { params });
-            setUsers(response.data.data);
-            setCachedData(cacheKey, response.data.data);
-        } catch (err) {
-            const errorMessage = err.response?.data?.message || 'Gagal memuat data user.';
-            setError(errorMessage);
-            console.error('Users fetch error:', err);
-        } finally {
-            setLoading(false);
-        }
+        setActiveTab(tab);
     };
 
     const handleAddNew = () => {
@@ -102,7 +147,7 @@ export default function UserManagement() {
             await api.patch(`/admin/users/${user.id}/toggle-active`);
             invalidateCache(`admin_users_${activeTab}`);
             invalidateCache('admin_dashboard');
-            fetchUsers(true);
+            fetchUsers(activeTab, { forceRefresh: true });
         } catch (err) {
             setUsers(previousUsers);
             alert(err.response?.data?.message || 'Gagal mengubah status user.');
@@ -156,7 +201,7 @@ export default function UserManagement() {
                 {/* Tabs */}
                 <div className="flex gap-2 border-b border-gray-200">
                     <button
-                        onClick={() => setActiveTab('kader')}
+                        onClick={() => handleTabChange('kader')}
                         className={`px-4 py-2 font-medium transition-colors flex items-center gap-2 ${activeTab === 'kader'
                             ? 'text-blue-600 border-b-2 border-blue-600'
                             : 'text-gray-600 hover:text-gray-800'
@@ -166,7 +211,7 @@ export default function UserManagement() {
                         Kader
                     </button>
                     <button
-                        onClick={() => setActiveTab('ibu')}
+                        onClick={() => handleTabChange('ibu')}
                         className={`px-4 py-2 font-medium transition-colors flex items-center gap-2 ${activeTab === 'ibu'
                             ? 'text-blue-600 border-b-2 border-blue-600'
                             : 'text-gray-600 hover:text-gray-800'
@@ -182,7 +227,7 @@ export default function UserManagement() {
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                         <p className="text-red-800">{error}</p>
                         <button
-                            onClick={fetchUsers}
+                            onClick={() => fetchUsers(activeTab, { forceRefresh: true, showLoader: true })}
                             className="mt-2 text-red-600 hover:text-red-800 text-sm font-medium"
                         >
                             Coba Lagi
@@ -287,7 +332,7 @@ export default function UserManagement() {
                     onClose={() => setShowModal(false)}
                     onSuccess={(password) => {
                         setShowModal(false);
-                        fetchUsers(true);
+                        fetchUsers(activeTab, { forceRefresh: true });
                         if (password) {
                             setNewPassword(password);
                             setShowPasswordModal(true);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import api from "../../lib/api";
 import { useDataCache } from "../../contexts/DataCacheContext";
 import { Baby, Search, X, Building2, User, Calendar, Weight, Ruler } from "lucide-react";
@@ -19,13 +19,9 @@ export default function ChildrenMonitoring() {
 
     // Data caching
     const { getCachedData, setCachedData } = useDataCache();
+    const activeChildrenRequestId = React.useRef(0);
 
-    useEffect(() => {
-        fetchPosyandus();
-        fetchChildren();
-    }, []);
-
-    const fetchPosyandus = async (forceRefresh = false) => {
+    const fetchPosyandus = useCallback(async (forceRefresh = false) => {
         // Check cache first (skip if forceRefresh)
         if (!forceRefresh) {
             const cachedPosyandus = getCachedData('admin_posyandus');
@@ -42,12 +38,12 @@ export default function ChildrenMonitoring() {
         } catch (err) {
             console.error('Posyandus fetch error:', err);
         }
-    };
+    }, [getCachedData, setCachedData]);
 
 
-    const fetchChildren = async (forceRefresh = false) => {
-        // Cache only when no filter (skip if forceRefresh)
+    const fetchChildren = useCallback(async ({ forceRefresh = false, showLoader = false } = {}) => {
         const hasFilter = filters.name || filters.posyandu_id || filters.nutritional_status;
+
         if (!hasFilter && !forceRefresh) {
             const cachedChildren = getCachedData('admin_children');
             if (cachedChildren) {
@@ -57,36 +53,52 @@ export default function ChildrenMonitoring() {
             }
         }
 
-        try {
-            // Only show loading on initial load
-            if (!forceRefresh) {
-                setLoading(true);
-            }
-            setError(null);
-            const params = {};
-            if (filters.name) params.name = filters.name;
-            if (filters.posyandu_id) params.posyandu_id = filters.posyandu_id;
-            if (filters.nutritional_status) params.nutritional_status = filters.nutritional_status;
+        if (showLoader) {
+            setLoading(true);
+        }
 
+        setError(null);
+        const params = {};
+        if (filters.name) params.name = filters.name;
+        if (filters.posyandu_id) params.posyandu_id = filters.posyandu_id;
+        if (filters.nutritional_status) params.nutritional_status = filters.nutritional_status;
+        const requestId = ++activeChildrenRequestId.current;
+
+        try {
             const response = await api.get('/admin/children', { params });
+
+            if (activeChildrenRequestId.current !== requestId) {
+                return;
+            }
+
             setChildren(response.data.data);
 
-            // Cache only when no filter
             if (!hasFilter) {
                 setCachedData('admin_children', response.data.data);
             }
         } catch (err) {
+            if (activeChildrenRequestId.current !== requestId) {
+                return;
+            }
+
             const errorMessage = err.response?.data?.message || 'Gagal memuat data anak.';
             setError(errorMessage);
             console.error('Children fetch error:', err);
         } finally {
-            setLoading(false);
+            if (activeChildrenRequestId.current === requestId) {
+                setLoading(false);
+            }
         }
-    };
+    }, [filters, getCachedData, setCachedData]);
+
+    useEffect(() => {
+        fetchPosyandus();
+        fetchChildren({ forceRefresh: true, showLoader: true });
+    }, [fetchPosyandus, fetchChildren]);
 
 
     const handleSearch = () => {
-        fetchChildren();
+        fetchChildren({ forceRefresh: true, showLoader: true });
     };
 
     const handleClearFilters = () => {
@@ -95,7 +107,7 @@ export default function ChildrenMonitoring() {
             posyandu_id: '',
             nutritional_status: '',
         });
-        setTimeout(() => fetchChildren(), 100);
+        setTimeout(() => fetchChildren({ forceRefresh: true, showLoader: true }), 50);
     };
 
     const handleViewDetail = async (childId) => {
