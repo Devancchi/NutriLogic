@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { logoutWithApi } from "../../lib/auth";
 import { getMaintenanceMode } from "../../lib/sessionTimeout";
@@ -81,6 +81,8 @@ export default function DashboardAdmin() {
 
     // Data caching
     const { getCachedData, setCachedData } = useDataCache();
+    const activeUserRequestId = React.useRef(0);
+    const activeDashboardRequestId = React.useRef(0);
 
     // Keep-Alive Mechanism: Ping server every 5 minutes to prevent session timeout
     useEffect(() => {
@@ -106,10 +108,80 @@ export default function DashboardAdmin() {
         navigate("/");
     };
 
+    const fetchUserProfile = useCallback(async ({ forceRefresh = false } = {}) => {
+        if (!forceRefresh) {
+            const cachedUser = getCachedData('admin_user_profile');
+            if (cachedUser) {
+                setUser(cachedUser);
+                return;
+            }
+        }
+
+        const requestId = ++activeUserRequestId.current;
+
+        try {
+            const response = await api.get('/me');
+
+            if (activeUserRequestId.current !== requestId) {
+                return;
+            }
+
+            setUser(response.data.data);
+            setCachedData('admin_user_profile', response.data.data);
+        } catch (err) {
+            if (activeUserRequestId.current !== requestId) {
+                return;
+            }
+
+            console.error("Failed to fetch user profile", err);
+        }
+    }, [getCachedData, setCachedData]);
+
+    const fetchDashboardData = useCallback(async ({ forceRefresh = false, showLoader = false } = {}) => {
+        if (!forceRefresh) {
+            const cachedStats = getCachedData('admin_dashboard');
+            if (cachedStats) {
+                setStats(cachedStats);
+                setLoading(false);
+                return;
+            }
+        }
+
+        if (showLoader) {
+            setLoading(true);
+        }
+
+        setError(null);
+        const requestId = ++activeDashboardRequestId.current;
+
+        try {
+            const response = await api.get('/admin/dashboard');
+
+            if (activeDashboardRequestId.current !== requestId) {
+                return;
+            }
+
+            setStats(response.data.data);
+            setCachedData('admin_dashboard', response.data.data);
+        } catch (err) {
+            if (activeDashboardRequestId.current !== requestId) {
+                return;
+            }
+
+            const errorMessage = err.response?.data?.message || 'Gagal memuat data dashboard.';
+            setError(errorMessage);
+            console.error('Dashboard fetch error:', err);
+        } finally {
+            if (activeDashboardRequestId.current === requestId) {
+                setLoading(false);
+            }
+        }
+    }, [getCachedData, setCachedData]);
+
     useEffect(() => {
-        fetchDashboardData();
-        fetchUserProfile();
-    }, []);
+        fetchDashboardData({ forceRefresh: true, showLoader: true });
+        fetchUserProfile({ forceRefresh: true });
+    }, [fetchDashboardData, fetchUserProfile]);
 
     // Generate "AI-based" notifications when stats are loaded
     useEffect(() => {
@@ -207,53 +279,7 @@ export default function DashboardAdmin() {
         }
     };
 
-    const fetchUserProfile = async (forceRefresh = false) => {
-        // Check cache first (skip if forceRefresh)
-        if (!forceRefresh) {
-            const cachedUser = getCachedData('admin_user_profile');
-            if (cachedUser) {
-                setUser(cachedUser);
-                return;
-            }
-        }
-
-        try {
-            const response = await api.get('/me');
-            setUser(response.data.data);
-            setCachedData('admin_user_profile', response.data.data);
-        } catch (err) {
-            console.error("Failed to fetch user profile", err);
-        }
-    };
-
-    const fetchDashboardData = async (forceRefresh = false) => {
-        // Check cache first (skip if forceRefresh)
-        if (!forceRefresh) {
-            const cachedStats = getCachedData('admin_dashboard');
-            if (cachedStats) {
-                setStats(cachedStats);
-                setLoading(false);
-                return;
-            }
-        }
-
-        try {
-            // Only show loading on initial load
-            if (!forceRefresh) {
-                setLoading(true);
-            }
-            setError(null);
-            const response = await api.get('/admin/dashboard');
-            setStats(response.data.data);
-            setCachedData('admin_dashboard', response.data.data);
-        } catch (err) {
-            const errorMessage = err.response?.data?.message || 'Gagal memuat data dashboard.';
-            setError(errorMessage);
-            console.error('Dashboard fetch error:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
+    
 
 
     if (loading) {
@@ -267,7 +293,7 @@ export default function DashboardAdmin() {
                     <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-3" />
                     <p className="text-red-800 font-medium mb-4">{error}</p>
                     <button
-                        onClick={fetchDashboardData}
+                        onClick={() => fetchDashboardData({ forceRefresh: true, showLoader: true })}
                         className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium transition-colors"
                     >
                         Coba Lagi
@@ -422,7 +448,7 @@ export default function DashboardAdmin() {
                                 <p className="text-sm font-semibold text-gray-800 leading-none">{user?.name || 'Super Admin'}</p>
                                 <p className="text-xs text-gray-500 mt-1">Administrator</p>
                             </div>
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-emerald-500 flex items-center justify-center text-white shadow-md ring-2 ring-white cursor-pointer hover:shadow-lg transition-shadow">
+                            <div className="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-emerald-500 flex items-center justify-center text-white shadow-md ring-2 ring-white cursor-pointer hover:shadow-lg transition-shadow">
                                 <Shield className="w-5 h-5" />
                             </div>
                         </button>
