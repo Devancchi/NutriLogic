@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import api from "../../lib/api";
 import { useDataCache } from "../../contexts/DataCacheContext";
-import { UserCog, Users, Plus, Edit2, Power, Key, Building2 } from "lucide-react";
+import { UserCog, Users, Plus, Edit2, Power, Key, Building2, ChevronDown, Check } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import GenericListSkeleton from "../loading/GenericListSkeleton";
 
 export default function UserManagement() {
@@ -103,7 +104,7 @@ export default function UserManagement() {
         }
     };
 
-    
+
 
     const handleTabChange = (tab) => {
         if (tab === activeTab) return;
@@ -366,6 +367,7 @@ function UserModal({ user, role, posyandus, onClose, onSuccess }) {
     });
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState(null);
+    const [isPosyanduDropdownOpen, setIsPosyanduDropdownOpen] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -448,19 +450,52 @@ function UserModal({ user, role, posyandus, onClose, onSuccess }) {
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Posyandu <span className="text-red-500">*</span>
                             </label>
-                            <select
-                                required
-                                value={formData.posyandu_id}
-                                onChange={(e) => setFormData({ ...formData, posyandu_id: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
-                            >
-                                <option value="">Pilih Posyandu</option>
-                                {posyandus.map((posyandu) => (
-                                    <option key={posyandu.id} value={posyandu.id}>
-                                        {posyandu.name}
-                                    </option>
-                                ))}
-                            </select>
+                            <div className="relative">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsPosyanduDropdownOpen(!isPosyanduDropdownOpen)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-left flex items-center justify-between focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                >
+                                    <span className={!formData.posyandu_id ? "text-gray-500" : "text-gray-900"}>
+                                        {formData.posyandu_id
+                                            ? posyandus.find(p => p.id === parseInt(formData.posyandu_id))?.name || "Posyandu Terpilih"
+                                            : "Pilih Posyandu"}
+                                    </span>
+                                    <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isPosyanduDropdownOpen ? "rotate-180" : ""}`} />
+                                </button>
+
+                                <AnimatePresence>
+                                    {isPosyanduDropdownOpen && (
+                                        <>
+                                            <div className="fixed inset-0 z-10" onClick={() => setIsPosyanduDropdownOpen(false)} />
+                                            <motion.div
+                                                initial={{ opacity: 0, y: -10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -10 }}
+                                                className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto"
+                                            >
+                                                {posyandus.map((posyandu) => (
+                                                    <div
+                                                        key={posyandu.id}
+                                                        onClick={() => {
+                                                            setFormData({ ...formData, posyandu_id: posyandu.id });
+                                                            setIsPosyanduDropdownOpen(false);
+                                                        }}
+                                                        className="px-4 py-2 hover:bg-blue-50 cursor-pointer flex items-center justify-between group"
+                                                    >
+                                                        <span className={`text-sm ${parseInt(formData.posyandu_id) === posyandu.id ? 'text-blue-600 font-medium' : 'text-gray-700'}`}>
+                                                            {posyandu.name}
+                                                        </span>
+                                                        {parseInt(formData.posyandu_id) === posyandu.id && (
+                                                            <Check className="w-4 h-4 text-blue-600" />
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </motion.div>
+                                        </>
+                                    )}
+                                </AnimatePresence>
+                            </div>
                         </div>
                     )}
 

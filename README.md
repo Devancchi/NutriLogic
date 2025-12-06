@@ -1,59 +1,367 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+<div align="center">
+  
+  <img src="./resources/js/assets/logo_scroll.svg" alt="NutriLogic Logo" width="400"/>
+  
+  <h1>🍼 NutriLogic</h1>
+  <p><strong>Sistem Monitoring Kesehatan & Gizi Balita Terpadu</strong></p>
+  
+  <p>
+    <img src="https://img.shields.io/badge/Laravel-11.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white" alt="Laravel"/>
+    <img src="https://img.shields.io/badge/React-18.x-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React"/>
+    <img src="https://img.shields.io/badge/Tailwind-3.x-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind"/>
+    <img src="https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL"/>
+  </p>
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+  <p>
+    <em>Solusi Digital untuk Meningkatkan Kualitas Kesehatan Balita Indonesia</em>
+  </p>
 
-## About Laravel
+</div>
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 📖 Tentang NutriLogic
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+**NutriLogic** adalah platform digital inovatif yang dirancang untuk membantu **Posyandu**, **Kader Kesehatan**, dan **Orang Tua** dalam memantau tumbuh kembang dan status gizi balita secara real-time. Dengan teknologi modern dan antarmuka yang intuitif, NutriLogic mempermudah pendataan, analisis, dan pengambilan keputusan untuk mencegah stunting dan masalah gizi lainnya.
 
-## Learning Laravel
+### 🎯 Misi Kami
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+-   🏥 **Digitalisasi Posyandu** - Transformasi dari pencatatan manual ke sistem digital yang efisien
+-   📊 **Early Detection** - Deteksi dini masalah gizi melalui sistem peringatan otomatis
+-   👨‍👩‍👧‍👦 **Pemberdayaan Orang Tua** - Memberikan akses informasi dan edukasi gizi yang mudah dipahami
+-   📈 **Data-Driven Decisions** - Laporan dan visualisasi data untuk evaluasi program kesehatan
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-## Laravel Sponsors
+## ✨ Fitur Utama
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### 👩‍⚕️ **Untuk Kader Posyandu**
 
-### Premium Partners
+<table>
+  <tr>
+    <td width="50%">
+      <h4>📋 Manajemen Data Terpadu</h4>
+      <ul>
+        <li>CRUD data anak, orang tua, dan posyandu</li>
+        <li>Input massal untuk efisiensi hari H posyandu</li>
+        <li>Dashboard statistik real-time</li>
+      </ul>
+    </td>
+    <td width="50%">
+      <h4>⚠️ Early Warning System</h4>
+      <ul>
+        <li>Auto-flag anak berisiko stunting</li>
+        <li>Deteksi penurunan grafik pertumbuhan</li>
+        <li>Notifikasi anak yang jarang datang</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <h4>📊 Reporting & Analytics</h4>
+      <ul>
+        <li>Laporan bulanan/periodik</li>
+        <li>Export ke PDF/Excel</li>
+        <li>Visualisasi data interaktif</li>
+      </ul>
+    </td>
+    <td>
+      <h4>📢 Broadcast & Konsultasi</h4>
+      <ul>
+        <li>Kirim pengumuman ke orang tua</li>
+        <li>Konsultasi virtual dengan orang tua</li>
+        <li>Reminder jadwal posyandu otomatis</li>
+      </ul>
+    </td>
+  </tr>
+</table>
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### 👨‍👩‍👧 **Untuk Orang Tua**
 
-## Contributing
+<table>
+  <tr>
+    <td width="50%">
+      <h4>📱 Dashboard Personal</h4>
+      <ul>
+        <li>Riwayat tumbuh kembang anak</li>
+        <li>Grafik pertumbuhan interaktif</li>
+        <li>Status gizi real-time</li>
+      </ul>
+    </td>
+    <td width="50%">
+      <h4>🍎 NutriAssist AI</h4>
+      <ul>
+        <li>Rekomendasi menu gizi personal</li>
+        <li>Saran pola makan sesuai usia</li>
+        <li>Tips kesehatan dari ahli</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <h4>📓 Jurnal Makan Digital</h4>
+      <ul>
+        <li>Catat asupan harian anak</li>
+        <li>Analisis nutrisi otomatis</li>
+        <li>Reminder waktu makan</li>
+      </ul>
+    </td>
+    <td>
+      <h4>🎮 Gamification</h4>
+      <ul>
+        <li>Sistem poin & badge</li>
+        <li>Motivasi pencapaian target</li>
+        <li>Leaderboard komunitas</li>
+      </ul>
+    </td>
+  </tr>
+</table>
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### 🔐 **Untuk Super Admin**
 
-## Code of Conduct
+-   🏢 **Manajemen Posyandu** - Kelola data posyandu, kader, dan pengguna
+-   📊 **System Reports** - Laporan sistem dengan filter per posyandu & rentang waktu
+-   👥 **User Management** - Kontrol akses dan aktivitas pengguna
+-   🔍 **Activity Logs** - Audit trail untuk keamanan sistem
+-   ⚙️ **System Settings** - Konfigurasi maintenance mode dan pengaturan global
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+---
 
-## Security Vulnerabilities
+## 📊 Visualisasi Data
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+NutriLogic dilengkapi dengan **dashboard interaktif** dan **visualisasi data** yang memudahkan analisis:
 
-## License
+### 🎨 **Distribusi Status Gizi**
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Pie chart dan grid dengan gradasi warna kustom untuk membedakan status gizi:
+
+-   **Hijau** 🟢 Normal
+-   **Kuning** 🟡 Kurang, Pendek, Kurus, Lebih (gradasi dari gelap ke terang)
+-   **Merah** 🔴 Sangat Kurang, Sangat Pendek, Sangat Kurus, Gemuk (gradasi dari gelap ke terang)
+
+### 📈 **Tren Penimbangan Bulanan**
+
+Area chart menampilkan tren penimbangan dalam 12 bulan terakhir dengan:
+
+-   Smooth gradient visualization
+-   Interactive tooltip
+-   Auto-refresh monthly data
+
+### 📅 **Statistik Bulanan**
+
+Bar chart yang menunjukkan:
+
+-   **Anak Ditimbang** (Unique children per bulan)
+-   **Total Penimbangan** (Total weighing sessions)
+-   Filter per Posyandu atau view semua data
+
+### 🏥 **Top Risk Posyandu**
+
+Identifikasi posyandu dengan anak berisiko tertinggi untuk prioritas intervensi.
+
+---
+
+## 🛠️ Teknologi
+
+### Backend
+
+-   **Laravel 11.x** - PHP Framework untuk REST API
+-   **MySQL 8.0** - Relational Database
+-   **Sanctum** - API Authentication
+-   **Queue Jobs** - Background Processing
+
+### Frontend
+
+-   **React 18.x** - Modern UI Library
+-   **React Router** - Navigation
+-   **Tailwind CSS** - Utility-First Styling
+-   **Recharts** - Data Visualization
+-   **Framer Motion** - Smooth Animations
+-   **Lucide Icons** - Beautiful Icons
+
+### Features
+
+-   **Real-time Caching** - Instant page transitions
+-   **Responsive Design** - Mobile-first approach
+-   **PWA Ready** - Progressive Web App capabilities
+-   **Role-Based Access Control** - Secure multi-user system
+
+---
+
+## 🚀 Instalasi
+
+### Prerequisites
+
+```bash
+- PHP >= 8.2
+- Composer
+- Node.js >= 18.x
+- MySQL >= 8.0
+- Git
+```
+
+### Quick Start
+
+1. **Clone Repository**
+
+```bash
+git clone https://github.com/krizzn65/NutriLogic.git
+cd NutriLogic
+```
+
+2. **Install Dependencies**
+
+```bash
+# Backend
+composer install
+
+# Frontend
+npm install
+```
+
+3. **Environment Setup**
+
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+
+4. **Database Configuration**
+
+Edit `.env`:
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=nutrilogic
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+5. **Migrate & Seed**
+
+```bash
+php artisan migrate --seed
+```
+
+6. **Build Assets**
+
+```bash
+npm run build
+# atau untuk development
+npm run dev
+```
+
+7. **Run Server**
+
+```bash
+php artisan serve
+```
+
+Akses aplikasi di `http://localhost:8000`
+
+### 🔑 **Default Credentials**
+
+**Super Admin:**
+
+-   Email: `admin@admin.com`
+-   Password: `password`
+
+**Kader:**
+
+-   Email: `kader@kader.com`
+-   Password: `password`
+
+**Orang Tua:**
+
+-   Email: `ibu@ibu.com`
+-   Password: `password`
+
+---
+
+## 📁 Struktur Proyek
+
+```
+NutriLogic/
+├── app/
+│   ├── Http/Controllers/     # API Controllers
+│   ├── Models/                # Eloquent Models
+│   └── Services/              # Business Logic Services
+├── database/
+│   ├── migrations/            # Database Migrations
+│   └── seeders/               # Data Seeders
+├── resources/
+│   ├── js/
+│   │   ├── components/        # React Components
+│   │   ├── contexts/          # React Contexts
+│   │   └── lib/               # Utilities & API Client
+│   └── views/                 # Blade Templates
+├── routes/
+│   ├── api.php                # API Routes
+│   └── web.php                # Web Routes
+└── public/                    # Public Assets
+```
+
+---
+
+## 🎨 Design System
+
+### Color Palette
+
+**Status Gizi:**
+
+-   `#10B981` - Normal (Hijau)
+-   `#FDC700` - Kurang (Kuning Gelap)
+-   `#FFE06D` - Pendek (Kuning Cerah)
+-   `#D9C990` - Kurus (Khaki)
+-   `#FFF8D2` - Lebih (Krem)
+-   `#F43F5E` - Sangat Kurang (Merah Gelap)
+-   `#FE7189` - Sangat Pendek (Merah Sedang)
+-   `#FB9FAF` - Sangat Kurus (Pink)
+-   `#FFCCD5` - Gemuk (Pink Terang)
+
+---
+
+## 📱 Screenshots
+
+_(Tambahkan screenshots aplikasi Anda di sini)_
+
+---
+
+## 🤝 Kontribusi
+
+Kami menyambut kontribusi dari komunitas! Jika Anda ingin berkontribusi:
+
+1. Fork repository ini
+2. Buat branch fitur (`git checkout -b feature/AmazingFeature`)
+3. Commit perubahan (`git commit -m 'Add some AmazingFeature'`)
+4. Push ke branch (`git push origin feature/AmazingFeature`)
+5. Buat Pull Request
+
+---
+
+## 📄 Lisensi
+
+Project ini dilisensikan di bawah [MIT License](LICENSE).
+
+---
+
+## 👥 Tim Pengembang
+
+Dikembangkan dengan ❤️ oleh tim NutriLogic
+
+---
+
+## 📞 Kontak & Dukungan
+
+-   📧 Email: support@nutrilogic.id
+-   🌐 Website: https://nutrilogic.id
+-   📱 WhatsApp: +62-xxx-xxxx-xxxx
+
+---
+
+<div align="center">
+  <p><strong>⭐ Jangan lupa berikan star jika project ini bermanfaat! ⭐</strong></p>
+  <p><em>Bersama wujudkan generasi Indonesia bebas stunting</em></p>
+</div>
