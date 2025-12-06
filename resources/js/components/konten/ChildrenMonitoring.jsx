@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import api from "../../lib/api";
 import { useDataCache } from "../../contexts/DataCacheContext";
-import { Baby, Search, X, Building2, User, Calendar, Weight, Ruler } from "lucide-react";
+import { Baby, Search, X, Building2, User, Calendar, Weight, Ruler, ChevronDown, Check } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { formatAge } from "../../lib/utils";
 
 export default function ChildrenMonitoring() {
@@ -16,6 +17,21 @@ export default function ChildrenMonitoring() {
     });
     const [selectedChild, setSelectedChild] = useState(null);
     const [showDetailModal, setShowDetailModal] = useState(false);
+    const [isPosyanduDropdownOpen, setIsPosyanduDropdownOpen] = useState(false);
+    const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+
+    const statusOptions = [
+        { value: "", label: "Semua Status" },
+        { value: "normal", label: "Normal" },
+        { value: "kurang", label: "Kurang" },
+        { value: "sangat_kurang", label: "Sangat Kurang" },
+        { value: "pendek", label: "Pendek" },
+        { value: "sangat_pendek", label: "Sangat Pendek" },
+        { value: "kurus", label: "Kurus" },
+        { value: "sangat_kurus", label: "Sangat Kurus" },
+        { value: "lebih", label: "Lebih" },
+        { value: "gemuk", label: "Gemuk" },
+    ];
 
     // Data caching
     const { getCachedData, setCachedData } = useDataCache();
@@ -114,6 +130,14 @@ export default function ChildrenMonitoring() {
     }, [fetchPosyandus, fetchChildren, getCachedData]);
 
 
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            fetchChildren({ forceRefresh: true, showLoader: false });
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [fetchChildren]);
+
     const handleSearch = () => {
         fetchChildren({ forceRefresh: true, showLoader: true });
     };
@@ -124,7 +148,6 @@ export default function ChildrenMonitoring() {
             posyandu_id: '',
             nutritional_status: '',
         });
-        setTimeout(() => fetchChildren({ forceRefresh: true, showLoader: true }), 50);
     };
 
     const handleViewDetail = async (childId) => {
@@ -191,7 +214,7 @@ export default function ChildrenMonitoring() {
                                 value={filters.name}
                                 onChange={(e) => setFilters({ ...filters, name: e.target.value })}
                                 placeholder="Cari nama..."
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
                             />
                         </div>
 
@@ -199,56 +222,125 @@ export default function ChildrenMonitoring() {
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Posyandu
                             </label>
-                            <select
-                                value={filters.posyandu_id}
-                                onChange={(e) => setFilters({ ...filters, posyandu_id: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            >
-                                <option value="">Semua Posyandu</option>
-                                {posyandus.map((posyandu) => (
-                                    <option key={posyandu.id} value={posyandu.id}>
-                                        {posyandu.name}
-                                    </option>
-                                ))}
-                            </select>
+                            <div className="relative">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsPosyanduDropdownOpen(!isPosyanduDropdownOpen)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-left flex items-center justify-between focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                >
+                                    <span className="text-gray-900 truncate">
+                                        {filters.posyandu_id
+                                            ? posyandus.find(p => p.id === parseInt(filters.posyandu_id))?.name || "Posyandu Terpilih"
+                                            : "Semua Posyandu"}
+                                    </span>
+                                    <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isPosyanduDropdownOpen ? "rotate-180" : ""}`} />
+                                </button>
+
+                                <AnimatePresence>
+                                    {isPosyanduDropdownOpen && (
+                                        <>
+                                            <div className="fixed inset-0 z-10" onClick={() => setIsPosyanduDropdownOpen(false)} />
+                                            <motion.div
+                                                initial={{ opacity: 0, y: -10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -10 }}
+                                                className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto"
+                                            >
+                                                <div
+                                                    onClick={() => {
+                                                        setFilters({ ...filters, posyandu_id: '' });
+                                                        setIsPosyanduDropdownOpen(false);
+                                                    }}
+                                                    className="px-4 py-2 hover:bg-blue-50 cursor-pointer flex items-center justify-between group"
+                                                >
+                                                    <span className={`text-sm ${filters.posyandu_id === '' ? 'text-blue-600 font-medium' : 'text-gray-700'}`}>
+                                                        Semua Posyandu
+                                                    </span>
+                                                    {filters.posyandu_id === '' && (
+                                                        <Check className="w-4 h-4 text-blue-600" />
+                                                    )}
+                                                </div>
+                                                {posyandus.map((posyandu) => (
+                                                    <div
+                                                        key={posyandu.id}
+                                                        onClick={() => {
+                                                            setFilters({ ...filters, posyandu_id: posyandu.id });
+                                                            setIsPosyanduDropdownOpen(false);
+                                                        }}
+                                                        className="px-4 py-2 hover:bg-blue-50 cursor-pointer flex items-center justify-between group"
+                                                    >
+                                                        <span className={`text-sm ${parseInt(filters.posyandu_id) === posyandu.id ? 'text-blue-600 font-medium' : 'text-gray-700'}`}>
+                                                            {posyandu.name}
+                                                        </span>
+                                                        {parseInt(filters.posyandu_id) === posyandu.id && (
+                                                            <Check className="w-4 h-4 text-blue-600" />
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </motion.div>
+                                        </>
+                                    )}
+                                </AnimatePresence>
+                            </div>
                         </div>
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Status Gizi
                             </label>
-                            <select
-                                value={filters.nutritional_status}
-                                onChange={(e) => setFilters({ ...filters, nutritional_status: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            >
-                                <option value="">Semua Status</option>
-                                <option value="normal">Normal</option>
-                                <option value="kurang">Kurang</option>
-                                <option value="sangat_kurang">Sangat Kurang</option>
-                                <option value="pendek">Pendek</option>
-                                <option value="sangat_pendek">Sangat Pendek</option>
-                                <option value="kurus">Kurus</option>
-                                <option value="sangat_kurus">Sangat Kurus</option>
-                                <option value="lebih">Lebih</option>
-                                <option value="gemuk">Gemuk</option>
-                            </select>
+                            <div className="relative">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-left flex items-center justify-between focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                >
+                                    <span className="text-gray-900 truncate">
+                                        {statusOptions.find(opt => opt.value === filters.nutritional_status)?.label || "Semua Status"}
+                                    </span>
+                                    <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isStatusDropdownOpen ? "rotate-180" : ""}`} />
+                                </button>
+
+                                <AnimatePresence>
+                                    {isStatusDropdownOpen && (
+                                        <>
+                                            <div className="fixed inset-0 z-10" onClick={() => setIsStatusDropdownOpen(false)} />
+                                            <motion.div
+                                                initial={{ opacity: 0, y: -10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -10 }}
+                                                className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto"
+                                            >
+                                                {statusOptions.map((option) => (
+                                                    <div
+                                                        key={option.value}
+                                                        onClick={() => {
+                                                            setFilters({ ...filters, nutritional_status: option.value });
+                                                            setIsStatusDropdownOpen(false);
+                                                        }}
+                                                        className="px-4 py-2 hover:bg-blue-50 cursor-pointer flex items-center justify-between group"
+                                                    >
+                                                        <span className={`text-sm ${filters.nutritional_status === option.value ? 'text-blue-600 font-medium' : 'text-gray-700'}`}>
+                                                            {option.label}
+                                                        </span>
+                                                        {filters.nutritional_status === option.value && (
+                                                            <Check className="w-4 h-4 text-blue-600" />
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </motion.div>
+                                        </>
+                                    )}
+                                </AnimatePresence>
+                            </div>
                         </div>
 
                         <div className="flex items-end gap-2">
                             <button
-                                onClick={handleSearch}
-                                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
-                            >
-                                <Search className="w-4 h-4" />
-                                Cari
-                            </button>
-                            <button
                                 onClick={handleClearFilters}
-                                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                                className="p-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                                 title="Clear Filters"
                             >
-                                <X className="w-4 h-4" />
+                                <X className="w-5 h-5" />
                             </button>
                         </div>
                     </div>

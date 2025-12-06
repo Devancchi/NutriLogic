@@ -19,6 +19,7 @@ class AdminReportController extends Controller
     {
         $dateFrom = $request->input('date_from');
         $dateTo = $request->input('date_to');
+        $posyanduId = $request->input('posyandu_id');
 
         // Total counts
         $totalPosyandu = Posyandu::where('is_active', true)->count();
@@ -31,16 +32,21 @@ class AdminReportController extends Controller
         if ($dateFrom && $dateTo) {
             $weighingQuery->whereBetween('measured_at', [$dateFrom, $dateTo]);
         }
+        if ($posyanduId) {
+            $weighingQuery->whereHas('child', function ($q) use ($posyanduId) {
+                $q->where('posyandu_id', $posyanduId);
+            });
+        }
         $totalWeighings = $weighingQuery->count();
 
         // Nutritional status distribution (latest weighing per child)
-        $statusDistribution = $this->getNutritionalStatusDistribution();
+        $statusDistribution = $this->getNutritionalStatusDistribution($posyanduId);
 
-        // Growth by posyandu
-        $growthByPosyandu = $this->getGrowthByPosyandu($dateFrom, $dateTo);
+        // Monthly trend (last 12 months)
+        $monthlyTrend = $this->getMonthlyTrend($posyanduId);
 
-        // Monthly trend (last 6 months)
-        $monthlyTrend = $this->getMonthlyTrend();
+        // Yearly growth by posyandu
+        $growthByPosyandu = $this->getGrowthByPosyandu($posyanduId);
 
         return response()->json([
             'data' => [
@@ -80,7 +86,7 @@ class AdminReportController extends Controller
     /**
      * Get nutritional status distribution
      */
-    private function getNutritionalStatusDistribution(): array
+    private function getNutritionalStatusDistribution($posyanduId = null): array
     {
         $distribution = [
             'normal' => 0,
@@ -94,13 +100,20 @@ class AdminReportController extends Controller
             'gemuk' => 0,
         ];
 
-        $latestWeighings = WeighingLog::select('child_id', 'nutritional_status')
+        $query = WeighingLog::select('child_id', 'nutritional_status')
             ->whereIn('id', function ($query) {
                 $query->select(DB::raw('MAX(id)'))
                     ->from('weighing_logs')
                     ->groupBy('child_id');
-            })
-            ->get();
+            });
+
+        if ($posyanduId) {
+            $query->whereHas('child', function ($q) use ($posyanduId) {
+                $q->where('posyandu_id', $posyanduId);
+            });
+        }
+
+        $latestWeighings = $query->get();
 
         foreach ($latestWeighings as $weighing) {
             $status = $weighing->nutritional_status;
@@ -113,49 +126,61 @@ class AdminReportController extends Controller
     }
 
     /**
-     * Get growth statistics by posyandu
+     * Get growth statistics by posyandu (monthly breakdown for last 12 months)
      */
-    private function getGrowthByPosyandu($dateFrom, $dateTo): array
+    private function getGrowthByPosyandu($posyanduId = null): array
     {
-        $query = DB::table('weighing_logs as wl')
-            ->select(
-                'p.id',
-                'p.name',
-                DB::raw('COUNT(DISTINCT wl.child_id) as children_count'),
-                DB::raw('COUNT(wl.id) as weighings_count')
-            )
-            ->join('children as c', 'wl.child_id', '=', 'c.id')
-            ->join('posyandus as p', 'c.posyandu_id', '=', 'p.id');
-
-        if ($dateFrom && $dateTo) {
-            $query->whereBetween('wl.measured_at', [$dateFrom, $dateTo]);
-        }
-
-        return $query->groupBy('p.id', 'p.name')
-            ->orderBy('weighings_count', 'desc')
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'posyandu_name' => $item->name,
-                    'children_count' => $item->children_count,
-                    'weighings_count' => $item->weighings_count,
-                ];
-            })
-            ->toArray();
-    }
-
-    /**
-     * Get monthly trend for last 6 months
-     */
-    private function getMonthlyTrend(): array
-    {
-        $months = [];
-        for ($i = 5; $i >= 0; $i--) {
+        // Generate monthly data for last 12 months
+        $monthlyData = [];
+        for ($i = 11; $i >= 0; $i--) {
             $date = now()->subMonths($i);
             $monthStart = $date->copy()->startOfMonth()->format('Y-m-d');
             $monthEnd = $date->copy()->endOfMonth()->format('Y-m-d');
 
-            $weighingsCount = WeighingLog::whereBetween('measured_at', [$monthStart, $monthEnd])->count();
+            $query = DB::table('weighing_logs as wl')
+                ->select(
+                    DB::raw('COUNT(DISTINCT wl.child_id) as children_count'),
+                    DB::raw('COUNT(wl.id) as weighings_count')
+                )
+                ->join('children as c', 'wl.child_id', '=', 'c.id')
+                ->whereBetween('wl.measured_at', [$monthStart, $monthEnd]);
+
+            if ($posyanduId) {
+                $query->where('c.posyandu_id', $posyanduId);
+            }
+
+            $result = $query->first();
+
+            $monthlyData[] = [
+                'month' => $date->format('M Y'),
+                'children_count' => $result->children_count ?? 0,
+                'weighings_count' => $result->weighings_count ?? 0,
+            ];
+        }
+
+        return $monthlyData;
+    }
+
+    /**
+     * Get monthly trend for last 12 months
+     */
+    private function getMonthlyTrend($posyanduId = null): array
+    {
+        $months = [];
+        for ($i = 11; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $monthStart = $date->copy()->startOfMonth()->format('Y-m-d');
+            $monthEnd = $date->copy()->endOfMonth()->format('Y-m-d');
+
+            $weighingQuery = WeighingLog::whereBetween('measured_at', [$monthStart, $monthEnd]);
+            
+            if ($posyanduId) {
+                $weighingQuery->whereHas('child', function ($q) use ($posyanduId) {
+                    $q->where('posyandu_id', $posyanduId);
+                });
+            }
+            
+            $weighingsCount = $weighingQuery->count();
 
             $months[] = [
                 'month' => $date->format('M Y'),
