@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import api from "../../lib/api";
 import { useDataCache } from "../../contexts/DataCacheContext";
 import { FileText, Download, Calendar, TrendingUp, BarChart3 } from "lucide-react";
@@ -15,14 +15,11 @@ export default function SystemReports() {
 
     // Data caching
     const { getCachedData, setCachedData } = useDataCache();
+    const activeReportRequestId = React.useRef(0);
 
-    useEffect(() => {
-        fetchReportData();
-    }, []);
-
-    const fetchReportData = async (forceRefresh = false) => {
-        // Cache only when no date filter (skip if forceRefresh)
+    const fetchReportData = useCallback(async ({ forceRefresh = false, showLoader = false } = {}) => {
         const hasDateFilter = dateRange.date_from || dateRange.date_to;
+
         if (!hasDateFilter && !forceRefresh) {
             const cachedReports = getCachedData('admin_reports');
             if (cachedReports) {
@@ -32,31 +29,46 @@ export default function SystemReports() {
             }
         }
 
-        try {
-            // Only show loading on initial load
-            if (!forceRefresh) {
-                setLoading(true);
-            }
-            setError(null);
-            const params = {};
-            if (dateRange.date_from) params.date_from = dateRange.date_from;
-            if (dateRange.date_to) params.date_to = dateRange.date_to;
+        if (showLoader) {
+            setLoading(true);
+        }
 
+        setError(null);
+        const params = {};
+        if (dateRange.date_from) params.date_from = dateRange.date_from;
+        if (dateRange.date_to) params.date_to = dateRange.date_to;
+        const requestId = ++activeReportRequestId.current;
+
+        try {
             const response = await api.get('/admin/reports', { params });
+
+            if (activeReportRequestId.current !== requestId) {
+                return;
+            }
+
             setReportData(response.data.data);
 
-            // Cache only when no date filter
             if (!hasDateFilter) {
                 setCachedData('admin_reports', response.data.data);
             }
         } catch (err) {
+            if (activeReportRequestId.current !== requestId) {
+                return;
+            }
+
             const errorMessage = err.response?.data?.message || 'Gagal memuat data laporan.';
             setError(errorMessage);
             console.error('Report fetch error:', err);
         } finally {
-            setLoading(false);
+            if (activeReportRequestId.current === requestId) {
+                setLoading(false);
+            }
         }
-    };
+    }, [dateRange, getCachedData, setCachedData]);
+
+    useEffect(() => {
+        fetchReportData({ forceRefresh: true, showLoader: true });
+    }, [fetchReportData]);
 
 
     const handleExport = (type) => {
@@ -139,7 +151,7 @@ export default function SystemReports() {
                             />
                         </div>
                         <button
-                            onClick={fetchReportData}
+                            onClick={() => fetchReportData({ forceRefresh: true, showLoader: true })}
                             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                         >
                             Filter

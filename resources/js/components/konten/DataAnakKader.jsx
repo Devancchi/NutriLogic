@@ -34,7 +34,7 @@ export default function DataAnakKader() {
         last_page: 1,
     });
 
-    // Data caching
+
     const { getCachedData, setCachedData } = useDataCache();
 
     const statusOptions = [

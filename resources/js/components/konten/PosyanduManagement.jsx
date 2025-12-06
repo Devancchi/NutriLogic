@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import api from "../../lib/api";
 import { useDataCache } from "../../contexts/DataCacheContext";
 import { Building2, Plus, Edit2, Power, MapPin, Users, Baby } from "lucide-react";
@@ -15,11 +15,12 @@ export default function PosyanduManagement() {
     // Data caching
     const { getCachedData, setCachedData, invalidateCache } = useDataCache();
 
-    // Track if this is initial mount
+    // Track if this is initial mount and latest in-flight request
     const isInitialMount = React.useRef(true);
+    const activeRequestId = React.useRef(0);
 
     // Preload all filter data for instant tab switching
-    const preloadAllFilters = async () => {
+    const preloadAllFilters = useCallback(async () => {
         const filters = ['all', 'active', 'inactive'];
 
         for (const filter of filters) {
@@ -40,39 +41,11 @@ export default function PosyanduManagement() {
                 console.error(`Preload ${filter} error:`, err);
             }
         }
-    };
+    }, [getCachedData, setCachedData]);
 
-    useEffect(() => {
-        if (isInitialMount.current) {
-            // First load - show skeleton and preload all filters
-            isInitialMount.current = false;
-            fetchPosyandus();
-            // Preload other filters in background
-            preloadAllFilters();
-        } else {
-            // Filter change - no skeleton, use cache or fetch
-            fetchPosyandus(true);
-        }
-    }, [filterStatus]);
+    const fetchPosyandus = useCallback(async (targetFilter, { forceRefresh = false, showLoader = false } = {}) => {
+        const cacheKey = `admin_posyandus_${targetFilter}`;
 
-    // Handler for filter tab changes - show cached data instantly, refresh in background
-    const handleFilterChange = (newFilter) => {
-        if (newFilter === filterStatus) return;
-
-        // Immediately show cached data for the new filter (instant switch)
-        const cachedPosyandus = getCachedData(`admin_posyandus_${newFilter}`);
-        if (cachedPosyandus) {
-            setPosyandus(cachedPosyandus);
-        }
-
-        setFilterStatus(newFilter);
-    };
-
-    const fetchPosyandus = async (forceRefresh = false) => {
-        // Cache each filter state separately
-        const cacheKey = `admin_posyandus_${filterStatus}`;
-
-        // For non-force refresh, use cache and return
         if (!forceRefresh) {
             const cachedPosyandus = getCachedData(cacheKey);
             if (cachedPosyandus) {
@@ -82,28 +55,83 @@ export default function PosyanduManagement() {
             }
         }
 
+        if (showLoader) {
+            setLoading(true);
+        }
+
+        setError(null);
+        const params = targetFilter !== "all" ? { status: targetFilter } : {};
+        const requestId = ++activeRequestId.current;
+
         try {
-            // Only show loading skeleton on initial load, not on background refresh
-            if (!forceRefresh) {
-                setLoading(true);
-            }
-            setError(null);
-            const params = filterStatus !== "all" ? { status: filterStatus } : {};
             const response = await api.get('/admin/posyandus', { params });
+
+            // Ignore stale responses that belong to an older request
+            if (activeRequestId.current !== requestId) {
+                return;
+            }
+
             setPosyandus(response.data.data);
             setCachedData(cacheKey, response.data.data);
 
-            // Also update "all" cache for other pages that use admin_posyandus
-            if (filterStatus === "all") {
+            if (targetFilter === "all") {
                 setCachedData('admin_posyandus', response.data.data);
             }
         } catch (err) {
+            if (activeRequestId.current !== requestId) {
+                return;
+            }
+
             const errorMessage = err.response?.data?.message || 'Gagal memuat data posyandu.';
             setError(errorMessage);
             console.error('Posyandus fetch error:', err);
         } finally {
-            setLoading(false);
+            if (activeRequestId.current === requestId) {
+                setLoading(false);
+            }
         }
+    }, [getCachedData, setCachedData]);
+
+    useEffect(() => {
+        const cacheKey = `admin_posyandus_${filterStatus}`;
+
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            fetchPosyandus(filterStatus, { forceRefresh: true, showLoader: true });
+            preloadAllFilters();
+            return;
+        }
+
+        const cachedPosyandus = getCachedData(cacheKey);
+
+        if (cachedPosyandus) {
+            setPosyandus(cachedPosyandus);
+            setLoading(false);
+        } else {
+            setLoading(true);
+        }
+
+        fetchPosyandus(filterStatus, {
+            forceRefresh: true,
+            showLoader: !cachedPosyandus,
+        });
+    }, [filterStatus, fetchPosyandus, preloadAllFilters, getCachedData]);
+
+    // Handler for filter tab changes - show cached data instantly, refresh in background
+    const handleFilterChange = (newFilter) => {
+        if (newFilter === filterStatus) return;
+
+        const cacheKey = `admin_posyandus_${newFilter}`;
+        const cachedPosyandus = getCachedData(cacheKey);
+
+        if (cachedPosyandus) {
+            setPosyandus(cachedPosyandus);
+            setLoading(false);
+        } else {
+            setLoading(true);
+        }
+
+        setFilterStatus(newFilter);
     };
 
 
@@ -138,7 +166,7 @@ export default function PosyanduManagement() {
             invalidateCache('admin_posyandus_inactive');
             invalidateCache('admin_dashboard');
             // Fetch fresh data to ensure consistency
-            fetchPosyandus(true);
+            fetchPosyandus(filterStatus, { forceRefresh: true, showLoader: false });
         } catch (err) {
             // Revert on error
             setPosyandus(previousPosyandus);
