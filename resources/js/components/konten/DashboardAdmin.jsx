@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { logoutWithApi } from "../../lib/auth";
+import { getMaintenanceMode } from "../../lib/sessionTimeout";
 import api from "../../lib/api";
 import { useDataCache } from "../../contexts/DataCacheContext";
 import {
@@ -29,6 +30,54 @@ export default function DashboardAdmin() {
     // Notification State
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
     const [notifications, setNotifications] = useState([]);
+
+    // Check maintenance mode and update notifications
+    useEffect(() => {
+        const checkMaintenanceMode = () => {
+            const isMaintenanceActive = getMaintenanceMode();
+
+            setNotifications(prev => {
+                const maintenanceNotifId = 'maintenance-mode-active';
+                const hasMaintenanceNotif = prev.some(n => n.id === maintenanceNotifId);
+
+                if (isMaintenanceActive && !hasMaintenanceNotif) {
+                    // Add maintenance notification
+                    return [{
+                        id: maintenanceNotifId,
+                        type: 'warning',
+                        title: 'Mode Maintenance Aktif',
+                        message: 'Sistem sedang dalam mode maintenance. Pengguna non-admin tidak dapat mengakses aplikasi.',
+                        timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+                        persistent: true
+                    }, ...prev];
+                } else if (!isMaintenanceActive && hasMaintenanceNotif) {
+                    // Remove maintenance notification
+                    return prev.filter(n => n.id !== maintenanceNotifId);
+                }
+                return prev;
+            });
+        };
+
+        // Check initially
+        checkMaintenanceMode();
+
+        // Listen for storage changes (when settings modal saves)
+        const handleStorageChange = (e) => {
+            if (e.key === 'nutrilogic_maintenance_mode') {
+                checkMaintenanceMode();
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+
+        // Also check periodically in case same-tab changes
+        const interval = setInterval(checkMaintenanceMode, 1000);
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            clearInterval(interval);
+        };
+    }, []);
 
     // Data caching
     const { getCachedData, setCachedData } = useDataCache();
@@ -134,6 +183,13 @@ export default function DashboardAdmin() {
     };
 
     const handleNotificationClick = (notification) => {
+        // Handle maintenance notification - open settings modal
+        if (notification.id === 'maintenance-mode-active') {
+            setIsNotificationOpen(false);
+            setIsSettingsModalOpen(true);
+            return;
+        }
+
         // Save dismissed notification ID to localStorage
         const dismissedIds = JSON.parse(localStorage.getItem('dismissedNotifications') || '[]');
         if (!dismissedIds.includes(notification.id)) {
@@ -146,7 +202,9 @@ export default function DashboardAdmin() {
         setIsNotificationOpen(false);
 
         // Navigate to the target page
-        navigate(notification.link);
+        if (notification.link) {
+            navigate(notification.link);
+        }
     };
 
     const fetchUserProfile = async () => {
