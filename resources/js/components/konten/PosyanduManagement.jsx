@@ -15,15 +15,56 @@ export default function PosyanduManagement() {
     // Data caching
     const { getCachedData, setCachedData, invalidateCache } = useDataCache();
 
+    // Track if this is initial mount
+    const isInitialMount = React.useRef(true);
+
+    // Preload all filter data for instant tab switching
+    const preloadAllFilters = async () => {
+        const filters = ['all', 'active', 'inactive'];
+
+        for (const filter of filters) {
+            const cacheKey = `admin_posyandus_${filter}`;
+            // Skip if already cached
+            if (getCachedData(cacheKey)) continue;
+
+            try {
+                const params = filter !== 'all' ? { status: filter } : {};
+                const response = await api.get('/admin/posyandus', { params });
+                setCachedData(cacheKey, response.data.data);
+
+                // Also update "all" cache for other pages
+                if (filter === 'all') {
+                    setCachedData('admin_posyandus', response.data.data);
+                }
+            } catch (err) {
+                console.error(`Preload ${filter} error:`, err);
+            }
+        }
+    };
+
     useEffect(() => {
-        fetchPosyandus();
+        if (isInitialMount.current) {
+            // First load - show skeleton and preload all filters
+            isInitialMount.current = false;
+            fetchPosyandus();
+            // Preload other filters in background
+            preloadAllFilters();
+        } else {
+            // Filter change - no skeleton, use cache or fetch
+            fetchPosyandus(true);
+        }
     }, [filterStatus]);
 
-    // Handler for filter tab changes - always force refresh
+    // Handler for filter tab changes - show cached data instantly, refresh in background
     const handleFilterChange = (newFilter) => {
         if (newFilter === filterStatus) return;
-        // Invalidate cache for this filter
-        invalidateCache(`admin_posyandus_${newFilter}`);
+
+        // Immediately show cached data for the new filter (instant switch)
+        const cachedPosyandus = getCachedData(`admin_posyandus_${newFilter}`);
+        if (cachedPosyandus) {
+            setPosyandus(cachedPosyandus);
+        }
+
         setFilterStatus(newFilter);
     };
 
@@ -31,7 +72,7 @@ export default function PosyanduManagement() {
         // Cache each filter state separately
         const cacheKey = `admin_posyandus_${filterStatus}`;
 
-        // Skip cache if forceRefresh is true
+        // For non-force refresh, use cache and return
         if (!forceRefresh) {
             const cachedPosyandus = getCachedData(cacheKey);
             if (cachedPosyandus) {

@@ -70,17 +70,22 @@ export default function JadwalPosyandu() {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const fetchSchedules = async () => {
-        // Check cache first
-        const cachedSchedules = getCachedData('kader_schedules');
-        if (cachedSchedules) {
-            setSchedules(cachedSchedules);
-            setLoading(false);
-            return;
+    const fetchSchedules = async (forceRefresh = false) => {
+        // Check cache first (skip if forceRefresh)
+        if (!forceRefresh) {
+            const cachedSchedules = getCachedData('kader_schedules');
+            if (cachedSchedules) {
+                setSchedules(cachedSchedules);
+                setLoading(false);
+                return;
+            }
         }
 
         try {
-            setLoading(true);
+            // Only show loading on initial load
+            if (!forceRefresh) {
+                setLoading(true);
+            }
             setError(null);
             const response = await api.get('/kader/schedules');
             setSchedules(response.data.data);
@@ -93,12 +98,14 @@ export default function JadwalPosyandu() {
         }
     };
 
-    const fetchChildren = async () => {
-        // Check cache first
-        const cachedChildren = getCachedData('kader_children_active');
-        if (cachedChildren) {
-            setChildren(cachedChildren);
-            return;
+    const fetchChildren = async (forceRefresh = false) => {
+        // Check cache first (skip if forceRefresh)
+        if (!forceRefresh) {
+            const cachedChildren = getCachedData('kader_children_active');
+            if (cachedChildren) {
+                setChildren(cachedChildren);
+                return;
+            }
         }
 
         try {
@@ -115,14 +122,21 @@ export default function JadwalPosyandu() {
         e.stopPropagation();
         if (!window.confirm('Apakah Anda yakin ingin menandai jadwal ini sebagai selesai?')) return;
 
+        // Optimistic update
+        const previousSchedules = [...schedules];
+        setSchedules(prev => prev.map(s =>
+            s.id === id ? { ...s, status: 'completed', completed_at: new Date().toISOString() } : s
+        ));
+
         try {
             await api.put(`/kader/schedules/${id}`, {
                 completed_at: new Date().toISOString()
             });
             invalidateCache('kader_schedules');
             invalidateCache('kader_dashboard');
-            fetchSchedules();
+            fetchSchedules(true);
         } catch (err) {
+            setSchedules(previousSchedules);
             alert('Gagal mengupdate status jadwal.');
         }
     };
@@ -131,12 +145,17 @@ export default function JadwalPosyandu() {
         e.stopPropagation();
         if (!window.confirm('Apakah Anda yakin ingin menghapus jadwal ini?')) return;
 
+        // Optimistic update
+        const previousSchedules = [...schedules];
+        setSchedules(prev => prev.filter(s => s.id !== id));
+
         try {
             await api.delete(`/kader/schedules/${id}`);
             invalidateCache('kader_schedules');
             invalidateCache('kader_dashboard');
-            fetchSchedules();
+            fetchSchedules(true);
         } catch (err) {
+            setSchedules(previousSchedules);
             alert('Gagal menghapus jadwal.');
         }
     };

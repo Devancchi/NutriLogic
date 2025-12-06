@@ -207,12 +207,14 @@ export default function DashboardAdmin() {
         }
     };
 
-    const fetchUserProfile = async () => {
-        // Check cache first
-        const cachedUser = getCachedData('admin_user_profile');
-        if (cachedUser) {
-            setUser(cachedUser);
-            return;
+    const fetchUserProfile = async (forceRefresh = false) => {
+        // Check cache first (skip if forceRefresh)
+        if (!forceRefresh) {
+            const cachedUser = getCachedData('admin_user_profile');
+            if (cachedUser) {
+                setUser(cachedUser);
+                return;
+            }
         }
 
         try {
@@ -224,17 +226,22 @@ export default function DashboardAdmin() {
         }
     };
 
-    const fetchDashboardData = async () => {
-        // Check cache first
-        const cachedStats = getCachedData('admin_dashboard');
-        if (cachedStats) {
-            setStats(cachedStats);
-            setLoading(false);
-            return;
+    const fetchDashboardData = async (forceRefresh = false) => {
+        // Check cache first (skip if forceRefresh)
+        if (!forceRefresh) {
+            const cachedStats = getCachedData('admin_dashboard');
+            if (cachedStats) {
+                setStats(cachedStats);
+                setLoading(false);
+                return;
+            }
         }
 
         try {
-            setLoading(true);
+            // Only show loading on initial load
+            if (!forceRefresh) {
+                setLoading(true);
+            }
             setError(null);
             const response = await api.get('/admin/dashboard');
             setStats(response.data.data);

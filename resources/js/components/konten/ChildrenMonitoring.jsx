@@ -25,12 +25,14 @@ export default function ChildrenMonitoring() {
         fetchChildren();
     }, []);
 
-    const fetchPosyandus = async () => {
-        // Check cache first
-        const cachedPosyandus = getCachedData('admin_posyandus');
-        if (cachedPosyandus) {
-            setPosyandus(cachedPosyandus);
-            return;
+    const fetchPosyandus = async (forceRefresh = false) => {
+        // Check cache first (skip if forceRefresh)
+        if (!forceRefresh) {
+            const cachedPosyandus = getCachedData('admin_posyandus');
+            if (cachedPosyandus) {
+                setPosyandus(cachedPosyandus);
+                return;
+            }
         }
 
         try {
@@ -43,10 +45,10 @@ export default function ChildrenMonitoring() {
     };
 
 
-    const fetchChildren = async () => {
-        // Cache only when no filter
+    const fetchChildren = async (forceRefresh = false) => {
+        // Cache only when no filter (skip if forceRefresh)
         const hasFilter = filters.name || filters.posyandu_id || filters.nutritional_status;
-        if (!hasFilter) {
+        if (!hasFilter && !forceRefresh) {
             const cachedChildren = getCachedData('admin_children');
             if (cachedChildren) {
                 setChildren(cachedChildren);
@@ -56,7 +58,10 @@ export default function ChildrenMonitoring() {
         }
 
         try {
-            setLoading(true);
+            // Only show loading on initial load
+            if (!forceRefresh) {
+                setLoading(true);
+            }
             setError(null);
             const params = {};
             if (filters.name) params.name = filters.name;

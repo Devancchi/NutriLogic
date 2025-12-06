@@ -20,10 +20,10 @@ export default function SystemReports() {
         fetchReportData();
     }, []);
 
-    const fetchReportData = async () => {
-        // Cache only when no date filter
+    const fetchReportData = async (forceRefresh = false) => {
+        // Cache only when no date filter (skip if forceRefresh)
         const hasDateFilter = dateRange.date_from || dateRange.date_to;
-        if (!hasDateFilter) {
+        if (!hasDateFilter && !forceRefresh) {
             const cachedReports = getCachedData('admin_reports');
             if (cachedReports) {
                 setReportData(cachedReports);
@@ -33,7 +33,10 @@ export default function SystemReports() {
         }
 
         try {
-            setLoading(true);
+            // Only show loading on initial load
+            if (!forceRefresh) {
+                setLoading(true);
+            }
             setError(null);
             const params = {};
             if (dateRange.date_from) params.date_from = dateRange.date_from;

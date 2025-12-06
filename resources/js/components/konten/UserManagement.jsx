@@ -26,12 +26,14 @@ export default function UserManagement() {
         fetchUsers();
     }, [activeTab]);
 
-    const fetchPosyandus = async () => {
-        // Check cache first
-        const cachedPosyandus = getCachedData('admin_posyandus');
-        if (cachedPosyandus) {
-            setPosyandus(cachedPosyandus);
-            return;
+    const fetchPosyandus = async (forceRefresh = false) => {
+        // Check cache first (skip if forceRefresh)
+        if (!forceRefresh) {
+            const cachedPosyandus = getCachedData('admin_posyandus');
+            if (cachedPosyandus) {
+                setPosyandus(cachedPosyandus);
+                return;
+            }
         }
 
         try {
@@ -43,18 +45,23 @@ export default function UserManagement() {
         }
     };
 
-    const fetchUsers = async () => {
-        // Check cache first based on activeTab
+    const fetchUsers = async (forceRefresh = false) => {
+        // Check cache first based on activeTab (skip if forceRefresh)
         const cacheKey = `admin_users_${activeTab}`;
-        const cachedUsers = getCachedData(cacheKey);
-        if (cachedUsers) {
-            setUsers(cachedUsers);
-            setLoading(false);
-            return;
+        if (!forceRefresh) {
+            const cachedUsers = getCachedData(cacheKey);
+            if (cachedUsers) {
+                setUsers(cachedUsers);
+                setLoading(false);
+                return;
+            }
         }
 
         try {
-            setLoading(true);
+            // Only show loading on initial load
+            if (!forceRefresh) {
+                setLoading(true);
+            }
             setError(null);
             const params = { role: activeTab };
             const response = await api.get('/admin/users', { params });
@@ -85,12 +92,19 @@ export default function UserManagement() {
             return;
         }
 
+        // Optimistic update
+        const previousUsers = [...users];
+        setUsers(prev => prev.map(u =>
+            u.id === user.id ? { ...u, is_active: !u.is_active } : u
+        ));
+
         try {
             await api.patch(`/admin/users/${user.id}/toggle-active`);
             invalidateCache(`admin_users_${activeTab}`);
             invalidateCache('admin_dashboard');
-            fetchUsers();
+            fetchUsers(true);
         } catch (err) {
+            setUsers(previousUsers);
             alert(err.response?.data?.message || 'Gagal mengubah status user.');
         }
     };
@@ -273,7 +287,7 @@ export default function UserManagement() {
                     onClose={() => setShowModal(false)}
                     onSuccess={(password) => {
                         setShowModal(false);
-                        fetchUsers();
+                        fetchUsers(true);
                         if (password) {
                             setNewPassword(password);
                             setShowPasswordModal(true);
@@ -330,7 +344,7 @@ function UserModal({ user, role, posyandus, onClose, onSuccess }) {
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg max-w-md w-full">
                 <div className="p-6 border-b border-gray-200">
                     <h2 className="text-xl font-semibold text-gray-800">
@@ -354,7 +368,7 @@ function UserModal({ user, role, posyandus, onClose, onSuccess }) {
                             required
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
                         />
                     </div>
 
@@ -367,7 +381,7 @@ function UserModal({ user, role, posyandus, onClose, onSuccess }) {
                             required
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
                         />
                     </div>
 
@@ -380,7 +394,7 @@ function UserModal({ user, role, posyandus, onClose, onSuccess }) {
                             required
                             value={formData.phone}
                             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
                         />
                     </div>
 
@@ -393,7 +407,7 @@ function UserModal({ user, role, posyandus, onClose, onSuccess }) {
                                 required
                                 value={formData.posyandu_id}
                                 onChange={(e) => setFormData({ ...formData, posyandu_id: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
                             >
                                 <option value="">Pilih Posyandu</option>
                                 {posyandus.map((posyandu) => (

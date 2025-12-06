@@ -36,18 +36,23 @@ export default function AnakPrioritas() {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const fetchPriorityChildren = async () => {
-        // Check cache first
-        const cachedData = getCachedData('kader_priority_children');
-        if (cachedData) {
-            setPriorityChildren(cachedData.children);
-            setSummary(cachedData.summary);
-            setLoading(false);
-            return;
+    const fetchPriorityChildren = async (forceRefresh = false) => {
+        // Check cache first (skip if forceRefresh)
+        if (!forceRefresh) {
+            const cachedData = getCachedData('kader_priority_children');
+            if (cachedData) {
+                setPriorityChildren(cachedData.children);
+                setSummary(cachedData.summary);
+                setLoading(false);
+                return;
+            }
         }
 
         try {
-            setLoading(true);
+            // Only show loading on initial load
+            if (!forceRefresh) {
+                setLoading(true);
+            }
             setError(null);
 
             const response = await api.get('/kader/children/priorities');
