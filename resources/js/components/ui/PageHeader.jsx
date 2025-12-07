@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Calendar, Bell, Shield, UserCog, Settings, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getUser, logoutWithApi } from "../../lib/auth";
 import { getMaintenanceMode } from "../../lib/sessionTimeout";
+import api from "../../lib/api";
 import AdminProfileModal from "../dashboard/AdminProfileModal";
 import ProfileModal from "../dashboard/ProfileModal";
 import AdminSettingsModal from "../dashboard/AdminSettingsModal";
 import SettingsModal from "../dashboard/SettingsModal";
 import ConfirmationModal from "../ui/ConfirmationModal";
 
-export default function PageHeader({ title, subtitle, children, showProfile = true, profileClassName = "" }) {
+export default function PageHeader({ title, subtitle, children, showProfile = true, profileClassName = "", dashboardData = null, generateNotifications = null }) {
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -19,10 +20,64 @@ export default function PageHeader({ title, subtitle, children, showProfile = tr
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
     const [notifications, setNotifications] = useState([]);
 
+    const fetchNotifications = useCallback(async () => {
+        try {
+            // Determine the correct API endpoint based on user role
+            const user = getUser();
+            if (!user) return;
+            
+            let endpoint = '/notifications/unread';
+            if (user.role === 'kader') {
+                endpoint = '/kader/notifications/unread';
+            } else if (user.role === 'admin') {
+                endpoint = '/admin/notifications/unread';
+            } else if (user.role === 'ibu') {
+                endpoint = '/parent/notifications/unread';
+            }
+            
+            const response = await api.get(endpoint);
+            const dbNotifications = response.data.data.map(notif => ({
+                id: `db_${notif.id}`,
+                type: notif.type,
+                title: notif.title,
+                message: notif.message,
+                link: notif.link,
+                timestamp: notif.timestamp,
+                dbId: notif.id, // Store original DB ID
+                source: 'database', // Mark as database notification
+            }));
+            
+            console.log('Fetched DB notifications:', dbNotifications.length);
+            
+            // Always update database notifications
+            setNotifications(prev => {
+                // Keep non-database notifications (maintenance, AI notifications)
+                const nonDbNotifs = prev.filter(n => !n.source || n.source !== 'database');
+                const merged = [...nonDbNotifs, ...dbNotifications];
+                console.log('Total notifications after merge:', merged.length);
+                return merged;
+            });
+        } catch (err) {
+            console.error('Failed to fetch notifications:', err);
+        }
+    }, []);
+
     useEffect(() => {
         const userData = getUser();
         setUser(userData);
-    }, []);
+        
+        // Fetch notifications from database
+        if (userData) {
+            fetchNotifications();
+            
+            // Poll for new notifications every 30 seconds
+            const pollInterval = setInterval(() => {
+                fetchNotifications();
+            }, 30000);
+            
+            return () => clearInterval(pollInterval);
+        }
+    }, [fetchNotifications]);
 
     // Check maintenance mode notifications
     useEffect(() => {
@@ -64,12 +119,92 @@ export default function PageHeader({ title, subtitle, children, showProfile = tr
         };
     }, []);
 
+    // Generate notifications from dashboard data (for Kader)
+    useEffect(() => {
+        if (dashboardData && generateNotifications) {
+            const smartNotifications = generateNotifications(dashboardData);
+            const dismissedIds = JSON.parse(localStorage.getItem('dismissedNotifications') || '[]');
+            const filteredNotifications = smartNotifications.filter(n => !dismissedIds.includes(n.id)).map(n => ({
+                ...n,
+                source: 'ai', // Mark as AI notification
+            }));
+            
+            // Save AI notifications to localStorage for persistence across pages
+            if (filteredNotifications.length > 0) {
+                localStorage.setItem('aiNotifications', JSON.stringify(filteredNotifications));
+            }
+            
+            setNotifications(prev => {
+                // Keep maintenance and database notifications
+                const persistentNotifs = prev.filter(n => 
+                    n.id === 'maintenance-mode-active' || 
+                    n.source === 'database'
+                );
+                return [...persistentNotifs, ...filteredNotifications];
+            });
+        } else {
+            // Load AI notifications from localStorage when not on dashboard
+            const savedAiNotifs = localStorage.getItem('aiNotifications');
+            if (savedAiNotifs) {
+                try {
+                    const aiNotifications = JSON.parse(savedAiNotifs);
+                    const dismissedIds = JSON.parse(localStorage.getItem('dismissedNotifications') || '[]');
+                    const activeAiNotifs = aiNotifications.filter(n => !dismissedIds.includes(n.id));
+                    
+                    if (activeAiNotifs.length > 0) {
+                        setNotifications(prev => {
+                            // Only add AI notifications if they're not already there
+                            const hasAiNotifs = prev.some(n => n.source === 'ai');
+                            if (hasAiNotifs) return prev;
+                            
+                            // Keep maintenance and database notifications
+                            const persistentNotifs = prev.filter(n => 
+                                n.id === 'maintenance-mode-active' || 
+                                n.source === 'database'
+                            );
+                            return [...persistentNotifs, ...activeAiNotifs];
+                        });
+                    }
+                } catch (err) {
+                    console.error('Failed to parse AI notifications from localStorage:', err);
+                }
+            }
+        }
+    }, [dashboardData, generateNotifications]);
+
     const handleNotificationClick = (notification) => {
         if (notification.id === 'maintenance-mode-active') {
             setIsNotificationOpen(false);
             setIsSettingsModalOpen(true);
             return;
         }
+
+        // Mark as read in database if it's a DB notification
+        if (notification.dbId) {
+            api.post(`/notifications/${notification.dbId}/read`).catch(err => {
+                console.error('Failed to mark notification as read:', err);
+            });
+        } else if (notification.source === 'ai') {
+            // Save dismissed notification ID to localStorage for AI notifications
+            const dismissedIds = JSON.parse(localStorage.getItem('dismissedNotifications') || '[]');
+            if (!dismissedIds.includes(notification.id)) {
+                dismissedIds.push(notification.id);
+                localStorage.setItem('dismissedNotifications', JSON.stringify(dismissedIds));
+            }
+            
+            // Also update aiNotifications in localStorage
+            const savedAiNotifs = localStorage.getItem('aiNotifications');
+            if (savedAiNotifs) {
+                try {
+                    const aiNotifications = JSON.parse(savedAiNotifs);
+                    const updatedAiNotifs = aiNotifications.filter(n => n.id !== notification.id);
+                    localStorage.setItem('aiNotifications', JSON.stringify(updatedAiNotifs));
+                } catch (err) {
+                    console.error('Failed to update AI notifications in localStorage:', err);
+                }
+            }
+        }
+
         setNotifications(prev => prev.filter(n => n.id !== notification.id));
         setIsNotificationOpen(false);
         if (notification.link) {

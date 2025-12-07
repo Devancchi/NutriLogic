@@ -1,6 +1,7 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { MapPin, Calendar as CalendarIcon, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import api from "../../lib/api";
 import { useDataCache } from "../../contexts/DataCacheContext";
 import DashboardKaderSkeleton from "../loading/DashboardKaderSkeleton";
@@ -9,6 +10,7 @@ import DashboardLayout from "../dashboard/DashboardLayout";
 import { Calendar } from "../ui/calendar";
 
 export default function DashboardKaderContent() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
@@ -23,6 +25,121 @@ export default function DashboardKaderContent() {
     fetchDashboardData();
     fetchAllSchedules();
   }, []);
+
+  // Generate smart notifications for Kader based on dashboard data
+  const generateSmartNotifications = useMemo(() => (data) => {
+    const notifs = [];
+    let idCounter = 1;
+
+    if (!data || !data.statistics) return notifs;
+
+    const { statistics, highlights } = data;
+
+    // Priority Children Alert
+    if (statistics.priority_children > 0) {
+      notifs.push({
+        id: `priority_children_${idCounter++}`,
+        title: "Perhatian: Anak Prioritas",
+        message: `Terdapat ${statistics.priority_children} anak yang membutuhkan perhatian khusus di posyandu Anda. Segera lakukan intervensi.`,
+        type: 'danger',
+        link: '/dashboard/data-anak',
+        timestamp: 'Baru saja'
+      });
+    }
+
+    // Severe Malnutrition Alert
+    const severeMalnutrition = (statistics.nutritional_status?.sangat_kurang || 0);
+    if (severeMalnutrition > 0) {
+      notifs.push({
+        id: `gizi_buruk_${idCounter++}`,
+        title: "Peringatan Gizi Buruk",
+        message: `${severeMalnutrition} anak terdeteksi dengan gizi sangat kurang. Diperlukan tindakan segera dan koordinasi dengan tenaga kesehatan.`,
+        type: 'danger',
+        link: '/dashboard/data-anak',
+        timestamp: '30 menit yang lalu'
+      });
+    }
+
+    // Stunting Alert
+    const stunting = (statistics.nutritional_status?.sangat_pendek || 0);
+    if (stunting > 0) {
+      notifs.push({
+        id: `stunting_${idCounter++}`,
+        title: "Kasus Stunting Ditemukan",
+        message: `${stunting} anak terindikasi sangat pendek (stunting). Perlu pemantauan pertumbuhan berkelanjutan dan edukasi nutrisi kepada orang tua.`,
+        type: 'warning',
+        link: '/dashboard/data-anak',
+        timestamp: '1 jam yang lalu'
+      });
+    }
+
+    // Wasting Alert
+    const wasting = (statistics.nutritional_status?.sangat_kurus || 0);
+    if (wasting > 0) {
+      notifs.push({
+        id: `wasting_${idCounter++}`,
+        title: "Peringatan Gizi Akut",
+        message: `${wasting} anak mengalami gizi kurang akut (wasting). Evaluasi asupan makanan dan kondisi kesehatan anak segera.`,
+        type: 'warning',
+        link: '/dashboard/data-anak',
+        timestamp: '1 jam yang lalu'
+      });
+    }
+
+    // Unanswered Consultations
+    if (highlights?.open_consultations > 0) {
+      notifs.push({
+        id: `consultations_${idCounter++}`,
+        title: "Konsultasi Menunggu Respon",
+        message: `Ada ${highlights.open_consultations} pesan konsultasi dari orang tua yang belum Anda balas. Berikan bantuan kepada mereka.`,
+        type: 'info',
+        link: '/dashboard/konsultasi',
+        timestamp: '2 jam yang lalu'
+      });
+    }
+
+    // Upcoming Schedules (check for schedules in next 3 days)
+    const upcomingSchedules = allSchedules.filter(schedule => {
+      const scheduleDate = new Date(schedule.scheduled_for);
+      const today = new Date();
+      const diffDays = Math.ceil((scheduleDate - today) / (1000 * 60 * 60 * 24));
+      return diffDays >= 0 && diffDays <= 3;
+    });
+
+    if (upcomingSchedules.length > 0) {
+      const nearestSchedule = upcomingSchedules[0];
+      const scheduleDate = new Date(nearestSchedule.scheduled_for);
+      const diffDays = Math.ceil((scheduleDate - new Date()) / (1000 * 60 * 60 * 24));
+      
+      notifs.push({
+        id: `schedule_${nearestSchedule.id}`,
+        title: "Jadwal Posyandu Akan Datang",
+        message: `${nearestSchedule.title} dijadwalkan ${diffDays === 0 ? 'hari ini' : diffDays === 1 ? 'besok' : `${diffDays} hari lagi`}. Pastikan persiapan sudah lengkap.`,
+        type: 'info',
+        link: '/dashboard',
+        timestamp: diffDays === 0 ? 'Hari ini' : diffDays === 1 ? 'Besok' : `${diffDays} hari lagi`
+      });
+    }
+
+    // Positive Insight
+    const normalNutrition = statistics.nutritional_status?.normal || 0;
+    const activeChildren = statistics.active_children || 0;
+    if (activeChildren > 0 && normalNutrition > 0) {
+      const normalPercentage = Math.round((normalNutrition / activeChildren) * 100);
+      if (normalPercentage >= 70) {
+        notifs.push({
+          id: 'insight_positif',
+          title: "Insight Positif",
+          message: `Selamat! ${normalPercentage}% anak di posyandu Anda memiliki status gizi normal. Pertahankan kinerja baik ini!`,
+          type: 'info',
+          link: '/dashboard',
+          timestamp: 'Hari ini'
+        });
+      }
+    }
+
+    return notifs;
+  }, [allSchedules]);
 
   const fetchDashboardData = async () => {
     // Check cache first
@@ -120,6 +237,8 @@ export default function DashboardKaderContent() {
           title="Dashboard Kader"
           subtitle="Portal Kader"
           showProfile={true}
+          dashboardData={dashboardData}
+          generateNotifications={generateSmartNotifications}
         />
       }
     >

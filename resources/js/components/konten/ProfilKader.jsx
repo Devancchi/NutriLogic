@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import api from "../../lib/api";
 import { useDataCache } from "../../contexts/DataCacheContext";
-import PageHeader from "../dashboard/PageHeader";
+import PageHeader from "../ui/PageHeader";
 import ProfilKaderSkeleton from "../loading/ProfilKaderSkeleton";
 import SuccessModal from "../ui/SuccessModal";
 
