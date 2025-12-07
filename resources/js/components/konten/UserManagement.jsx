@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import api from "../../lib/api";
 import { useDataCache } from "../../contexts/DataCacheContext";
 import { UserCog, Users, Plus, Edit2, Power, Key, Building2, ChevronDown, Check } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import GenericListSkeleton from "../loading/GenericListSkeleton";
 import PageHeader from "../ui/PageHeader";
 
@@ -13,7 +13,7 @@ export default function UserManagement() {
     const [error, setError] = useState(null);
     const [users, setUsers] = useState([]);
     const [posyandus, setPosyandus] = useState([]);
-    
+
     // Determine initial tab based on current route
     const getInitialTab = () => {
         if (location.pathname.includes('/orang-tua')) {
@@ -21,7 +21,7 @@ export default function UserManagement() {
         }
         return 'kader';
     };
-    
+
     const [activeTab, setActiveTab] = useState(getInitialTab());
     const [showModal, setShowModal] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
@@ -208,7 +208,7 @@ export default function UserManagement() {
             <div className="flex-1 overflow-auto p-6 space-y-6">
 
                 {/* Tabs with Add Button */}
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
@@ -283,8 +283,8 @@ export default function UserManagement() {
                                     </tr>
                                 ) : (
                                     users.map((user, index) => (
-                                        <motion.tr 
-                                            key={user.id} 
+                                        <motion.tr
+                                            key={user.id}
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: index * 0.05, duration: 0.3 }}
@@ -353,39 +353,44 @@ export default function UserManagement() {
             </div>
 
             {/* Add/Edit Modal */}
-            {showModal && (
-                <UserModal
-                    user={editingUser}
-                    role={activeTab}
-                    posyandus={posyandus}
-                    onClose={() => setShowModal(false)}
-                    onSuccess={(password) => {
-                        setShowModal(false);
-                        fetchUsers(activeTab, { forceRefresh: true });
-                        if (password) {
-                            setNewPassword(password);
-                            setShowPasswordModal(true);
-                        }
-                    }}
-                />
-            )}
+            <AnimatePresence>
+                {showModal && (
+                    <UserModal
+                        user={editingUser}
+                        role={activeTab}
+                        posyandus={posyandus}
+                        onClose={() => setShowModal(false)}
+                        onSuccess={(password) => {
+                            setShowModal(false);
+                            fetchUsers(activeTab, { forceRefresh: true });
+                            if (password) {
+                                setNewPassword(password);
+                                setShowPasswordModal(true);
+                            }
+                        }}
+                    />
+                )}
+            </AnimatePresence>
 
             {/* Password Display Modal */}
-            {showPasswordModal && (
-                <PasswordModal
-                    password={newPassword}
-                    onClose={() => {
-                        setShowPasswordModal(false);
-                        setNewPassword(null);
-                    }}
-                />
-            )}
+            <AnimatePresence>
+                {showPasswordModal && (
+                    <PasswordModal
+                        password={newPassword}
+                        onClose={() => {
+                            setShowPasswordModal(false);
+                            setNewPassword(null);
+                        }}
+                    />
+                )}
+            </AnimatePresence>
         </div>
     );
 }
 
 // User Add/Edit Modal
 function UserModal({ user, role, posyandus, onClose, onSuccess }) {
+    const controls = useDragControls();
     const [formData, setFormData] = useState({
         name: user?.name || '',
         email: user?.email || '',
@@ -419,8 +424,31 @@ function UserModal({ user, role, posyandus, onClose, onSuccess }) {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-md w-full">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end md:items-center justify-center z-50 p-0 md:p-4">
+            <motion.div
+                drag="y"
+                dragControls={controls}
+                dragListener={false}
+                dragConstraints={{ top: 0, bottom: 0 }}
+                dragElastic={{ top: 0, bottom: 0.2 }}
+                onDragEnd={(event, info) => {
+                    if (info.offset.y > 100) {
+                        onClose();
+                    }
+                }}
+                initial={{ opacity: 0, y: "100%" }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className="bg-white rounded-t-2xl md:rounded-xl w-full md:max-w-md max-h-[90vh] overflow-y-auto shadow-xl"
+            >
+                {/* Drag Handle */}
+                <div
+                    className="w-full h-6 flex items-center justify-center md:hidden cursor-grab active:cursor-grabbing pt-2 pb-1"
+                    onPointerDown={(e) => controls.start(e)}
+                >
+                    <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+                </div>
                 <div className="p-6 border-b border-gray-200">
                     <h2 className="text-xl font-semibold text-gray-800">
                         {user ? 'Edit User' : `Tambah ${role === 'kader' ? 'Kader' : 'Orang Tua'} Baru`}
@@ -545,13 +573,14 @@ function UserModal({ user, role, posyandus, onClose, onSuccess }) {
                         </button>
                     </div>
                 </form>
-            </div>
+            </motion.div>
         </div>
     );
 }
 
 // Password Display Modal
 function PasswordModal({ password, onClose }) {
+    const controls = useDragControls();
     const [copied, setCopied] = useState(false);
 
     const handleCopy = () => {
@@ -561,8 +590,31 @@ function PasswordModal({ password, onClose }) {
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-md w-full">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end md:items-center justify-center z-50 p-0 md:p-4">
+            <motion.div
+                drag="y"
+                dragControls={controls}
+                dragListener={false}
+                dragConstraints={{ top: 0, bottom: 0 }}
+                dragElastic={{ top: 0, bottom: 0.2 }}
+                onDragEnd={(event, info) => {
+                    if (info.offset.y > 100) {
+                        onClose();
+                    }
+                }}
+                initial={{ opacity: 0, y: "100%" }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className="bg-white rounded-t-2xl md:rounded-xl w-full md:max-w-md shadow-xl"
+            >
+                {/* Drag Handle */}
+                <div
+                    className="w-full h-6 flex items-center justify-center md:hidden cursor-grab active:cursor-grabbing pt-2 pb-1"
+                    onPointerDown={(e) => controls.start(e)}
+                >
+                    <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+                </div>
                 <div className="p-6 border-b border-gray-200">
                     <h2 className="text-xl font-semibold text-gray-800">Password Baru</h2>
                 </div>
@@ -601,7 +653,7 @@ function PasswordModal({ password, onClose }) {
                         Tutup
                     </button>
                 </div>
-            </div>
+            </motion.div>
         </div>
     );
 }
