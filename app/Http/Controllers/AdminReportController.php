@@ -74,6 +74,20 @@ class AdminReportController extends Controller
         $dateTo = $request->input('date_to');
         $posyanduId = $request->input('posyandu_id');
 
+        // Log export action
+        AdminActivityLogController::log(
+            'export',
+            "Admin mengexport laporan {$type}",
+            'Report',
+            null,
+            [
+                'export_type' => $type,
+                'date_from' => $dateFrom,
+                'date_to' => $dateTo,
+                'posyandu_id' => $posyanduId,
+            ]
+        );
+
         switch ($type) {
             case 'children':
                 return $this->exportChildren($posyanduId);

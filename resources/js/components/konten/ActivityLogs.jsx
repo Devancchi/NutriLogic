@@ -16,6 +16,14 @@ export default function ActivityLogs() {
     const [error, setError] = useState(null);
     const [logs, setLogs] = useState([]);
     const [allUsers, setAllUsers] = useState([]);
+    const [pagination, setPagination] = useState({
+        current_page: 1,
+        last_page: 1,
+        per_page: 50,
+        total: 0,
+        from: 0,
+        to: 0,
+    });
     const [filters, setFilters] = useState({
         action: '',
         model: '',
@@ -33,13 +41,14 @@ export default function ActivityLogs() {
     const hasHydratedLogs = React.useRef(false);
     const activeLogsRequestId = React.useRef(0);
 
-    const fetchLogs = useCallback(async ({ forceRefresh = false, showLoader = false } = {}) => {
+    const fetchLogs = useCallback(async ({ forceRefresh = false, showLoader = false, page = 1 } = {}) => {
         const hasFilter = filters.action || filters.model || filters.user_id || filters.date_from || filters.date_to;
 
-        if (!hasFilter && !forceRefresh) {
+        if (!hasFilter && !forceRefresh && page === 1) {
             const cachedLogs = getCachedData('admin_logs');
             if (cachedLogs) {
-                setLogs(cachedLogs);
+                setLogs(cachedLogs.data || []);
+                setPagination(cachedLogs.pagination || pagination);
                 setLoading(false);
                 return;
             }
@@ -50,7 +59,7 @@ export default function ActivityLogs() {
         }
 
         setError(null);
-        const params = {};
+        const params = { page, per_page: pagination.per_page };
         if (filters.action) params.action = filters.action;
         if (filters.model) params.model = filters.model;
         if (filters.user_id) params.user_id = filters.user_id;
@@ -67,10 +76,20 @@ export default function ActivityLogs() {
             }
 
             const logsData = response.data?.data || [];
-            setLogs(logsData);
+            const paginationData = {
+                current_page: response.data?.current_page || 1,
+                last_page: response.data?.last_page || 1,
+                per_page: response.data?.per_page || 50,
+                total: response.data?.total || 0,
+                from: response.data?.from || 0,
+                to: response.data?.to || 0,
+            };
 
-            if (!hasFilter) {
-                setCachedData('admin_logs', logsData, 60);
+            setLogs(logsData);
+            setPagination(paginationData);
+
+            if (!hasFilter && page === 1) {
+                setCachedData('admin_logs', { data: logsData, pagination: paginationData }, 60);
             }
 
             setLoading(false);
@@ -82,7 +101,7 @@ export default function ActivityLogs() {
             setError(err.response?.data?.message || 'Gagal memuat log aktivitas');
             setLoading(false);
         }
-    }, [filters, getCachedData, setCachedData]);
+    }, [filters, pagination.per_page, getCachedData, setCachedData]);
 
     // Fetch users for filter dropdown
     const fetchUsers = useCallback(async () => {
@@ -115,7 +134,8 @@ export default function ActivityLogs() {
 
         const cachedLogs = getCachedData('admin_logs');
         if (cachedLogs) {
-            setLogs(cachedLogs);
+            setLogs(cachedLogs.data || []);
+            setPagination(cachedLogs.pagination || pagination);
             setLoading(false);
             fetchLogs({ forceRefresh: true, showLoader: false });
         } else {
@@ -508,16 +528,74 @@ export default function ActivityLogs() {
                             </tbody>
                         </table>
                     </div>
-                </div>                {/* Info */}
+                </div>
+
+                {/* Pagination Controls */}
+                {pagination.last_page > 1 && (
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                            <div className="text-sm text-gray-600">
+                                Menampilkan <span className="font-medium">{pagination.from}</span> - <span className="font-medium">{pagination.to}</span> dari <span className="font-medium">{pagination.total}</span> log
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => fetchLogs({ forceRefresh: true, page: pagination.current_page - 1 })}
+                                    disabled={pagination.current_page === 1 || loading}
+                                    className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    <ChevronLeft className="w-4 h-4" />
+                                </button>
+                                <div className="flex items-center gap-1">
+                                    {Array.from({ length: Math.min(5, pagination.last_page) }, (_, i) => {
+                                        let pageNum;
+                                        if (pagination.last_page <= 5) {
+                                            pageNum = i + 1;
+                                        } else if (pagination.current_page <= 3) {
+                                            pageNum = i + 1;
+                                        } else if (pagination.current_page >= pagination.last_page - 2) {
+                                            pageNum = pagination.last_page - 4 + i;
+                                        } else {
+                                            pageNum = pagination.current_page - 2 + i;
+                                        }
+                                        
+                                        return (
+                                            <button
+                                                key={pageNum}
+                                                onClick={() => fetchLogs({ forceRefresh: true, page: pageNum })}
+                                                disabled={loading}
+                                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                                    pagination.current_page === pageNum
+                                                        ? 'bg-blue-600 text-white'
+                                                        : 'border border-gray-300 hover:bg-gray-50'
+                                                }`}
+                                            >
+                                                {pageNum}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                <button
+                                    onClick={() => fetchLogs({ forceRefresh: true, page: pagination.current_page + 1 })}
+                                    disabled={pagination.current_page === pagination.last_page || loading}
+                                    className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    <ChevronRight className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Info */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <div className="flex items-start gap-3">
                         <Activity className="w-5 h-5 text-blue-600 mt-0.5" />
                         <div className="text-sm text-blue-800">
-                            <strong>Catatan:</strong> Halaman ini menampilkan maksimal 100 log aktivitas terbaru dari sistem.
+                            <strong>Catatan:</strong> Log aktivitas sistem dengan pagination (max 500 per halaman).
                             Gunakan filter untuk mempersempit pencarian. Auto-refresh dapat diaktifkan untuk pemantauan real-time setiap 30 detik.
-                            {logs.length > 0 && (
+                            {pagination.total > 0 && (
                                 <div className="mt-2 text-blue-700">
-                                    Menampilkan <strong>{logs.length}</strong> log aktivitas.
+                                    Total <strong>{pagination.total}</strong> log aktivitas tersedia.
                                 </div>
                             )}
                         </div>

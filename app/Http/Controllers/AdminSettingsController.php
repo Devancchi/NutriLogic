@@ -46,12 +46,20 @@ class AdminSettingsController extends Controller
         // Clear cache
         Setting::clearCache();
 
-        // Log activity
+        // Get old settings for audit trail
+        $oldSettings = Setting::getAll();
+
+        // Log activity with before/after snapshot
         AdminActivityLogController::log(
             'update',
             'Admin memperbarui pengaturan sistem',
             'Setting',
-            null
+            null,
+            [
+                'before' => $oldSettings,
+                'after' => $validated,
+                'changed_keys' => array_keys($validated),
+            ]
         );
 
         return response()->json([

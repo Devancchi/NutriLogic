@@ -13,6 +13,12 @@ export default function UserManagement() {
     const [error, setError] = useState(null);
     const [users, setUsers] = useState([]);
     const [posyandus, setPosyandus] = useState([]);
+    
+    // Get current logged-in user for self-edit protection
+    const [currentUser] = useState(() => {
+        const userData = localStorage.getItem('nutrilogic_user');
+        return userData ? JSON.parse(userData) : null;
+    });
 
     // Determine initial tab based on current route
     const getInitialTab = () => {
@@ -159,11 +165,23 @@ export default function UserManagement() {
     };
 
     const handleEdit = (user) => {
+        // Prevent admin from editing own account
+        if (currentUser && user.id === currentUser.id) {
+            alert('Anda tidak dapat mengedit akun Anda sendiri.');
+            return;
+        }
+        
         setEditingUser(user);
         setShowModal(true);
     };
 
     const handleToggleActive = (user) => {
+        // Prevent admin from disabling own account
+        if (currentUser && user.id === currentUser.id) {
+            alert('Anda tidak dapat menonaktifkan akun Anda sendiri.');
+            return;
+        }
+        
         const action = user.is_active ? 'nonaktifkan' : 'aktifkan';
 
         setConfirmationModal({
@@ -196,6 +214,12 @@ export default function UserManagement() {
     };
 
     const handleResetPassword = (user) => {
+        // Prevent admin from resetting own password through this endpoint
+        if (currentUser && user.id === currentUser.id) {
+            alert('Gunakan fitur ubah password di profil untuk mengubah password Anda sendiri.');
+            return;
+        }
+        
         setResetPasswordModal({
             isOpen: true,
             user: user
@@ -713,8 +737,18 @@ function ResetPasswordFormModal({ user, onClose, onSuccess }) {
             return;
         }
 
-        if (formData.password.length < 6) {
-            setError('Password minimal 6 karakter.');
+        if (formData.password.length < 8) {
+            setError('Password minimal 8 karakter.');
+            return;
+        }
+
+        // Password complexity validation
+        const hasUpperCase = /[A-Z]/.test(formData.password);
+        const hasLowerCase = /[a-z]/.test(formData.password);
+        const hasNumber = /\d/.test(formData.password);
+
+        if (!hasUpperCase || !hasLowerCase || !hasNumber) {
+            setError('Password harus mengandung minimal 1 huruf besar, 1 huruf kecil, dan 1 angka.');
             return;
         }
 
@@ -783,7 +817,7 @@ function ResetPasswordFormModal({ user, onClose, onSuccess }) {
                                 value={formData.password}
                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-10 text-gray-900"
-                                placeholder="Minimal 6 karakter"
+                                placeholder="Min 8 karakter, 1 huruf besar, 1 huruf kecil, 1 angka"
                             />
                             <button
                                 type="button"
@@ -793,6 +827,9 @@ function ResetPasswordFormModal({ user, onClose, onSuccess }) {
                                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                             </button>
                         </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                            Password harus mengandung minimal 1 huruf besar, 1 huruf kecil, dan 1 angka
+                        </p>
                     </div>
 
                     <div>
