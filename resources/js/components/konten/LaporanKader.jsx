@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import api from "../../lib/api";
 import { useDataCache } from "../../contexts/DataCacheContext";
 import { getStatusColor, getStatusLabel } from "../../lib/utils";
+import { exportKaderChildrenToExcel, exportKaderWeighingsToExcel } from "../../utils/excelExport";
 import PageHeader from "../ui/PageHeader";
 import DashboardLayout from "../dashboard/DashboardLayout";
 import { DatePicker } from "../ui/date-picker";
@@ -31,8 +32,14 @@ export default function LaporanKader() {
         child_id: "",
         start_date: "",
         end_date: "",
+        month: "",
+        year: "",
+        status: "",
     });
     const [children, setChildren] = useState([]);
+    const [filterMode, setFilterMode] = useState("date_range"); // "date_range" or "month_year"
+    const [posyanduName, setPosyanduName] = useState("Posyandu");
+    const [loadingExport, setLoadingExport] = useState(false);
 
     // Data caching
     const { getCachedData, setCachedData } = useDataCache();
@@ -40,7 +47,19 @@ export default function LaporanKader() {
     useEffect(() => {
         fetchChildren();
         fetchHistory(1);
+        fetchPosyanduInfo();
     }, []);
+
+    const fetchPosyanduInfo = async () => {
+        try {
+            const response = await api.get("/user/profile");
+            if (response.data.user?.posyandu?.name) {
+                setPosyanduName(response.data.user.posyandu.name);
+            }
+        } catch (err) {
+            console.error("Error fetching posyandu info:", err);
+        }
+    };
 
     useEffect(() => {
         fetchHistory(1);
@@ -65,7 +84,7 @@ export default function LaporanKader() {
 
     const fetchHistory = async (page = 1) => {
         // Cache only first page with no filters
-        const hasFilters = filters.child_id || filters.start_date || filters.end_date;
+        const hasFilters = filters.child_id || filters.start_date || filters.end_date || filters.month || filters.year || filters.status;
         const isFirstPage = page === 1;
 
         if (isFirstPage && !hasFilters) {
@@ -88,8 +107,16 @@ export default function LaporanKader() {
             };
 
             if (filters.child_id) params.child_id = filters.child_id;
-            if (filters.start_date) params.start_date = filters.start_date;
-            if (filters.end_date) params.end_date = filters.end_date;
+            if (filters.status) params.status = filters.status;
+            
+            // Send either month/year OR date range, not both
+            if (filterMode === "month_year" && filters.month && filters.year) {
+                params.month = filters.month;
+                params.year = filters.year;
+            } else if (filterMode === "date_range") {
+                if (filters.start_date) params.start_date = filters.start_date;
+                if (filters.end_date) params.end_date = filters.end_date;
+            }
 
             const response = await api.get("/kader/report/history", { params });
             setHistoryData(response.data.data);
@@ -146,47 +173,91 @@ export default function LaporanKader() {
     };
 
     const handleExportChildren = async () => {
+        setLoadingExport(true);
         try {
-            const response = await api.get('/kader/report/export/children', {
-                responseType: 'blob'
-            });
-
-            const url = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `data_anak_${new Date().toISOString().split('T')[0]}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            window.URL.revokeObjectURL(url);
+            // Fetch all children data with latest weighing
+            const response = await api.get("/kader/children");
+            const childrenData = response.data.data || [];
+            
+            // Fetch latest weighing for each child
+            const childrenWithWeighing = await Promise.all(
+                childrenData.map(async (child) => {
+                    try {
+                        const weighingResponse = await api.get(`/kader/weighings/child/${child.id}/history`);
+                        return {
+                            ...child,
+                            weighing_logs: weighingResponse.data.data?.weighings || []
+                        };
+                    } catch {
+                        return child;
+                    }
+                })
+            );
+            
+            exportKaderChildrenToExcel(childrenWithWeighing, posyanduName);
         } catch (err) {
             alert('Gagal mengunduh data. Silakan coba lagi.');
             console.error('Export error:', err);
+        } finally {
+            setLoadingExport(false);
         }
     };
 
     const handleExportWeighings = async () => {
-        if (!filters.start_date || !filters.end_date) {
+        // Check filter mode and validate accordingly
+        if (filterMode === "date_range" && (!filters.start_date || !filters.end_date)) {
             alert('Silakan pilih rentang tanggal terlebih dahulu.');
             return;
         }
+        
+        if (filterMode === "month_year" && (!filters.month || !filters.year)) {
+            alert('Silakan pilih bulan dan tahun terlebih dahulu.');
+            return;
+        }
 
+        setLoadingExport(true);
         try {
-            const response = await api.get(`/kader/report/export/weighings?date_from=${filters.start_date}&date_to=${filters.end_date}`, {
-                responseType: 'blob'
-            });
+            const params = {
+                per_page: 1000 // Get all data for export
+            };
 
-            const url = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `riwayat_penimbangan_${new Date().toISOString().split('T')[0]}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            window.URL.revokeObjectURL(url);
+            // Determine date range
+            let dateRange = {};
+            if (filterMode === "month_year" && filters.month && filters.year) {
+                const startDate = new Date(filters.year, filters.month - 1, 1);
+                const endDate = new Date(filters.year, filters.month, 0);
+                params.month = filters.month;
+                params.year = filters.year;
+                dateRange = {
+                    from: startDate.toISOString().split('T')[0],
+                    to: endDate.toISOString().split('T')[0]
+                };
+            } else if (filters.start_date && filters.end_date) {
+                params.start_date = filters.start_date;
+                params.end_date = filters.end_date;
+                dateRange = {
+                    from: filters.start_date,
+                    to: filters.end_date
+                };
+            }
+
+            if (filters.child_id) params.child_id = filters.child_id;
+            if (filters.status) params.status = filters.status;
+
+            const response = await api.get('/kader/report/history', { params });
+            const weighingsData = response.data.data || [];
+            
+            if (weighingsData.length === 0) {
+                alert('Tidak ada data penimbangan untuk periode yang dipilih.');
+                return;
+            }
+
+            exportKaderWeighingsToExcel(weighingsData, posyanduName, dateRange);
         } catch (err) {
             alert('Gagal mengunduh data. Silakan coba lagi.');
             console.error('Export error:', err);
+        } finally {
+            setLoadingExport(false);
         }
     };
 
@@ -310,51 +381,169 @@ export default function LaporanKader() {
                         </DropdownMenuContent>
                     </DropdownMenu>
 
-                    {/* Export Dropdown */}
+                    {/* Status Filter */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <button className="flex items-center gap-2 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 rounded-full text-sm font-medium text-emerald-700 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-100">
-                                <Icon icon="lucide:download" className="w-4 h-4" />
-                                <span>Ekspor</span>
-                                <Icon icon="lucide:chevron-down" className="text-emerald-600 w-4 h-4 ml-1" />
+                            <button className="flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 rounded-full text-sm font-medium text-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-100 whitespace-nowrap">
+                                <Icon icon="lucide:activity" className="text-gray-500 w-4 h-4" />
+                                <span>{filters.status ? getStatusLabel(filters.status) : "Semua Status"}</span>
+                                <Icon icon="lucide:chevron-down" className="text-gray-400 w-4 h-4 ml-1" />
+                            </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-56 bg-white rounded-xl shadow-xl border border-gray-100 p-1">
+                            <DropdownMenuItem
+                                onClick={() => handleFilterChange("status", "")}
+                                className="rounded-lg cursor-pointer hover:bg-gray-50 focus:bg-gray-50"
+                            >
+                                <span className="font-medium">Semua Status</span>
+                            </DropdownMenuItem>
+                            {[
+                                { value: "normal", label: "Normal" },
+                                { value: "kurang", label: "Kurang" },
+                                { value: "sangat_kurang", label: "Sangat Kurang" },
+                                { value: "pendek", label: "Pendek (Stunting)" },
+                                { value: "sangat_pendek", label: "Sangat Pendek" },
+                                { value: "kurus", label: "Kurus (Wasting)" },
+                                { value: "sangat_kurus", label: "Sangat Kurus" },
+                            ].map((status) => (
+                                <DropdownMenuItem
+                                    key={status.value}
+                                    onClick={() => handleFilterChange("status", status.value)}
+                                    className="rounded-lg cursor-pointer hover:bg-gray-50 focus:bg-gray-50 gap-2"
+                                >
+                                    <span>{status.label}</span>
+                                </DropdownMenuItem>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    <div className="ml-auto">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <button 
+                                disabled={loadingExport}
+                                className="flex items-center gap-2 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 rounded-full text-sm font-medium text-emerald-700 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {loadingExport ? (
+                                    <>
+                                        <Icon icon="lucide:loader-2" className="w-4 h-4 animate-spin" />
+                                        <span>Mengekspor...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Icon icon="lucide:download" className="w-4 h-4" />
+                                        <span>Ekspor Excel</span>
+                                        <Icon icon="lucide:chevron-down" className="text-emerald-600 w-4 h-4 ml-1" />
+                                    </>
+                                )}
                             </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start" className="w-56 bg-white rounded-xl shadow-xl border border-gray-100 p-1">
                             <DropdownMenuItem
                                 onClick={handleExportChildren}
-                                className="rounded-lg cursor-pointer hover:bg-gray-50 focus:bg-gray-50 gap-2"
+                                disabled={loadingExport}
+                                className="rounded-lg cursor-pointer hover:bg-gray-50 focus:bg-gray-50 gap-2 disabled:opacity-50"
                             >
-                                <Icon icon="lucide:file-spreadsheet" className="w-4 h-4 text-emerald-600" />
-                                <span>Data Anak</span>
+                                <Icon icon="lucide:users" className="w-4 h-4 text-emerald-600" />
+                                <div className="flex flex-col">
+                                    <span className="font-medium">Data Anak</span>
+                                    <span className="text-xs text-gray-500">Semua data anak (.xlsx)</span>
+                                </div>
                             </DropdownMenuItem>
                             <DropdownMenuItem
                                 onClick={handleExportWeighings}
-                                className="rounded-lg cursor-pointer hover:bg-gray-50 focus:bg-gray-50 gap-2"
+                                disabled={loadingExport}
+                                className="rounded-lg cursor-pointer hover:bg-gray-50 focus:bg-gray-50 gap-2 disabled:opacity-50"
                             >
-                                <Icon icon="lucide:history" className="w-4 h-4 text-blue-600" />
-                                <span>Riwayat Penimbangan</span>
+                                <Icon icon="lucide:activity" className="w-4 h-4 text-blue-600" />
+                                <div className="flex flex-col">
+                                    <span className="font-medium">Riwayat Penimbangan</span>
+                                    <span className="text-xs text-gray-500">Sesuai filter (.xlsx)</span>
+                                </div>
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
+                </div>
 
-                {/* Date Range */}
-                <div className="flex items-center gap-2 w-full md:w-auto flex-wrap md:flex-nowrap">
-                    <div className="flex items-center gap-2 flex-1 md:flex-none">
-                        <DatePicker
-                            value={filters.start_date}
-                            onChange={(date) => handleFilterChange("start_date", date)}
-                            placeholder="Mulai"
-                            className="w-full md:w-auto"
-                        />
-                        <span className="text-gray-300">-</span>
-                        <DatePicker
-                            value={filters.end_date}
-                            onChange={(date) => handleFilterChange("end_date", date)}
-                            placeholder="Selesai"
-                            className="w-full md:w-auto"
-                        />
+                {/* Row 2: Date Filter Mode Toggle */}
+                <div className="flex flex-col md:flex-row items-start md:items-center gap-3 w-full">
+                    {/* Filter Mode Toggle */}
+                    <div className="flex items-center gap-1 bg-gray-100 rounded-full p-1">
+                        <button
+                            onClick={() => setFilterMode("date_range")}
+                            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                                filterMode === "date_range"
+                                    ? "bg-white text-gray-900 shadow-sm"
+                                    : "text-gray-500 hover:text-gray-700"
+                            }`}
+                        >
+                            <Icon icon="lucide:calendar-range" className="inline w-3.5 h-3.5 mr-1" />
+                            Rentang Tanggal
+                        </button>
+                        <button
+                            onClick={() => setFilterMode("month_year")}
+                            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                                filterMode === "month_year"
+                                    ? "bg-white text-gray-900 shadow-sm"
+                                    : "text-gray-500 hover:text-gray-700"
+                            }`}
+                        >
+                            <Icon icon="lucide:calendar" className="inline w-3.5 h-3.5 mr-1" />
+                            Bulan/Tahun
+                        </button>
                     </div>
+
+                    {/* Conditional Filter Inputs */}
+                    {filterMode === "date_range" ? (
+                        <div className="flex items-center gap-2 flex-1">
+                            <DatePicker
+                                value={filters.start_date}
+                                onChange={(date) => handleFilterChange("start_date", date)}
+                                placeholder="Mulai"
+                                className="w-full md:w-auto"
+                            />
+                            <span className="text-gray-300">-</span>
+                            <DatePicker
+                                value={filters.end_date}
+                                onChange={(date) => handleFilterChange("end_date", date)}
+                                placeholder="Selesai"
+                                className="w-full md:w-auto"
+                            />
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-2 flex-1">
+                            <select
+                                value={filters.month}
+                                onChange={(e) => handleFilterChange("month", e.target.value)}
+                                className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all"
+                            >
+                                <option value="">Pilih Bulan</option>
+                                <option value="1">Januari</option>
+                                <option value="2">Februari</option>
+                                <option value="3">Maret</option>
+                                <option value="4">April</option>
+                                <option value="5">Mei</option>
+                                <option value="6">Juni</option>
+                                <option value="7">Juli</option>
+                                <option value="8">Agustus</option>
+                                <option value="9">September</option>
+                                <option value="10">Oktober</option>
+                                <option value="11">November</option>
+                                <option value="12">Desember</option>
+                            </select>
+                            <select
+                                value={filters.year}
+                                onChange={(e) => handleFilterChange("year", e.target.value)}
+                                className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all"
+                            >
+                                <option value="">Pilih Tahun</option>
+                                {Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - i).map(year => (
+                                    <option key={year} value={year}>{year}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
                 </div>
             </div>
 
