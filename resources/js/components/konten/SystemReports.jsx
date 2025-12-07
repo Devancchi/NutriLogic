@@ -204,22 +204,13 @@ export default function SystemReports() {
             setIsExportingWeighings(true);
             setExportError(null);
 
-            // Fetch weighing data from API
+            // Fetch weighing data from API with filters
             const params = {};
             if (selectedPosyandu !== 'all') {
                 params.posyandu_id = selectedPosyandu;
             }
 
-            const response = await api.get('/admin/reports/export', {
-                params: {
-                    ...params,
-                    type: 'weighings',
-                    format: 'json' // Request JSON format instead of CSV
-                }
-            });
-
-            // If API returns CSV, we need to fetch weighing data differently
-            // Let's use a direct weighing endpoint
+            // Use the weighing endpoint directly for better control
             const weighingResponse = await api.get('/admin/weighings', { params });
             const weighingData = weighingResponse.data.data;
 
