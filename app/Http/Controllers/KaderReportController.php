@@ -7,6 +7,7 @@ use App\Models\WeighingLog;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Response;
 
 class KaderReportController extends Controller
@@ -50,9 +51,8 @@ class KaderReportController extends Controller
             'lebih' => 0,
             'gemuk' => 0,
         ];
-
         // Use a single query with subquery to get latest status for each child
-        $latestStatuses = \DB::table('children')
+        $latestStatuses = DB::table('children')
             ->leftJoin('weighing_logs', function ($join) {
                 $join->on('children.id', '=', 'weighing_logs.child_id')
                     ->whereRaw('weighing_logs.id = (
@@ -203,7 +203,7 @@ class KaderReportController extends Controller
 
         // Generate CSV
         $csvData = "ID,Nama Lengkap,NIK,Tanggal Lahir,Jenis Kelamin,Nama Orang Tua,Status Gizi Terakhir\n";
-        
+
         foreach ($children as $child) {
             $csvData .= sprintf(
                 "%d,%s,%s,%s,%s,%s,%s\n",
@@ -255,7 +255,7 @@ class KaderReportController extends Controller
 
         // Generate CSV
         $csvData = "Tanggal,Nama Anak,Berat (kg),Tinggi (cm),Lengan (cm),Kepala (cm),Status Gizi,Catatan\n";
-        
+
         foreach ($weighings as $weighing) {
             $csvData .= sprintf(
                 "%s,%s,%.1f,%.1f,%s,%s,%s,%s\n",
