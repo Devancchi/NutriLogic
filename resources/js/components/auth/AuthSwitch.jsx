@@ -22,9 +22,12 @@ export default function AuthSwitch() {
     name: '',
     email: '',
     phone: '',
+    posyandu_id: '',
+    rt: '',
+    rw: '',
+    address: '',
     password: '',
-    confirmPassword: '',
-    posyandu_id: ''
+    confirmPassword: ''
   });
   const [signUpError, setSignUpError] = useState('');
   const [signUpLoading, setSignUpLoading] = useState(false);
@@ -107,7 +110,7 @@ export default function AuthSwitch() {
     setFieldErrors({}); // Clear previous field errors
 
     // Validate required fields
-    if (!signUpData.name || !signUpData.email || !signUpData.phone || !signUpData.password || !signUpData.confirmPassword || !signUpData.posyandu_id) {
+    if (!signUpData.name || !signUpData.email || !signUpData.phone || !signUpData.posyandu_id || !signUpData.rt || !signUpData.rw || !signUpData.address || !signUpData.password || !signUpData.confirmPassword) {
       setSignUpError('Semua field wajib diisi.');
       return;
     }
@@ -150,9 +153,12 @@ export default function AuthSwitch() {
         name: signUpData.name,
         email: signUpData.email,
         phone: signUpData.phone,
+        posyandu_id: signUpData.posyandu_id,
+        rt: signUpData.rt,
+        rw: signUpData.rw,
+        address: signUpData.address,
         password: signUpData.password,
         password_confirmation: signUpData.confirmPassword,
-        posyandu_id: signUpData.posyandu_id,
         role: 'ibu'
       });
 
@@ -240,7 +246,7 @@ export default function AuthSwitch() {
           position: relative;
           width: 100%;
           max-width: 900px;
-          height: 650px;
+          height: 750px;
           background: white;
           border-radius: 20px;
           box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
@@ -250,7 +256,7 @@ export default function AuthSwitch() {
         @media (max-width: 870px) {
           .auth-container {
             height: auto;
-            min-height: 650px;
+            min-height: 750px;
             max-height: none;
           }
         }
@@ -258,7 +264,7 @@ export default function AuthSwitch() {
         @media (max-width: 570px) {
           .auth-container {
             height: auto;
-            min-height: 700px;
+            min-height: 800px;
             border-radius: 15px;
             box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
           }
@@ -291,14 +297,18 @@ export default function AuthSwitch() {
           flex-direction: column;
           padding: 0 5rem;
           transition: all 0.2s 0.7s;
-          overflow: hidden;
+          overflow-y: auto;
+          overflow-x: hidden;
           grid-column: 1 / 2;
           grid-row: 1 / 2;
+          max-height: 100%;
         }
 
         form.sign-up-form {
           opacity: 0;
           z-index: 1;
+          padding-top: 1rem;
+          padding-bottom: 1rem;
         }
 
         form.sign-in-form {
@@ -308,8 +318,13 @@ export default function AuthSwitch() {
         .title {
           font-size: 2.2rem;
           color: #444;
-          margin-bottom: 10px;
+          margin-bottom: 8px;
           font-weight: 700;
+        }
+        
+        .sign-up-form .title {
+          margin-bottom: 5px;
+          font-size: 2rem;
         }
 
         .input-field {
@@ -326,6 +341,72 @@ export default function AuthSwitch() {
           transition: 0.3s;
           overflow: hidden; /* Clip the rectangular input corners */
           border: 2px solid transparent;
+        }
+        
+        .sign-up-form .input-field {
+          margin: 7px 0;
+          height: 50px;
+        }
+        
+        .sign-up-form .input-field.textarea-field {
+          min-height: 80px;
+        }
+        
+        .input-field.small-field {
+          max-width: 182px;
+          margin: 10px 4px;
+          grid-template-columns: 20% 1fr;
+          padding: 0 0.6rem;
+        }
+        
+        .sign-up-form .input-field.small-field {
+          margin: 7px 4px;
+          height: 50px;
+        }
+        
+        .input-field.small-field i {
+          line-height: 50px;
+        }
+        
+        .input-field.small-field input {
+          padding-left: 8px;
+        }
+        
+        .rt-rw-container {
+          display: flex;
+          gap: 8px;
+          width: 100%;
+          max-width: 380px;
+        }
+        
+        .input-field.textarea-field {
+          height: auto;
+          min-height: 90px;
+          border-radius: 20px;
+          grid-template-columns: 15% 1fr;
+          align-items: start;
+          padding: 0.8rem 0.4rem;
+        }
+        
+        .input-field.textarea-field textarea {
+          background: none;
+          outline: none;
+          border: none;
+          font-weight: 500;
+          font-size: 1rem;
+          color: #333;
+          width: 100%;
+          resize: none;
+          font-family: 'Poppins', 'Montserrat', 'Outfit', sans-serif;
+        }
+        
+        .input-field.textarea-field textarea::placeholder {
+          color: #aaa;
+          font-weight: 400;
+        }
+        
+        .input-field.textarea-field i {
+          padding-top: 5px;
         }
 
         .input-field.error {
@@ -509,7 +590,7 @@ export default function AuthSwitch() {
           transform: translateY(-50%);
           background: linear-gradient(-45deg, #00BFEF 0%, #006AA6 100%);
           transition: 1.8s ease-in-out;
-          border-radius: 50%;
+          border-radius: 0;
           z-index: 6;
         }
 
@@ -982,7 +1063,7 @@ export default function AuthSwitch() {
               </div>
 
               {/* Lokasi Posyandu Dropdown */}
-              <div className="input-field" style={{ cursor: 'pointer', overflow: 'visible' }}>
+              <div className={`input-field ${fieldErrors.posyandu_id ? 'error' : ''}`} style={{ cursor: 'pointer', overflow: 'visible' }}>
                 <i><Icon icon="mdi:hospital-building" /></i>
                 <div
                   style={{
@@ -1084,6 +1165,50 @@ export default function AuthSwitch() {
                     </>
                   )}
                 </AnimatePresence>
+              </div>
+
+              {/* RT & RW - Horizontal */}
+              <div className="rt-rw-container">
+                <div className={`input-field small-field ${fieldErrors.rt ? 'error' : ''}`}>
+                  <i><Icon icon="mdi:home-group" /></i>
+                  <input
+                    type="text"
+                    placeholder="RT"
+                    autoComplete="off"
+                    value={signUpData.rt}
+                    onChange={(e) => setSignUpData({ ...signUpData, rt: e.target.value.trim() })}
+                    required
+                    disabled={signUpLoading}
+                    maxLength={5}
+                  />
+                </div>
+                <div className={`input-field small-field ${fieldErrors.rw ? 'error' : ''}`}>
+                  <i><Icon icon="mdi:home-city" /></i>
+                  <input
+                    type="text"
+                    placeholder="RW"
+                    autoComplete="off"
+                    value={signUpData.rw}
+                    onChange={(e) => setSignUpData({ ...signUpData, rw: e.target.value.trim() })}
+                    required
+                    disabled={signUpLoading}
+                    maxLength={5}
+                  />
+                </div>
+              </div>
+
+              {/* Alamat */}
+              <div className={`input-field textarea-field ${fieldErrors.address ? 'error' : ''}`}>
+                <i><Icon icon="mdi:map-marker" /></i>
+                <textarea
+                  placeholder="Alamat Lengkap"
+                  autoComplete="street-address"
+                  value={signUpData.address}
+                  onChange={(e) => setSignUpData({ ...signUpData, address: e.target.value })}
+                  required
+                  disabled={signUpLoading}
+                  rows={3}
+                />
               </div>
 
               {/* Password */}

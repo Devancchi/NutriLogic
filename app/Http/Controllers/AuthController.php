@@ -36,6 +36,9 @@ class AuthController extends Controller
             'name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'string', 'email', 'max:191'],
             'phone' => ['nullable', 'string', 'max:20', 'regex:/^(08|62)\d{8,13}$/'],
+            'address' => ['nullable', 'string', 'max:500'],
+            'rt' => ['nullable', 'string', 'max:10'],
+            'rw' => ['nullable', 'string', 'max:10'],
             'password' => [
                 'required',
                 'string',
