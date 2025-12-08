@@ -18,9 +18,7 @@ class ChildController extends Controller
     {
         $user = $request->user();
 
-        $query = Child::with(['parent', 'posyandu', 'weighingLogs' => function ($q) {
-            $q->orderBy('measured_at', 'desc')->limit(1);
-        }]);
+        $query = Child::with(['parent', 'posyandu']);
 
         if ($user->isIbu()) {
             // Ibu can only see their own children
@@ -32,29 +30,10 @@ class ChildController extends Controller
             }
         }
 
-        // Search by child name
-        if ($request->has('search') && $request->search) {
-            $search = $request->search;
-            $query->where('full_name', 'like', "%{$search}%");
-        }
-
-        // Validate pagination parameter
-        $request->validate([
-            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
-        ]);
-
-        $perPage = $request->input('per_page', 20);
-
-        $children = $query->orderBy('created_at', 'desc')->paginate($perPage);
+        $children = $query->orderBy('created_at', 'desc')->get();
 
         return response()->json([
-            'data' => $children->items(),
-            'meta' => [
-                'current_page' => $children->currentPage(),
-                'per_page' => $children->perPage(),
-                'total' => $children->total(),
-                'last_page' => $children->lastPage(),
-            ],
+            'data' => $children,
         ], 200);
     }
 
