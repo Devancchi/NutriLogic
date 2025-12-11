@@ -18,14 +18,14 @@ export default function InstallPrompt() {
             e.preventDefault();
             setDeferredPrompt(e);
             
-            // Tampilkan prompt setelah 30 detik jika belum pernah dismiss
+            // Tampilkan prompt setelah 5 detik jika belum pernah dismiss
             const dismissed = localStorage.getItem('pwa-install-dismissed');
             const dismissedTime = dismissed ? parseInt(dismissed) : 0;
             const daysSinceDismissed = (Date.now() - dismissedTime) / (1000 * 60 * 60 * 24);
             
-            // Tampilkan lagi setelah 7 hari
-            if (!dismissed || daysSinceDismissed > 7) {
-                setTimeout(() => setShowPrompt(true), 30000);
+            // Tampilkan lagi setelah 3 hari
+            if (!dismissed || daysSinceDismissed > 1) {
+                setTimeout(() => setShowPrompt(true), 3000); // 5 detik
             }
         };
 
