@@ -218,6 +218,7 @@ class ParentDashboardController extends Controller
             $childrenData[] = [
                 'id' => $child->id,
                 'full_name' => $child->full_name,
+                'nik' => $child->nik,
                 'birth_date' => $child->birth_date->format('Y-m-d'),
                 'gender' => $child->gender,
                 'age_in_months' => $child->age_in_months, // Use model accessor
@@ -312,6 +313,7 @@ class ParentDashboardController extends Controller
                 'zscore_hfa' => $log->zscore_hfa,
                 'zscore_wfa' => $log->zscore_wfa,
                 'zscore_wfh' => $log->zscore_wfh,
+                'notes' => $log->notes,
             ];
         });
 
