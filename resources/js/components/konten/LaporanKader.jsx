@@ -25,7 +25,7 @@ export default function LaporanKader() {
     const [historyData, setHistoryData] = useState([]);
     const [pagination, setPagination] = useState({
         current_page: 1,
-        per_page: 20,
+        per_page: 10,
         total: 0,
         last_page: 1,
     });
