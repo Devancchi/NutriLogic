@@ -188,6 +188,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::prefix('weighings')->group(function () {
             Route::get('/today', [App\Http\Controllers\KaderWeighingController::class, 'todayList']);
             Route::post('/bulk', [App\Http\Controllers\KaderWeighingController::class, 'bulkStore']);
+            Route::put('/{id}', [App\Http\Controllers\KaderWeighingController::class, 'update']);
         });
 
         // Vitamin Distribution Management

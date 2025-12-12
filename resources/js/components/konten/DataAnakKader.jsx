@@ -70,12 +70,12 @@ export default function DataAnakKader() {
         fetchChildren(1); // Always start from page 1 when filters change
     }, [filterStatus, filterActive]);
 
-    const fetchChildren = async (page = 1) => {
+    const fetchChildren = async (page = 1, forceRefresh = false) => {
         // Cache key based on filters (no search to avoid too many cache entries)
         const cacheKey = `kader_children_status_${filterStatus || 'all'}_active_${filterActive || 'all'}`;
 
-        // Only use cache when there's no search term
-        if (!searchTerm && page === 1) {
+        // Only use cache when there's no search term and not force refreshing
+        if (!searchTerm && page === 1 && !forceRefresh) {
             const cachedChildren = getCachedData(cacheKey);
             if (cachedChildren) {
                 setChildren(cachedChildren);
@@ -602,7 +602,8 @@ export default function DataAnakKader() {
                 onClose={() => setIsEditModalOpen(false)}
                 onSuccess={(msg) => {
                     setSuccessMessage(msg);
-                    fetchChildren();
+                    fetchChildren(1, true); // Force refresh from server
+                    setTimeout(() => setSuccessMessage(null), 5000);
                 }}
                 childId={selectedChildId}
             />
@@ -612,7 +613,7 @@ export default function DataAnakKader() {
                 onClose={() => setIsAddModalOpen(false)}
                 onSuccess={(msg) => {
                     setSuccessMessage(msg);
-                    fetchChildren();
+                    fetchChildren(1, true); // Force refresh from server
                     setTimeout(() => setSuccessMessage(null), 5000);
                 }}
             />

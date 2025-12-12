@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, ChevronLeft, ChevronRight, Search, Save, ArrowLeft, Check, Scale, Pill, Syringe } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Search, Save, ArrowLeft, Check, Scale, Pill, Syringe, FileText, X, Edit2, Lock, Unlock } from "lucide-react";
 import api from "../../lib/api";
 import { useDataCache } from "../../contexts/DataCacheContext";
 import { formatAge, getStatusColor, getStatusLabel } from "../../lib/utils";
@@ -43,6 +43,12 @@ export default function KegiatanPosyandu() {
     const [immunizationResults, setImmunizationResults] = useState(null);
     const [immunizationWarnings, setImmunizationWarnings] = useState(null);
 
+    // WHO Standards Modal - type: null | 'weight' | 'height' | 'muac' | 'head'
+    const [whoModalType, setWhoModalType] = useState(null);
+
+    // Edit mode - track which children are in edit mode (for today's data)
+    const [editMode, setEditMode] = useState({});
+
     const navigate = useNavigate();
 
     // Data caching
@@ -66,16 +72,26 @@ export default function KegiatanPosyandu() {
             const cachedChildren = getCachedData('kader_weighing_children');
             if (cachedChildren) {
                 setChildren(cachedChildren);
-                // Initialize weighing data state
+                // Initialize weighing data state with today's data if exists
                 const initialData = {};
                 cachedChildren.forEach(child => {
-                    initialData[child.id] = {
-                        weight_kg: '',
-                        height_cm: '',
-                        muac_cm: '',
-                        head_circumference_cm: '',
-                        notes: '',
-                    };
+                    if (child.today_weighing) {
+                        initialData[child.id] = {
+                            weight_kg: child.today_weighing.weight_kg || '',
+                            height_cm: child.today_weighing.height_cm || '',
+                            muac_cm: child.today_weighing.muac_cm || '',
+                            head_circumference_cm: child.today_weighing.head_circumference_cm || '',
+                            notes: child.today_weighing.notes || '',
+                        };
+                    } else {
+                        initialData[child.id] = {
+                            weight_kg: '',
+                            height_cm: '',
+                            muac_cm: '',
+                            head_circumference_cm: '',
+                            notes: '',
+                        };
+                    }
                 });
                 setWeighingData(initialData);
                 setLoading(false);
@@ -95,16 +111,26 @@ export default function KegiatanPosyandu() {
             setChildren(childrenData);
             setCachedData('kader_weighing_children', childrenData);
 
-            // Initialize weighing data state
+            // Initialize weighing data state with today's data if exists
             const initialData = {};
             childrenData.forEach(child => {
-                initialData[child.id] = {
-                    weight_kg: '',
-                    height_cm: '',
-                    muac_cm: '',
-                    head_circumference_cm: '',
-                    notes: '',
-                };
+                if (child.today_weighing) {
+                    initialData[child.id] = {
+                        weight_kg: child.today_weighing.weight_kg || '',
+                        height_cm: child.today_weighing.height_cm || '',
+                        muac_cm: child.today_weighing.muac_cm || '',
+                        head_circumference_cm: child.today_weighing.head_circumference_cm || '',
+                        notes: child.today_weighing.notes || '',
+                    };
+                } else {
+                    initialData[child.id] = {
+                        weight_kg: '',
+                        height_cm: '',
+                        muac_cm: '',
+                        head_circumference_cm: '',
+                        notes: '',
+                    };
+                }
             });
             setWeighingData(initialData);
         } catch (err) {
@@ -151,7 +177,7 @@ export default function KegiatanPosyandu() {
 
         if (field === 'head_circumference_cm' && value) {
             const head = parseFloat(value);
-            if (head < 0) validatedValue = '0';
+            if (head < 30) validatedValue = '30';
             if (head > 60) validatedValue = '60';
         }
 
@@ -163,6 +189,69 @@ export default function KegiatanPosyandu() {
                 [field]: validatedValue
             }
         }));
+    };
+
+    // Toggle edit mode for a specific child
+    const toggleEditMode = (childId) => {
+        setEditMode(prev => ({
+            ...prev,
+            [childId]: !prev[childId]
+        }));
+    };
+
+    // Check if a child's inputs should be disabled
+    const isInputDisabled = (child) => {
+        return child.today_weighing && !editMode[child.id];
+    };
+
+    // Update existing weighing record
+    const updateWeighing = async (child) => {
+        const data = weighingData[child.id];
+        if (!data) return;
+
+        try {
+            setSubmitting(true);
+            await api.put(`/kader/weighings/${child.today_weighing.id}`, {
+                weight_kg: data.weight_kg || null,
+                height_cm: data.height_cm || null,
+                muac_cm: data.muac_cm || null,
+                head_circumference_cm: data.head_circumference_cm || null,
+                notes: data.notes || null,
+            });
+
+            // Update local state
+            setChildren(prev => prev.map(c => {
+                if (c.id === child.id) {
+                    return {
+                        ...c,
+                        today_weighing: {
+                            ...c.today_weighing,
+                            weight_kg: data.weight_kg || null,
+                            height_cm: data.height_cm || null,
+                            muac_cm: data.muac_cm || null,
+                            head_circumference_cm: data.head_circumference_cm || null,
+                            notes: data.notes || null,
+                        }
+                    };
+                }
+                return c;
+            }));
+
+            // Exit edit mode
+            setEditMode(prev => ({
+                ...prev,
+                [child.id]: false
+            }));
+
+            // Invalidate cache
+            invalidateCache('kader_weighing_children');
+
+        } catch (err) {
+            console.error('Update weighing error:', err);
+            alert(err.response?.data?.message || 'Gagal memperbarui data penimbangan');
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     const toggleDatePicker = () => {
@@ -528,12 +617,24 @@ export default function KegiatanPosyandu() {
                                     <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                                 </svg>
                                 <div className="flex-1">
-                                    <p className="font-bold text-yellow-800 text-sm mb-2">Peringatan:</p>
-                                    <ul className="space-y-1">
-                                        {warnings.map((warning, idx) => (
-                                            <li key={idx} className="text-xs text-yellow-700">• {warning}</li>
-                                        ))}
-                                    </ul>
+                                    <p className="font-bold text-yellow-800 text-sm">
+                                        {warnings.length} anak sudah ditimbang hari ini
+                                    </p>
+                                    <p className="text-xs text-yellow-700 mt-1">
+                                        Gunakan tombol <span className="font-semibold">Edit</span> untuk memperbarui data.
+                                    </p>
+                                    <div className="flex flex-wrap gap-1.5 mt-2">
+                                        {warnings.map((warning, idx) => {
+                                            // Extract child name from warning message
+                                            const match = warning.match(/Anak '([^']+)'/);
+                                            const childName = match ? match[1] : `Anak ${idx + 1}`;
+                                            return (
+                                                <span key={idx} className="px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs rounded-full font-medium">
+                                                    {childName}
+                                                </span>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -764,11 +865,19 @@ export default function KegiatanPosyandu() {
                                         </div>
                                     ) : (
                                         filteredChildren.map((child, index) => (
-                                            <div key={child.id} className="p-4 bg-white flex flex-col gap-4">
+                                            <div key={child.id} className={`p-4 bg-white flex flex-col gap-4 ${child.today_weighing && !editMode[child.id] ? 'bg-green-50/50' : ''}`}>
                                                 {/* Child Info */}
                                                 <div className="flex justify-between items-start">
                                                     <div>
-                                                        <div className="font-bold text-gray-900">{child.full_name}</div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="font-bold text-gray-900">{child.full_name}</span>
+                                                            {child.today_weighing && (
+                                                                <span className="px-1.5 py-0.5 text-[9px] font-medium bg-green-100 text-green-700 rounded-full flex items-center gap-0.5">
+                                                                    <Check className="w-2.5 h-2.5" />
+                                                                    Sudah
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                         <div className="flex items-center gap-2 mt-1">
                                                             <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${child.gender === 'L' ? 'bg-blue-50 text-blue-600' : 'bg-pink-50 text-pink-600'}`}>
                                                                 {child.gender === 'L' ? 'Laki-laki' : 'Perempuan'}
@@ -777,83 +886,164 @@ export default function KegiatanPosyandu() {
                                                             <span className="text-xs text-gray-500">{formatAge(child.age_in_months)}</span>
                                                         </div>
                                                     </div>
-                                                    <div className="text-right">
-                                                        <div className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-1">Data Terakhir</div>
-                                                        {child.latest_weighing ? (
-                                                            <div className="flex flex-col items-end">
-                                                                <div className="text-xs font-medium text-gray-700">
-                                                                    {child.latest_weighing.weight_kg} kg / {child.latest_weighing.height_cm} cm
-                                                                </div>
-                                                                <span className="text-[10px] text-gray-400">
-                                                                    {new Date(child.latest_weighing.measured_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
-                                                                </span>
-                                                            </div>
-                                                        ) : (
-                                                            <span className="text-xs text-gray-400 italic">Belum ada data</span>
+                                                    <div className="flex items-start gap-2">
+                                                        {/* Edit button for today's data */}
+                                                        {child.today_weighing && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => editMode[child.id] ? updateWeighing(child) : toggleEditMode(child.id)}
+                                                                className={`px-2 py-1 text-xs font-medium rounded-lg transition-colors flex items-center gap-1 ${editMode[child.id]
+                                                                    ? 'bg-green-500 text-white hover:bg-green-600'
+                                                                    : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                                                                    }`}
+                                                            >
+                                                                {editMode[child.id] ? (
+                                                                    <>
+                                                                        <Check className="w-3 h-3" />
+                                                                        Simpan
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <Edit2 className="w-3 h-3" />
+                                                                        Edit
+                                                                    </>
+                                                                )}
+                                                            </button>
                                                         )}
+                                                        <div className="text-right">
+                                                            <div className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-1">Data Terakhir</div>
+                                                            {child.latest_weighing ? (
+                                                                <div className="flex flex-col items-end">
+                                                                    <div className="text-xs font-medium text-gray-700">
+                                                                        {child.latest_weighing.weight_kg} kg / {child.latest_weighing.height_cm} cm
+                                                                    </div>
+                                                                    <span className="text-[10px] text-gray-400">
+                                                                        {new Date(child.latest_weighing.measured_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                                                                    </span>
+                                                                </div>
+                                                            ) : (
+                                                                <span className="text-xs text-gray-400 italic">Belum ada data</span>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
-
                                                 {/* Inputs */}
                                                 <div className="grid grid-cols-4 gap-3">
                                                     <div>
-                                                        <label className="text-[10px] font-bold text-gray-500 uppercase mb-1 block">Berat (kg)</label>
+                                                        <div className="flex items-center gap-1 mb-1">
+                                                            <label className="text-[10px] font-bold text-gray-500 uppercase block">Berat (kg)</label>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setWhoModalType('weight')}
+                                                                className="p-0.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                                                                title="Lihat Standar WHO"
+                                                            >
+                                                                <FileText className="w-3 h-3" />
+                                                            </button>
+                                                        </div>
                                                         <input
                                                             type="number"
                                                             step="0.01"
                                                             min="1"
                                                             max="30"
+                                                            disabled={isInputDisabled(child)}
                                                             value={weighingData[child.id]?.weight_kg || ''}
                                                             onChange={(e) => handleInputChange(child.id, 'weight_kg', e.target.value)}
                                                             onBlur={(e) => handleInputBlur(child.id, 'weight_kg', e.target.value)}
-                                                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all text-sm font-medium text-gray-900 placeholder:text-gray-400"
+                                                            className={`w-full px-3 py-2 border rounded-lg transition-all text-sm font-medium placeholder:text-gray-400 ${isInputDisabled(child)
+                                                                ? 'bg-gray-100 border-gray-200 text-gray-600 cursor-not-allowed'
+                                                                : 'bg-gray-50 border-gray-200 text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10'
+                                                                }`}
                                                             placeholder="1-30"
                                                         />
                                                         <p className="text-[9px] text-gray-400 mt-0.5">Min 1kg, Max 30kg</p>
                                                     </div>
                                                     <div>
-                                                        <label className="text-[10px] font-bold text-gray-500 uppercase mb-1 block">Tinggi (cm)</label>
+                                                        <div className="flex items-center gap-1 mb-1">
+                                                            <label className="text-[10px] font-bold text-gray-500 uppercase block">Tinggi (cm)</label>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setWhoModalType('height')}
+                                                                className="p-0.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                                                                title="Lihat Standar WHO"
+                                                            >
+                                                                <FileText className="w-3 h-3" />
+                                                            </button>
+                                                        </div>
                                                         <input
                                                             type="number"
                                                             step="0.1"
                                                             min="40"
                                                             max="130"
+                                                            disabled={isInputDisabled(child)}
                                                             value={weighingData[child.id]?.height_cm || ''}
                                                             onChange={(e) => handleInputChange(child.id, 'height_cm', e.target.value)}
                                                             onBlur={(e) => handleInputBlur(child.id, 'height_cm', e.target.value)}
-                                                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all text-sm font-medium text-gray-900 placeholder:text-gray-400"
+                                                            className={`w-full px-3 py-2 border rounded-lg transition-all text-sm font-medium placeholder:text-gray-400 ${isInputDisabled(child)
+                                                                ? 'bg-gray-100 border-gray-200 text-gray-600 cursor-not-allowed'
+                                                                : 'bg-gray-50 border-gray-200 text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10'
+                                                                }`}
                                                             placeholder="40-130"
                                                         />
                                                         <p className="text-[9px] text-gray-400 mt-0.5">Min 40cm, Max 130cm</p>
                                                     </div>
                                                     <div>
-                                                        <label className="text-[10px] font-bold text-gray-500 uppercase mb-1 block">Lengan (cm)</label>
+                                                        <div className="flex items-center gap-1 mb-1">
+                                                            <label className="text-[10px] font-bold text-gray-500 uppercase block">Lengan (cm)</label>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setWhoModalType('muac')}
+                                                                className="p-0.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                                                                title="Lihat Standar WHO"
+                                                            >
+                                                                <FileText className="w-3 h-3" />
+                                                            </button>
+                                                        </div>
                                                         <input
                                                             type="number"
                                                             step="0.1"
                                                             min="8"
                                                             max="25"
+                                                            disabled={isInputDisabled(child)}
                                                             value={weighingData[child.id]?.muac_cm || ''}
                                                             onChange={(e) => handleInputChange(child.id, 'muac_cm', e.target.value)}
                                                             onBlur={(e) => handleInputBlur(child.id, 'muac_cm', e.target.value)}
-                                                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all text-sm font-medium text-gray-900 placeholder:text-gray-400"
+                                                            className={`w-full px-3 py-2 border rounded-lg transition-all text-sm font-medium placeholder:text-gray-400 ${isInputDisabled(child)
+                                                                ? 'bg-gray-100 border-gray-200 text-gray-600 cursor-not-allowed'
+                                                                : 'bg-gray-50 border-gray-200 text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10'
+                                                                }`}
                                                             placeholder="8-25"
                                                         />
                                                         <p className="text-[9px] text-gray-400 mt-0.5">Min 8cm, Max 25cm</p>
                                                     </div>
                                                     <div>
-                                                        <label className="text-[10px] font-bold text-gray-500 uppercase mb-1 block">Kepala (cm)</label>
+                                                        <div className="flex items-center gap-1 mb-1">
+                                                            <label className="text-[10px] font-bold text-gray-500 uppercase block">Kepala (cm)</label>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setWhoModalType('head')}
+                                                                className="p-0.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                                                                title="Lihat Standar WHO"
+                                                            >
+                                                                <FileText className="w-3 h-3" />
+                                                            </button>
+                                                        </div>
                                                         <input
                                                             type="number"
                                                             step="0.1"
-                                                            min="0"
+                                                            min="30"
                                                             max="60"
+                                                            disabled={isInputDisabled(child)}
                                                             value={weighingData[child.id]?.head_circumference_cm || ''}
                                                             onChange={(e) => handleInputChange(child.id, 'head_circumference_cm', e.target.value)}
                                                             onBlur={(e) => handleInputBlur(child.id, 'head_circumference_cm', e.target.value)}
-                                                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all text-sm font-medium text-gray-900 placeholder:text-gray-400"
-                                                            placeholder="0.0"
+                                                            className={`w-full px-3 py-2 border rounded-lg transition-all text-sm font-medium placeholder:text-gray-400 ${isInputDisabled(child)
+                                                                ? 'bg-gray-100 border-gray-200 text-gray-600 cursor-not-allowed'
+                                                                : 'bg-gray-50 border-gray-200 text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10'
+                                                                }`}
+                                                            placeholder="30-60"
                                                         />
+                                                        <p className="text-[9px] text-gray-400 mt-0.5">Min 30cm, Max 60cm (WHO)</p>
                                                     </div>
                                                 </div>
                                                 <div>
@@ -878,31 +1068,88 @@ export default function KegiatanPosyandu() {
                                                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-16">No</th>
                                                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider min-w-[200px]">Anak</th>
                                                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Data Terakhir</th>
-                                                <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-32">Berat (kg)</th>
-                                                <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-32">Tinggi (cm)</th>
-                                                <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-32">Lengan (cm)</th>
-                                                <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-32">Kepala (cm)</th>
+                                                <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-32">
+                                                    <div className="flex items-center gap-1">
+                                                        Berat (kg)
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setWhoModalType('weight')}
+                                                            className="p-0.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                                                            title="Lihat Standar WHO"
+                                                        >
+                                                            <FileText className="w-3 h-3" />
+                                                        </button>
+                                                    </div>
+                                                </th>
+                                                <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-32">
+                                                    <div className="flex items-center gap-1">
+                                                        Tinggi (cm)
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setWhoModalType('height')}
+                                                            className="p-0.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                                                            title="Lihat Standar WHO"
+                                                        >
+                                                            <FileText className="w-3 h-3" />
+                                                        </button>
+                                                    </div>
+                                                </th>
+                                                <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-32">
+                                                    <div className="flex items-center gap-1">
+                                                        Lengan (cm)
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setWhoModalType('muac')}
+                                                            className="p-0.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                                                            title="Lihat Standar WHO"
+                                                        >
+                                                            <FileText className="w-3 h-3" />
+                                                        </button>
+                                                    </div>
+                                                </th>
+                                                <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-32">
+                                                    <div className="flex items-center gap-1">
+                                                        Kepala (cm)
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setWhoModalType('head')}
+                                                            className="p-0.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                                                            title="Lihat Standar WHO"
+                                                        >
+                                                            <FileText className="w-3 h-3" />
+                                                        </button>
+                                                    </div>
+                                                </th>
                                                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider min-w-[200px]">Catatan</th>
+                                                <th className="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-24">Aksi</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-50">
                                             {filteredChildren.length === 0 ? (
                                                 <tr>
-                                                    <td colSpan="8" className="px-6 py-12 text-center text-gray-500">
+                                                    <td colSpan="9" className="px-6 py-12 text-center text-gray-500">
                                                         {searchQuery ? `Tidak ada anak dengan nama "${searchQuery}"` : 'Belum ada data anak yang terdaftar.'}
                                                     </td>
                                                 </tr>
                                             ) : (
                                                 filteredChildren.map((child, index) => (
-                                                    <tr key={child.id} className="group hover:bg-blue-50/30 transition-colors">
+                                                    <tr key={child.id} className={`group transition-colors ${child.today_weighing && !editMode[child.id] ? 'bg-green-50/50 hover:bg-green-100/50' : 'hover:bg-blue-50/30'}`}>
                                                         <td className="px-6 py-4 text-sm text-gray-500 font-medium">
                                                             {index + 1}
                                                         </td>
                                                         <td className="px-6 py-4">
                                                             <div className="flex flex-col">
-                                                                <span className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-                                                                    {child.full_name}
-                                                                </span>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                                                                        {child.full_name}
+                                                                    </span>
+                                                                    {child.today_weighing && (
+                                                                        <span className="px-1.5 py-0.5 text-[9px] font-medium bg-green-100 text-green-700 rounded-full flex items-center gap-0.5">
+                                                                            <Check className="w-2.5 h-2.5" />
+                                                                            Sudah
+                                                                        </span>
+                                                                    )}
+                                                                </div>
                                                                 <div className="flex items-center gap-2 mt-1">
                                                                     <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${child.gender === 'L' ? 'bg-blue-50 text-blue-600' : 'bg-pink-50 text-pink-600'}`}>
                                                                         {child.gender === 'L' ? 'Laki-laki' : 'Perempuan'}
@@ -934,11 +1181,15 @@ export default function KegiatanPosyandu() {
                                                                 step="0.01"
                                                                 min="0"
                                                                 max="100"
+                                                                disabled={isInputDisabled(child)}
                                                                 value={weighingData[child.id]?.weight_kg || ''}
                                                                 onChange={(e) => handleInputChange(child.id, 'weight_kg', e.target.value)}
                                                                 onBlur={(e) => handleInputBlur(child.id, 'weight_kg', e.target.value)}
-                                                                className="w-full px-3 py-2 bg-gray-50 border border-transparent rounded-lg focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm font-medium text-gray-900 placeholder:text-gray-400"
-                                                                placeholder="0.0"
+                                                                className={`w-full px-3 py-2 border rounded-lg transition-all text-sm font-medium placeholder:text-gray-400 ${isInputDisabled(child)
+                                                                    ? 'bg-gray-100 border-gray-200 text-gray-600 cursor-not-allowed'
+                                                                    : 'bg-gray-50 border-transparent text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10'
+                                                                    }`}
+                                                                placeholder="1"
                                                             />
                                                         </td>
                                                         <td className="px-6 py-4">
@@ -947,11 +1198,15 @@ export default function KegiatanPosyandu() {
                                                                 step="0.1"
                                                                 min="0"
                                                                 max="200"
+                                                                disabled={isInputDisabled(child)}
                                                                 value={weighingData[child.id]?.height_cm || ''}
                                                                 onChange={(e) => handleInputChange(child.id, 'height_cm', e.target.value)}
                                                                 onBlur={(e) => handleInputBlur(child.id, 'height_cm', e.target.value)}
-                                                                className="w-full px-3 py-2 bg-gray-50 border border-transparent rounded-lg focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm font-medium text-gray-900 placeholder:text-gray-400"
-                                                                placeholder="0.0"
+                                                                className={`w-full px-3 py-2 border rounded-lg transition-all text-sm font-medium placeholder:text-gray-400 ${isInputDisabled(child)
+                                                                    ? 'bg-gray-100 border-gray-200 text-gray-600 cursor-not-allowed'
+                                                                    : 'bg-gray-50 border-transparent text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10'
+                                                                    }`}
+                                                                placeholder="40"
                                                             />
                                                         </td>
                                                         <td className="px-6 py-4">
@@ -960,34 +1215,72 @@ export default function KegiatanPosyandu() {
                                                                 step="0.1"
                                                                 min="0"
                                                                 max="50"
+                                                                disabled={isInputDisabled(child)}
                                                                 value={weighingData[child.id]?.muac_cm || ''}
                                                                 onChange={(e) => handleInputChange(child.id, 'muac_cm', e.target.value)}
                                                                 onBlur={(e) => handleInputBlur(child.id, 'muac_cm', e.target.value)}
-                                                                className="w-full px-3 py-2 bg-gray-50 border border-transparent rounded-lg focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm font-medium text-gray-900 placeholder:text-gray-400"
-                                                                placeholder="0.0"
+                                                                className={`w-full px-3 py-2 border rounded-lg transition-all text-sm font-medium placeholder:text-gray-400 ${isInputDisabled(child)
+                                                                    ? 'bg-gray-100 border-gray-200 text-gray-600 cursor-not-allowed'
+                                                                    : 'bg-gray-50 border-transparent text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10'
+                                                                    }`}
+                                                                placeholder="8"
                                                             />
                                                         </td>
                                                         <td className="px-6 py-4">
                                                             <input
                                                                 type="number"
                                                                 step="0.1"
-                                                                min="0"
+                                                                min="30"
                                                                 max="60"
+                                                                disabled={isInputDisabled(child)}
                                                                 value={weighingData[child.id]?.head_circumference_cm || ''}
                                                                 onChange={(e) => handleInputChange(child.id, 'head_circumference_cm', e.target.value)}
                                                                 onBlur={(e) => handleInputBlur(child.id, 'head_circumference_cm', e.target.value)}
-                                                                className="w-full px-3 py-2 bg-gray-50 border border-transparent rounded-lg focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm font-medium text-gray-900 placeholder:text-gray-400"
-                                                                placeholder="0.0"
+                                                                className={`w-full px-3 py-2 border rounded-lg transition-all text-sm font-medium placeholder:text-gray-400 ${isInputDisabled(child)
+                                                                    ? 'bg-gray-100 border-gray-200 text-gray-600 cursor-not-allowed'
+                                                                    : 'bg-gray-50 border-transparent text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10'
+                                                                    }`}
+                                                                placeholder="30"
                                                             />
                                                         </td>
                                                         <td className="px-6 py-4">
                                                             <input
                                                                 type="text"
+                                                                disabled={isInputDisabled(child)}
                                                                 value={weighingData[child.id]?.notes || ''}
                                                                 onChange={(e) => handleInputChange(child.id, 'notes', e.target.value)}
-                                                                className="w-full px-3 py-2 bg-gray-50 border border-transparent rounded-lg focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm text-gray-900 placeholder:text-gray-400"
+                                                                className={`w-full px-3 py-2 border rounded-lg transition-all text-sm placeholder:text-gray-400 ${isInputDisabled(child)
+                                                                    ? 'bg-gray-100 border-gray-200 text-gray-600 cursor-not-allowed'
+                                                                    : 'bg-gray-50 border-transparent text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10'
+                                                                    }`}
                                                                 placeholder="Catatan..."
                                                             />
+                                                        </td>
+                                                        <td className="px-6 py-4 text-center">
+                                                            {child.today_weighing ? (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => editMode[child.id] ? updateWeighing(child) : toggleEditMode(child.id)}
+                                                                    className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center gap-1 mx-auto ${editMode[child.id]
+                                                                        ? 'bg-green-500 text-white hover:bg-green-600'
+                                                                        : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                                                                        }`}
+                                                                >
+                                                                    {editMode[child.id] ? (
+                                                                        <>
+                                                                            <Check className="w-3 h-3" />
+                                                                            Simpan
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            <Edit2 className="w-3 h-3" />
+                                                                            Edit
+                                                                        </>
+                                                                    )}
+                                                                </button>
+                                                            ) : (
+                                                                <span className="text-xs text-gray-400">-</span>
+                                                            )}
                                                         </td>
                                                     </tr>
                                                 ))
@@ -998,7 +1291,7 @@ export default function KegiatanPosyandu() {
                             </div>
 
                             {/* Footer / Submit - Fixed at bottom */}
-                            <div className="p-6 border-t border-gray-100 bg-white flex-shrink-0">
+                            < div className="p-6 border-t border-gray-100 bg-white flex-shrink-0" >
                                 <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
                                     {searchQuery && (
                                         <p className="text-sm text-gray-600 text-center sm:text-left">
@@ -1648,6 +1941,303 @@ export default function KegiatanPosyandu() {
                     </div>
                 </>
             )}
+
+            {/* WHO Standards Modal */}
+            <AnimatePresence>
+                {whoModalType && (
+                    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                            onClick={() => setWhoModalType(null)}
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="bg-white rounded-2xl shadow-xl w-full max-w-lg relative z-10 overflow-hidden max-h-[90vh] flex flex-col"
+                        >
+                            {/* Header */}
+                            <div className={`px-6 py-4 border-b flex items-center justify-between ${whoModalType === 'weight' ? 'bg-green-50 border-green-100' :
+                                whoModalType === 'height' ? 'bg-purple-50 border-purple-100' :
+                                    whoModalType === 'muac' ? 'bg-teal-50 border-teal-100' :
+                                        'bg-blue-50 border-blue-100'
+                                }`}>
+                                <div className="flex items-center gap-3">
+                                    <div className={`p-2 rounded-xl ${whoModalType === 'weight' ? 'bg-green-100' :
+                                        whoModalType === 'height' ? 'bg-purple-100' :
+                                            whoModalType === 'muac' ? 'bg-teal-100' :
+                                                'bg-blue-100'
+                                        }`}>
+                                        <FileText className={`w-5 h-5 ${whoModalType === 'weight' ? 'text-green-600' :
+                                            whoModalType === 'height' ? 'text-purple-600' :
+                                                whoModalType === 'muac' ? 'text-teal-600' :
+                                                    'text-blue-600'
+                                            }`} />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-bold text-gray-900">
+                                            {whoModalType === 'weight' && 'Standar Berat Badan WHO'}
+                                            {whoModalType === 'height' && 'Standar Tinggi/Panjang Badan WHO'}
+                                            {whoModalType === 'muac' && 'Standar Lingkar Lengan Atas WHO'}
+                                            {whoModalType === 'head' && 'Standar Lingkar Kepala WHO'}
+                                        </h3>
+                                        <p className="text-xs text-gray-500">Referensi Anak 0-5 Tahun</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setWhoModalType(null)}
+                                    className="p-2 hover:bg-white/50 rounded-full transition-colors"
+                                >
+                                    <X className="w-5 h-5 text-gray-500" />
+                                </button>
+                            </div>
+
+                            {/* Content */}
+                            <div className="p-6 overflow-y-auto">
+                                {/* Weight Standards */}
+                                {whoModalType === 'weight' && (
+                                    <div className="space-y-4">
+                                        <div className="bg-green-50 rounded-xl p-4 border border-green-100">
+                                            <h4 className="font-bold text-green-800 mb-3">Berat Badan berdasarkan Usia</h4>
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-sm">
+                                                    <thead>
+                                                        <tr className="border-b border-green-200">
+                                                            <th className="py-2 px-3 text-left text-green-700 font-semibold">Usia</th>
+                                                            <th className="py-2 px-3 text-center text-green-700 font-semibold">Laki-laki</th>
+                                                            <th className="py-2 px-3 text-center text-green-700 font-semibold">Perempuan</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="text-gray-700">
+                                                        <tr className="border-b border-green-100">
+                                                            <td className="py-2 px-3 font-medium">Lahir</td>
+                                                            <td className="py-2 px-3 text-center">2.5 - 4.4 kg</td>
+                                                            <td className="py-2 px-3 text-center">2.4 - 4.2 kg</td>
+                                                        </tr>
+                                                        <tr className="border-b border-green-100">
+                                                            <td className="py-2 px-3 font-medium">3 bulan</td>
+                                                            <td className="py-2 px-3 text-center">5.0 - 8.0 kg</td>
+                                                            <td className="py-2 px-3 text-center">4.5 - 7.5 kg</td>
+                                                        </tr>
+                                                        <tr className="border-b border-green-100">
+                                                            <td className="py-2 px-3 font-medium">6 bulan</td>
+                                                            <td className="py-2 px-3 text-center">6.4 - 9.8 kg</td>
+                                                            <td className="py-2 px-3 text-center">5.8 - 9.2 kg</td>
+                                                        </tr>
+                                                        <tr className="border-b border-green-100">
+                                                            <td className="py-2 px-3 font-medium">12 bulan</td>
+                                                            <td className="py-2 px-3 text-center">7.8 - 11.8 kg</td>
+                                                            <td className="py-2 px-3 text-center">7.1 - 11.3 kg</td>
+                                                        </tr>
+                                                        <tr className="border-b border-green-100">
+                                                            <td className="py-2 px-3 font-medium">2 tahun</td>
+                                                            <td className="py-2 px-3 text-center">9.8 - 15.1 kg</td>
+                                                            <td className="py-2 px-3 text-center">9.2 - 14.6 kg</td>
+                                                        </tr>
+                                                        <tr className="border-b border-green-100">
+                                                            <td className="py-2 px-3 font-medium">3 tahun</td>
+                                                            <td className="py-2 px-3 text-center">11.3 - 18.3 kg</td>
+                                                            <td className="py-2 px-3 text-center">10.8 - 17.9 kg</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td className="py-2 px-3 font-medium">5 tahun</td>
+                                                            <td className="py-2 px-3 text-center">14.0 - 24.2 kg</td>
+                                                            <td className="py-2 px-3 text-center">13.5 - 24.0 kg</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-600">
+                                            <p className="font-medium">📌 Catatan:</p>
+                                            <p className="text-xs mt-1">Rentang input yang diterima sistem: <span className="font-bold">1 - 30 kg</span></p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Height Standards */}
+                                {whoModalType === 'height' && (
+                                    <div className="space-y-4">
+                                        <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
+                                            <h4 className="font-bold text-purple-800 mb-3">Tinggi/Panjang Badan berdasarkan Usia</h4>
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-sm">
+                                                    <thead>
+                                                        <tr className="border-b border-purple-200">
+                                                            <th className="py-2 px-3 text-left text-purple-700 font-semibold">Usia</th>
+                                                            <th className="py-2 px-3 text-center text-purple-700 font-semibold">Laki-laki</th>
+                                                            <th className="py-2 px-3 text-center text-purple-700 font-semibold">Perempuan</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="text-gray-700">
+                                                        <tr className="border-b border-purple-100">
+                                                            <td className="py-2 px-3 font-medium">Lahir</td>
+                                                            <td className="py-2 px-3 text-center">46.1 - 53.7 cm</td>
+                                                            <td className="py-2 px-3 text-center">45.4 - 52.9 cm</td>
+                                                        </tr>
+                                                        <tr className="border-b border-purple-100">
+                                                            <td className="py-2 px-3 font-medium">3 bulan</td>
+                                                            <td className="py-2 px-3 text-center">57.3 - 65.5 cm</td>
+                                                            <td className="py-2 px-3 text-center">55.6 - 64.0 cm</td>
+                                                        </tr>
+                                                        <tr className="border-b border-purple-100">
+                                                            <td className="py-2 px-3 font-medium">6 bulan</td>
+                                                            <td className="py-2 px-3 text-center">63.3 - 71.9 cm</td>
+                                                            <td className="py-2 px-3 text-center">61.2 - 70.3 cm</td>
+                                                        </tr>
+                                                        <tr className="border-b border-purple-100">
+                                                            <td className="py-2 px-3 font-medium">12 bulan</td>
+                                                            <td className="py-2 px-3 text-center">71.0 - 80.5 cm</td>
+                                                            <td className="py-2 px-3 text-center">68.9 - 79.2 cm</td>
+                                                        </tr>
+                                                        <tr className="border-b border-purple-100">
+                                                            <td className="py-2 px-3 font-medium">2 tahun</td>
+                                                            <td className="py-2 px-3 text-center">81.7 - 93.9 cm</td>
+                                                            <td className="py-2 px-3 text-center">80.0 - 92.9 cm</td>
+                                                        </tr>
+                                                        <tr className="border-b border-purple-100">
+                                                            <td className="py-2 px-3 font-medium">3 tahun</td>
+                                                            <td className="py-2 px-3 text-center">88.7 - 103.5 cm</td>
+                                                            <td className="py-2 px-3 text-center">87.4 - 102.7 cm</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td className="py-2 px-3 font-medium">5 tahun</td>
+                                                            <td className="py-2 px-3 text-center">100.7 - 119.2 cm</td>
+                                                            <td className="py-2 px-3 text-center">99.9 - 118.9 cm</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-600">
+                                            <p className="font-medium">📌 Catatan:</p>
+                                            <p className="text-xs mt-1">Rentang input yang diterima sistem: <span className="font-bold">40 - 130 cm</span></p>
+                                            <p className="text-xs mt-1">Anak &lt;2 tahun diukur berbaring (panjang), ≥2 tahun berdiri (tinggi)</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* MUAC Standards */}
+                                {whoModalType === 'muac' && (
+                                    <div className="space-y-4">
+                                        <div className="bg-teal-50 rounded-xl p-4 border border-teal-100">
+                                            <h4 className="font-bold text-teal-800 mb-3">Klasifikasi Status Gizi (LILA)</h4>
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-sm">
+                                                    <thead>
+                                                        <tr className="border-b border-teal-200">
+                                                            <th className="py-2 px-3 text-left text-teal-700 font-semibold">Kategori</th>
+                                                            <th className="py-2 px-3 text-center text-teal-700 font-semibold">Ukuran LILA</th>
+                                                            <th className="py-2 px-3 text-center text-teal-700 font-semibold">Status</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="text-gray-700">
+                                                        <tr className="border-b border-teal-100">
+                                                            <td className="py-2 px-3 font-medium">Gizi Normal</td>
+                                                            <td className="py-2 px-3 text-center">≥ 12.5 cm</td>
+                                                            <td className="py-2 px-3 text-center">
+                                                                <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">Normal</span>
+                                                            </td>
+                                                        </tr>
+                                                        <tr className="border-b border-teal-100">
+                                                            <td className="py-2 px-3 font-medium">Gizi Kurang</td>
+                                                            <td className="py-2 px-3 text-center">11.5 - 12.4 cm</td>
+                                                            <td className="py-2 px-3 text-center">
+                                                                <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full">Waspada</span>
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td className="py-2 px-3 font-medium">Gizi Buruk</td>
+                                                            <td className="py-2 px-3 text-center">&lt; 11.5 cm</td>
+                                                            <td className="py-2 px-3 text-center">
+                                                                <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs font-medium rounded-full">Bahaya</span>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div className="bg-teal-50 rounded-lg p-3 text-sm text-gray-600 border border-teal-100">
+                                            <p className="font-medium text-teal-800">📌 Catatan:</p>
+                                            <p className="text-xs mt-1">Rentang input yang diterima sistem: <span className="font-bold">8 - 25 cm</span></p>
+                                            <p className="text-xs mt-1">Pengukuran dilakukan di lengan kiri, titik tengah antara bahu dan siku</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Head Circumference Standards */}
+                                {whoModalType === 'head' && (
+                                    <div className="space-y-4">
+                                        <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
+                                            <h4 className="font-bold text-blue-800 mb-3">Lingkar Kepala berdasarkan Usia</h4>
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-sm">
+                                                    <thead>
+                                                        <tr className="border-b border-blue-200">
+                                                            <th className="py-2 px-3 text-left text-blue-700 font-semibold">Usia</th>
+                                                            <th className="py-2 px-3 text-center text-blue-700 font-semibold">Laki-laki</th>
+                                                            <th className="py-2 px-3 text-center text-blue-700 font-semibold">Perempuan</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="text-gray-700">
+                                                        <tr className="border-b border-blue-100">
+                                                            <td className="py-2 px-3 font-medium">Lahir</td>
+                                                            <td className="py-2 px-3 text-center">31.9 - 37.0 cm</td>
+                                                            <td className="py-2 px-3 text-center">31.5 - 36.2 cm</td>
+                                                        </tr>
+                                                        <tr className="border-b border-blue-100">
+                                                            <td className="py-2 px-3 font-medium">3 bulan</td>
+                                                            <td className="py-2 px-3 text-center">38.1 - 42.9 cm</td>
+                                                            <td className="py-2 px-3 text-center">37.1 - 42.0 cm</td>
+                                                        </tr>
+                                                        <tr className="border-b border-blue-100">
+                                                            <td className="py-2 px-3 font-medium">6 bulan</td>
+                                                            <td className="py-2 px-3 text-center">40.9 - 45.8 cm</td>
+                                                            <td className="py-2 px-3 text-center">39.6 - 44.4 cm</td>
+                                                        </tr>
+                                                        <tr className="border-b border-blue-100">
+                                                            <td className="py-2 px-3 font-medium">12 bulan</td>
+                                                            <td className="py-2 px-3 text-center">43.5 - 48.6 cm</td>
+                                                            <td className="py-2 px-3 text-center">42.0 - 47.0 cm</td>
+                                                        </tr>
+                                                        <tr className="border-b border-blue-100">
+                                                            <td className="py-2 px-3 font-medium">2 tahun</td>
+                                                            <td className="py-2 px-3 text-center">45.8 - 51.0 cm</td>
+                                                            <td className="py-2 px-3 text-center">44.4 - 49.5 cm</td>
+                                                        </tr>
+                                                        <tr className="border-b border-blue-100">
+                                                            <td className="py-2 px-3 font-medium">3 tahun</td>
+                                                            <td className="py-2 px-3 text-center">46.9 - 52.3 cm</td>
+                                                            <td className="py-2 px-3 text-center">45.5 - 50.8 cm</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td className="py-2 px-3 font-medium">5 tahun</td>
+                                                            <td className="py-2 px-3 text-center">48.4 - 54.0 cm</td>
+                                                            <td className="py-2 px-3 text-center">47.0 - 52.5 cm</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-600">
+                                            <p className="font-medium">📌 Catatan:</p>
+                                            <p className="text-xs mt-1">Rentang input yang diterima sistem: <span className="font-bold">30 - 60 cm</span></p>
+                                            <p className="text-xs mt-1">Lingkar kepala penting untuk memantau perkembangan otak anak</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <p className="text-[10px] text-gray-500 text-center mt-4">
+                                    Sumber: WHO Child Growth Standards (2006)
+                                </p>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
         </DashboardLayout>
     );
