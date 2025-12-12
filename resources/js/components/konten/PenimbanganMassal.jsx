@@ -276,13 +276,25 @@ export default function KegiatanPosyandu() {
     };
 
     const handleVitaminInputChange = (childId, field, value) => {
-        setVitaminData(prev => ({
-            ...prev,
-            [childId]: {
-                ...prev[childId],
-                [field]: value
-            }
-        }));
+        // Special handling for dosage - only allow numbers
+        if (field === 'dosage') {
+            const numericValue = value.replace(/\D/g, '');
+            setVitaminData(prev => ({
+                ...prev,
+                [childId]: {
+                    ...prev[childId],
+                    [field]: numericValue
+                }
+            }));
+        } else {
+            setVitaminData(prev => ({
+                ...prev,
+                [childId]: {
+                    ...prev[childId],
+                    [field]: value
+                }
+            }));
+        }
     };
 
     const handleVitaminSubmit = async (e) => {
@@ -1169,7 +1181,9 @@ export default function KegiatanPosyandu() {
                                                             value={vitaminData[child.id]?.dosage || ''}
                                                             onChange={(e) => handleVitaminInputChange(child.id, 'dosage', e.target.value)}
                                                             className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500/10 transition-all text-sm text-gray-900"
-                                                            placeholder="Contoh: 1 kapsul"
+                                                            placeholder="Contoh: 1"
+                                                            inputMode="numeric"
+                                                            pattern="[0-9]*"
                                                         />
                                                     </div>
                                                     <div>
@@ -1260,7 +1274,9 @@ export default function KegiatanPosyandu() {
                                                                 value={vitaminData[child.id]?.dosage || ''}
                                                                 onChange={(e) => handleVitaminInputChange(child.id, 'dosage', e.target.value)}
                                                                 className="w-full px-3 py-2 bg-gray-50 border border-transparent rounded-lg focus:bg-white focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-sm text-gray-900 placeholder:text-gray-400"
-                                                                placeholder="1 kapsul"
+                                                                placeholder="1"
+                                                                inputMode="numeric"
+                                                                pattern="[0-9]*"
                                                             />
                                                         </td>
                                                         <td className="px-6 py-4">
