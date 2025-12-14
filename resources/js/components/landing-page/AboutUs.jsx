@@ -1,6 +1,7 @@
 import React from 'react'
 import { assets } from '../../assets/assets'
 import { useIntersectionObserver } from '../../hooks/useIntersectionObserver'
+import LazyImage from '../ui/LazyImage'
 
 const AboutUs = () => {
   const [sectionRef, isVisible] = useIntersectionObserver({ threshold: 0.1 })
@@ -65,21 +66,33 @@ const AboutUs = () => {
             {/* Central Image Collage (2x2 Grid) */}
             <div className='relative z-10 w-[350px] sm:w-[450px] lg:w-[500px] aspect-square grid grid-cols-2 gap-3 sm:gap-4 p-3'>
               {/* Image 1 (Top Left) */}
-              <div className='w-full h-full rounded-[2rem] overflow-hidden shadow-lg transform hover:scale-105 transition-transform duration-500'>
-                <img src={assets.gmb_1} alt="Nutrition 1" className='w-full h-full object-cover' />
-              </div>
+              <LazyImage
+                src={assets.gmb_1}
+                alt="Nutrition 1"
+                className='w-full h-full rounded-[2rem] overflow-hidden shadow-lg transform hover:scale-105 transition-transform duration-500'
+                placeholderClassName='rounded-[2rem]'
+              />
               {/* Image 2 (Top Right) */}
-              <div className='w-full h-full rounded-[2rem] overflow-hidden shadow-lg transform hover:scale-105 transition-transform duration-500'>
-                <img src={assets.gmb_2} alt="Nutrition 2" className='w-full h-full object-cover' />
-              </div>
+              <LazyImage
+                src={assets.gmb_2}
+                alt="Nutrition 2"
+                className='w-full h-full rounded-[2rem] overflow-hidden shadow-lg transform hover:scale-105 transition-transform duration-500'
+                placeholderClassName='rounded-[2rem]'
+              />
               {/* Image 3 (Bottom Left) */}
-              <div className='w-full h-full rounded-[2rem] overflow-hidden shadow-lg transform hover:scale-105 transition-transform duration-500'>
-                <img src={assets.gmb_3} alt="Nutrition 3" className='w-full h-full object-cover' />
-              </div>
+              <LazyImage
+                src={assets.gmb_3}
+                alt="Nutrition 3"
+                className='w-full h-full rounded-[2rem] overflow-hidden shadow-lg transform hover:scale-105 transition-transform duration-500'
+                placeholderClassName='rounded-[2rem]'
+              />
               {/* Image 4 (Bottom Right) */}
-              <div className='w-full h-full rounded-[2rem] overflow-hidden shadow-lg transform hover:scale-105 transition-transform duration-500'>
-                <img src={assets.gmb_4} alt="Nutrition 4" className='w-full h-full object-cover' />
-              </div>
+              <LazyImage
+                src={assets.gmb_4}
+                alt="Nutrition 4"
+                className='w-full h-full rounded-[2rem] overflow-hidden shadow-lg transform hover:scale-105 transition-transform duration-500'
+                placeholderClassName='rounded-[2rem]'
+              />
 
               {/* Decorative Circle */}
               <div className='absolute -z-10 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#00BFEF]/10 rounded-full blur-3xl opacity-50'></div>
