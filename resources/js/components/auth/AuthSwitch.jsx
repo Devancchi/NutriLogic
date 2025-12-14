@@ -264,7 +264,7 @@ export default function AuthSwitch() {
         @media (max-width: 570px) {
           .auth-container {
             height: auto;
-            min-height: 800px;
+            min-height: 100vh;
             border-radius: 15px;
             box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
           }
@@ -694,6 +694,8 @@ export default function AuthSwitch() {
             top: 95%;
             transform: translate(-50%, -100%);
             transition: 1s 0.8s ease-in-out;
+            max-height: calc(100vh - 180px);
+            overflow-y: auto;
           }
           .signin-signup,
           .auth-container.sign-up-mode .signin-signup {
@@ -702,6 +704,10 @@ export default function AuthSwitch() {
           
           form {
             padding: 0 2rem;
+          }
+          
+          form.sign-up-form {
+            padding-bottom: 30px;
           }
           
           .title {
@@ -755,7 +761,7 @@ export default function AuthSwitch() {
           }
           .auth-container.sign-up-mode:before {
             transform: translate(-50%, 100%);
-            bottom: 32%;
+            bottom: 22%;
             right: initial;
           }
           .auth-container.sign-up-mode .left-panel .content {
@@ -768,8 +774,9 @@ export default function AuthSwitch() {
             transform: translateY(300px);
           }
           .auth-container.sign-up-mode .signin-signup {
-            top: 5%;
+            top: 3%;
             transform: translate(-50%, 0);
+            padding-bottom: 180px;
           }
         }
 
