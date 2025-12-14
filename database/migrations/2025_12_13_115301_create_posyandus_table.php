@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('posyandus', function (Blueprint $table) {
@@ -18,15 +15,13 @@ return new class extends Migration
             $table->text('address')->nullable();
             $table->string('rt_rw', 20)->nullable();
             $table->string('city', 100)->nullable();
+            $table->boolean('is_active')->default(true);
             $table->decimal('latitude', 10, 7)->nullable();
             $table->decimal('longitude', 10, 7)->nullable();
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('posyandus');

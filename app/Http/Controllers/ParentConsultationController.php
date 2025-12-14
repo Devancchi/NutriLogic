@@ -70,8 +70,31 @@ class ParentConsultationController extends Controller
 
         $consultations = $query->get();
 
-        $consultationsData = $consultations->map(function ($consultation) {
+        $consultationsData = $consultations->map(function ($consultation) use ($user) {
             $lastMessage = $consultation->messages->first();
+
+            // Calculate unread count: messages from kader that came after parent's last message
+            $parentLastMessage = $consultation->messages()
+                ->where('sender_id', $user->id)
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            $unreadQuery = $consultation->messages();
+            
+            // Only count messages from kader (not from parent)
+            if ($consultation->kader_id) {
+                $unreadQuery->where('sender_id', $consultation->kader_id);
+            } else {
+                // If no kader assigned yet, count any message not from parent
+                $unreadQuery->where('sender_id', '!=', $user->id);
+            }
+
+            // If parent has sent a message, only count kader messages after that
+            if ($parentLastMessage) {
+                $unreadQuery->where('created_at', '>', $parentLastMessage->created_at);
+            }
+
+            $unreadCount = $unreadQuery->count();
             
             return [
                 'id' => $consultation->id,
@@ -92,6 +115,7 @@ class ParentConsultationController extends Controller
                     'created_at' => $lastMessage->created_at,
                     'attachment_type' => $lastMessage->attachment_type,
                 ] : null,
+                'unread_count' => $unreadCount,
                 'created_at' => $consultation->created_at,
                 'updated_at' => $consultation->updated_at,
             ];

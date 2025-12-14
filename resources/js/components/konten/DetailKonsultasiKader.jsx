@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useDataCache } from "../../contexts/DataCacheContext";
 import DetailKonsultasiKaderSkeleton from "../loading/DetailKonsultasiKaderSkeleton";
 
-export default function DetailKonsultasiKader({ selectedId, onBack, onDeleteSuccess, className = "" }) {
+export default function DetailKonsultasiKader({ selectedId, onBack, onDeleteSuccess, onConsultationViewed, className = "" }) {
     const { id: paramId } = useParams();
     const id = selectedId || paramId;
     const navigate = useNavigate();
@@ -155,6 +155,10 @@ Catatan: ${data.notes || '-'}`;
         } finally {
             if (!silent) {
                 setLoading(false);
+                // Notify parent that consultation was viewed (to update unread count)
+                if (onConsultationViewed) {
+                    onConsultationViewed();
+                }
             }
         }
     };
@@ -191,6 +195,11 @@ Catatan: ${data.notes || '-'}`;
 
             setNewMessage("");
             removeFile();
+
+            // Refresh consultation list to update unread counts
+            if (onConsultationViewed) {
+                onConsultationViewed();
+            }
         } catch (err) {
             const errorMessage = err.response?.data?.message || 'Gagal mengirim pesan. Silakan coba lagi.';
             setError(errorMessage);
