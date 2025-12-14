@@ -66,20 +66,25 @@ class KaderConsultationController extends Controller
             ] : null;
 
             // Calculate unread count: messages from parent that came after kader's last message
-            $kaderLastMessage = $consultation->messages()
-                ->where('sender_id', $user->id)
-                ->orderBy('created_at', 'desc')
-                ->first();
+            // Only count unread for open consultations
+            if ($consultation->status === 'closed') {
+                $consultation->unread_count = 0;
+            } else {
+                $kaderLastMessage = $consultation->messages()
+                    ->where('sender_id', $user->id)
+                    ->orderBy('created_at', 'desc')
+                    ->first();
 
-            $unreadQuery = $consultation->messages()
-                ->where('sender_id', $consultation->parent_id);
+                $unreadQuery = $consultation->messages()
+                    ->where('sender_id', $consultation->parent_id);
 
-            // If kader has sent a message, only count parent messages after that
-            if ($kaderLastMessage) {
-                $unreadQuery->where('created_at', '>', $kaderLastMessage->created_at);
+                // If kader has sent a message, only count parent messages after that
+                if ($kaderLastMessage) {
+                    $unreadQuery->where('created_at', '>', $kaderLastMessage->created_at);
+                }
+
+                $consultation->unread_count = $unreadQuery->count();
             }
-
-            $consultation->unread_count = $unreadQuery->count();
 
             // Remove the relation from response to avoid duplication
             unset($consultation->latestMessage);
