@@ -4,7 +4,6 @@ import { Icon } from '@iconify/react'
 import Navbar from './Navbar'
 import { assets } from '../../assets/assets'
 import { isAuthenticated } from '../../lib/auth'
-import LoginInformation from './LoginInformation'
 
 const Header = () => {
   const navigate = useNavigate()
@@ -179,11 +178,6 @@ const Header = () => {
                       {isAuthenticated() ? 'Buka Dashboard' : 'Cek Status Gizi Sekarang'}
                     </button>
                   </div>
-                </div>
-
-                {/* Right Column: Login Info (Desktop Only) */}
-                <div className="hidden lg:block w-full max-w-sm xl:max-w-md animate-fade-in-scale" style={{ animationDelay: '800ms' }}>
-                  <LoginInformation />
                 </div>
               </div>
             </div>

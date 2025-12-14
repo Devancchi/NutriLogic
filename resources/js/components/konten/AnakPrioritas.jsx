@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Check, Clock, AlertTriangle } from "lucide-react";
+import { Search, AlertTriangle, AlertCircle, Clock, TrendingDown } from "lucide-react";
 import PageHeader from "../ui/PageHeader";
 import DashboardLayout from "../dashboard/DashboardLayout";
 import api from "../../lib/api";
@@ -13,59 +13,106 @@ import AnakPrioritasSkeleton from "../loading/AnakPrioritasSkeleton";
 export default function AnakPrioritas() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [priorityChildren, setPriorityChildren] = useState([]);
-    const [summary, setSummary] = useState(null);
+    const [atRiskChildren, setAtRiskChildren] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
+    const [filterLevel, setFilterLevel] = useState("all");
     const navigate = useNavigate();
 
     // Data caching
     const { getCachedData, setCachedData } = useDataCache();
 
     useEffect(() => {
-        fetchPriorityChildren();
+        fetchAtRiskChildren();
     }, []);
 
-    const fetchPriorityChildren = async (forceRefresh = false) => {
-        // Check cache first (skip if forceRefresh)
+    const fetchAtRiskChildren = async (forceRefresh = false) => {
         if (!forceRefresh) {
-            const cachedData = getCachedData('kader_priority_children');
+            const cachedData = getCachedData('kader_at_risk_children');
             if (cachedData) {
-                setPriorityChildren(cachedData.children);
-                setSummary(cachedData.summary);
+                setAtRiskChildren(cachedData);
                 setLoading(false);
                 return;
             }
         }
 
         try {
-            // Only show loading on initial load
             if (!forceRefresh) {
                 setLoading(true);
             }
             setError(null);
 
-            const response = await api.get('/kader/children/priorities');
-            setPriorityChildren(response.data.data);
-            setSummary(response.data.summary);
-
-            // Cache both children and summary
-            setCachedData('kader_priority_children', {
-                children: response.data.data,
-                summary: response.data.summary
-            });
+            const response = await api.get('/kader/children/at-risk');
+            setAtRiskChildren(response.data.data);
+            setCachedData('kader_at_risk_children', response.data.data);
         } catch (err) {
             const errorMessage = err.response?.data?.message || 'Gagal memuat data anak prioritas. Silakan coba lagi.';
             setError(errorMessage);
-            console.error('Priority children fetch error:', err);
+            console.error('At-risk children fetch error:', err);
         } finally {
             setLoading(false);
         }
     };
 
-    const filteredChildren = priorityChildren.filter(child => {
-        const matchesSearch = child.full_name.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesSearch;
+    const filteredChildren = atRiskChildren.filter(item => {
+        const matchesSearch = item.child.full_name.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesLevel = filterLevel === "all" || item.risk_level === filterLevel;
+        return matchesSearch && matchesLevel;
     });
+
+    const getRiskLevelStyle = (level) => {
+        switch (level) {
+            case 'high':
+                return {
+                    bg: 'bg-red-50',
+                    border: 'border-red-200',
+                    text: 'text-red-700',
+                    badge: 'bg-red-100 text-red-700',
+                    icon: 'text-red-500',
+                    label: 'RISIKO TINGGI'
+                };
+            case 'medium':
+                return {
+                    bg: 'bg-orange-50',
+                    border: 'border-orange-200',
+                    text: 'text-orange-700',
+                    badge: 'bg-orange-100 text-orange-700',
+                    icon: 'text-orange-500',
+                    label: 'PERLU PERHATIAN'
+                };
+            default:
+                return {
+                    bg: 'bg-yellow-50',
+                    border: 'border-yellow-200',
+                    text: 'text-yellow-700',
+                    badge: 'bg-yellow-100 text-yellow-700',
+                    icon: 'text-yellow-500',
+                    label: 'PANTAU'
+                };
+        }
+    };
+
+    const getRiskIcon = (type) => {
+        switch (type) {
+            case 'zscore_drop':
+                return <TrendingDown className="w-3.5 h-3.5" />;
+            case 'status_worsening':
+            case 'critical_status':
+            case 'at_risk_status':
+                return <AlertCircle className="w-3.5 h-3.5" />;
+            case 'no_update':
+            case 'no_data':
+                return <Clock className="w-3.5 h-3.5" />;
+            default:
+                return <AlertTriangle className="w-3.5 h-3.5" />;
+        }
+    };
+
+    // Count by risk level
+    const countByLevel = {
+        high: atRiskChildren.filter(c => c.risk_level === 'high').length,
+        medium: atRiskChildren.filter(c => c.risk_level === 'medium').length,
+        low: atRiskChildren.filter(c => c.risk_level === 'low').length,
+    };
 
     if (loading) {
         return <AnakPrioritasSkeleton cardCount={6} />;
@@ -75,9 +122,9 @@ export default function AnakPrioritas() {
         <DashboardLayout
             header={
                 <PageHeader
-                    title="Antrian Prioritas"
+                    title="Anak Prioritas"
                     subtitle="Portal Kader"
-                    description="Daftar anak yang berhak mendapat antrian prioritas karena patuh konsumsi PMT"
+                    description="Daftar anak dengan kondisi gizi yang memerlukan perhatian khusus"
                     showProfile={true}
                 />
             }
@@ -92,20 +139,46 @@ export default function AnakPrioritas() {
             )}
 
             {/* Summary Cards */}
-            {summary && (
-                <div className="grid grid-cols-1 gap-4">
-                    <div className="bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all">
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-green-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-                        <div className="relative z-10">
-                            <p className="text-xs md:text-sm font-medium text-gray-500 mb-1">Total Anak Berhak Antrian Prioritas</p>
-                            <div className="flex items-baseline gap-2">
-                                <h3 className="text-2xl md:text-3xl font-bold text-gray-900">{summary.total_priority}</h3>
-                                <span className="text-xs md:text-sm text-gray-500">Anak</span>
-                            </div>
+            <div className="grid grid-cols-3 gap-4">
+                <div className="bg-red-50 rounded-2xl p-4 border border-red-100 relative overflow-hidden group hover:shadow-md transition-all cursor-pointer"
+                    onClick={() => setFilterLevel(filterLevel === 'high' ? 'all' : 'high')}>
+                    <div className="absolute top-0 right-0 w-16 h-16 bg-red-100 rounded-bl-full -mr-2 -mt-2"></div>
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-2 mb-1">
+                            <AlertTriangle className="w-4 h-4 text-red-500" />
+                            <p className="text-xs font-medium text-red-600">Risiko Tinggi</p>
                         </div>
+                        <h3 className="text-2xl font-bold text-red-700">{countByLevel.high}</h3>
                     </div>
+                    {filterLevel === 'high' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-red-500"></div>}
                 </div>
-            )}
+
+                <div className="bg-orange-50 rounded-2xl p-4 border border-orange-100 relative overflow-hidden group hover:shadow-md transition-all cursor-pointer"
+                    onClick={() => setFilterLevel(filterLevel === 'medium' ? 'all' : 'medium')}>
+                    <div className="absolute top-0 right-0 w-16 h-16 bg-orange-100 rounded-bl-full -mr-2 -mt-2"></div>
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-2 mb-1">
+                            <AlertCircle className="w-4 h-4 text-orange-500" />
+                            <p className="text-xs font-medium text-orange-600">Perlu Perhatian</p>
+                        </div>
+                        <h3 className="text-2xl font-bold text-orange-700">{countByLevel.medium}</h3>
+                    </div>
+                    {filterLevel === 'medium' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-orange-500"></div>}
+                </div>
+
+                <div className="bg-yellow-50 rounded-2xl p-4 border border-yellow-100 relative overflow-hidden group hover:shadow-md transition-all cursor-pointer"
+                    onClick={() => setFilterLevel(filterLevel === 'low' ? 'all' : 'low')}>
+                    <div className="absolute top-0 right-0 w-16 h-16 bg-yellow-100 rounded-bl-full -mr-2 -mt-2"></div>
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-2 mb-1">
+                            <Clock className="w-4 h-4 text-yellow-600" />
+                            <p className="text-xs font-medium text-yellow-700">Pantau</p>
+                        </div>
+                        <h3 className="text-2xl font-bold text-yellow-700">{countByLevel.low}</h3>
+                    </div>
+                    {filterLevel === 'low' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-yellow-500"></div>}
+                </div>
+            </div>
 
             {/* Search Bar */}
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200">
@@ -118,45 +191,58 @@ export default function AnakPrioritas() {
                         placeholder="Cari nama anak..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl leading-5 bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all sm:text-sm"
+                        className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl leading-5 bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all sm:text-sm"
                     />
                 </div>
             </div>
 
+            {/* Filter indicator */}
+            {filterLevel !== 'all' && (
+                <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-500">Filter aktif:</span>
+                    <span className={`text-xs font-bold px-2 py-1 rounded-full ${getRiskLevelStyle(filterLevel).badge}`}>
+                        {getRiskLevelStyle(filterLevel).label}
+                    </span>
+                    <button
+                        onClick={() => setFilterLevel('all')}
+                        className="text-xs text-gray-400 hover:text-gray-600"
+                    >
+                        Hapus filter
+                    </button>
+                </div>
+            )}
+
             {/* Children List */}
             {filteredChildren.length === 0 ? (
                 <div className="bg-white rounded-2xl p-12 shadow-sm border border-gray-200 text-center z-0">
-                    <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Search className="w-10 h-10 text-gray-300" />
+                    <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <AlertTriangle className="w-10 h-10 text-green-300" />
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-1">Tidak ada data ditemukan</h3>
+                    <h3 className="text-lg font-bold text-gray-900 mb-1">
+                        {searchQuery || filterLevel !== 'all' ? 'Tidak ada data ditemukan' : 'Semua anak dalam kondisi baik!'}
+                    </h3>
                     <p className="text-gray-500">
-                        {searchQuery
-                            ? "Coba ubah kata kunci pencarian."
-                            : "Belum ada anak yang memenuhi syarat antrian prioritas saat ini."}
+                        {searchQuery || filterLevel !== 'all'
+                            ? "Coba ubah kata kunci pencarian atau filter."
+                            : "Tidak ada anak yang memerlukan perhatian khusus saat ini."}
                     </p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 z-0">
-                    {filteredChildren.map((child) => {
-                        // Use real data from backend
-                        const pmtCompliance = child.pmt_compliance_percentage || 0;
-                        const isEligible = child.is_eligible_priority || false;
+                    {filteredChildren.map((item) => {
+                        const { child, risks, risk_level, latest_weighing } = item;
+                        const style = getRiskLevelStyle(risk_level);
 
                         return (
                             <div
                                 key={child.id}
-                                className={`bg-white rounded-2xl p-5 shadow-sm border-2 transition-all cursor-pointer group ${isEligible
-                                    ? 'border-green-200 hover:border-green-300 hover:shadow-lg hover:shadow-green-100'
-                                    : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
-                                    }`}
+                                className={`bg-white rounded-2xl p-5 shadow-sm border-2 transition-all cursor-pointer group ${style.border} hover:shadow-lg`}
                                 onClick={() => navigate(`/dashboard/data-anak/${child.id}`)}
                             >
                                 {/* Header */}
                                 <div className="flex items-start justify-between mb-4">
                                     <div className="flex items-center gap-3">
-                                        <div className={`w-12 h-12 rounded-full overflow-hidden border-2 shadow-sm shrink-0 ${isEligible ? 'border-green-300' : 'border-gray-300'
-                                            }`}>
+                                        <div className={`w-12 h-12 rounded-full overflow-hidden border-2 shadow-sm shrink-0 ${style.border}`}>
                                             <img
                                                 src={child.gender === 'L' ? kepalaBayi : kepalaBayiCewe}
                                                 alt={child.full_name}
@@ -164,8 +250,7 @@ export default function AnakPrioritas() {
                                             />
                                         </div>
                                         <div>
-                                            <h3 className={`font-bold line-clamp-1 transition-colors ${isEligible ? 'text-gray-900 group-hover:text-green-600' : 'text-gray-900 group-hover:text-gray-700'
-                                                }`}>
+                                            <h3 className={`font-bold line-clamp-1 transition-colors text-gray-900 group-hover:${style.text}`}>
                                                 {child.full_name}
                                             </h3>
                                             <p className="text-xs text-gray-500 mt-0.5">
@@ -173,48 +258,25 @@ export default function AnakPrioritas() {
                                             </p>
                                         </div>
                                     </div>
+                                    <span className={`text-xs font-bold px-2 py-1 rounded-full ${style.badge}`}>
+                                        {style.label}
+                                    </span>
                                 </div>
 
-                                {/* PMT Compliance Badge */}
-                                <div className={`rounded-xl p-4 mb-4 ${isEligible ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'
-                                    }`}>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="text-xs font-semibold uppercase tracking-wider text-gray-600">
-                                            Konsumsi PMT Bulan Ini
-                                        </span>
-                                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isEligible
-                                            ? 'bg-green-100 text-green-700'
-                                            : 'bg-gray-200 text-gray-600'
-                                            }`}>
-                                            {pmtCompliance}%
-                                        </span>
-                                    </div>
-
-                                    {/* Progress Bar */}
-                                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-3">
-                                        <div
-                                            className={`h-full transition-all duration-500 ${isEligible ? 'bg-green-500' : 'bg-gray-400'
-                                                }`}
-                                            style={{ width: `${pmtCompliance}%` }}
-                                        ></div>
-                                    </div>
-
-                                    {/* Status Badge */}
-                                    <div className={`flex items-center gap-2 justify-center py-1.5 rounded-lg ${isEligible
-                                        ? 'bg-green-100 text-green-700'
-                                        : 'bg-gray-200 text-gray-600'
-                                        }`}>
-                                        {isEligible ? (
-                                            <>
-                                                <Check className="w-4 h-4" />
-                                                <span className="text-xs font-bold">BERHAK ANTRIAN PRIORITAS</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Clock className="w-4 h-4" />
-                                                <span className="text-xs font-bold">BELUM MEMENUHI SYARAT</span>
-                                            </>
-                                        )}
+                                {/* Risk Indicators */}
+                                <div className={`rounded-xl p-4 mb-4 ${style.bg} border ${style.border}`}>
+                                    <p className="text-xs font-semibold uppercase tracking-wider text-gray-600 mb-2">
+                                        Indikator Risiko
+                                    </p>
+                                    <div className="space-y-2">
+                                        {risks.map((risk, idx) => (
+                                            <div key={idx} className={`flex items-start gap-2 text-xs ${style.text}`}>
+                                                <div className={`mt-0.5 ${style.icon}`}>
+                                                    {getRiskIcon(risk.type)}
+                                                </div>
+                                                <span>{risk.message}</span>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
 
@@ -223,29 +285,27 @@ export default function AnakPrioritas() {
                                     <div className="flex justify-between items-center mb-2">
                                         <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Data Terakhir</span>
                                         <span className="text-[10px] text-gray-400">
-                                            {child.latest_weighing
-                                                ? new Date(child.latest_weighing.measured_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
+                                            {latest_weighing
+                                                ? new Date(latest_weighing.measured_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
                                                 : '-'}
                                         </span>
                                     </div>
 
-                                    {child.latest_weighing ? (
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                    {latest_weighing ? (
+                                        <div className="grid grid-cols-3 gap-3">
                                             <div>
                                                 <p className="text-xs text-gray-500 mb-0.5">Berat</p>
-                                                <p className="text-sm font-bold text-gray-900">{child.latest_weighing.weight_kg} kg</p>
+                                                <p className="text-sm font-bold text-gray-900">{latest_weighing.weight_kg} kg</p>
                                             </div>
                                             <div>
                                                 <p className="text-xs text-gray-500 mb-0.5">Tinggi</p>
-                                                <p className="text-sm font-bold text-gray-900">{child.latest_weighing.height_cm} cm</p>
+                                                <p className="text-sm font-bold text-gray-900">{latest_weighing.height_cm} cm</p>
                                             </div>
                                             <div>
-                                                <p className="text-xs text-gray-500 mb-0.5">Lengan</p>
-                                                <p className="text-sm font-bold text-gray-900">{child.latest_weighing.muac_cm ? `${child.latest_weighing.muac_cm} cm` : '-'}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-xs text-gray-500 mb-0.5">Kepala</p>
-                                                <p className="text-sm font-bold text-gray-900">{child.latest_weighing.head_circumference_cm ? `${child.latest_weighing.head_circumference_cm} cm` : '-'}</p>
+                                                <p className="text-xs text-gray-500 mb-0.5">Status</p>
+                                                <p className={`text-xs font-bold ${style.text}`}>
+                                                    {latest_weighing.nutritional_status || '-'}
+                                                </p>
                                             </div>
                                         </div>
                                     ) : (
@@ -261,7 +321,7 @@ export default function AnakPrioritas() {
                                             {child.parent?.name || '-'}
                                         </span>
                                     </div>
-                                    <button className="text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors">
+                                    <button className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${style.text} ${style.bg} hover:opacity-80`}>
                                         Lihat Detail
                                     </button>
                                 </div>

@@ -253,12 +253,14 @@ export default function KonsultasiKader() {
                                                         )}
                                                     </p>
 
-                                                    {/* Status Badge */}
-                                                    {consultation.status === 'open' ? (
-                                                        <div className="w-2.5 h-2.5 rounded-full bg-green-500 flex-shrink-0" title="Aktif" />
-                                                    ) : (
+                                                    {/* Unread Badge */}
+                                                    {consultation.unread_count > 0 ? (
+                                                        <div className="flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-green-500 flex-shrink-0" title={`${consultation.unread_count} pesan belum dibaca`}>
+                                                            <span className="text-[10px] font-bold text-white">{consultation.unread_count}</span>
+                                                        </div>
+                                                    ) : consultation.status === 'closed' ? (
                                                         <CheckCircle className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" title="Selesai" />
-                                                    )}
+                                                    ) : null}
                                                 </div>
                                             </div>
                                         </div>
@@ -292,6 +294,10 @@ export default function KonsultasiKader() {
                             onDeleteSuccess={() => {
                                 navigate('/dashboard/konsultasi');
                                 fetchConsultations(filterStatus);
+                            }}
+                            onConsultationViewed={() => {
+                                // Refresh list to update unread counts after viewing
+                                fetchConsultations(filterStatus, true);
                             }}
                             className="h-full z-10"
                         />

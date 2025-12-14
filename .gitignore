@@ -25,5 +25,7 @@ Thumbs.db
 .github
 .todo
 .kiro
+.bak
 docs
 scripts
+_backup_migration
