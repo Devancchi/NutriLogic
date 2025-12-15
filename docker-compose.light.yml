@@ -59,6 +59,8 @@ services:
     image: mysql:8.0
     container_name: nutrilogic-mysql
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:3306:3306"  # Only accessible via SSH tunnel
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-nutrilogic123}
       MYSQL_DATABASE: ${DB_DATABASE:-nutrilogic}
